@@ -83,7 +83,7 @@ const Navbar = () => {
             {/* הוספת פילטר ללוגו כדי שיראה טוב על שחור במידה והוא לא שקוף */}
             <img src="/logo.png" alt="לוגו ציפורי - בית האוכל היהודי" className="h-14 sm:h-16 select-none transition-transform group-hover:scale-105" draggable={false} />
             <div className="hidden sm:flex flex-col leading-tight">
-              <span className="text-xl font-semibold text-white tracking-wide">ציפורי</span>
+              <span className="text-xl font-semibold text-white tracking-wide">צפורי</span>
               <span className="text-xs text-slate-400">בית האוכל היהודי</span>
             </div>
           </Link>
