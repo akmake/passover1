@@ -3,7 +3,7 @@
 export function toAbsoluteUrl(raw) {
   if (!raw) return null;
 
-  // 1. אם זה כבר קישור מלא (למשל מ-Cloudinary או קישור חיצוני), החזר כמו שהוא
+  // 1. אם זה כבר קישור מלא (למשל תמונה חיצונית או base64), החזר כמו שהוא
   if (/^(https?:)?\/\//i.test(raw) || /^data:/.test(raw) || /^blob:/.test(raw)) {
     return raw;
   }
@@ -16,9 +16,8 @@ export function toAbsoluteUrl(raw) {
       path = '/' + path;
   }
 
-  // 3. חישוב שורש השרת (הלוגיקה מפרויקט ציפורי)
-  // לוקחים את כתובת ה-API המוגדרת (למשל https://passover1.onrender.com)
-  // שימוש ב-VITE_API_BASE_URL או בכתובת ברירת המחדל שלך
+  // 3. חישוב שורש השרת
+  // לוקחים את כתובת ה-API המוגדרת (למשל https://passover1.onrender.com/api)
   const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
   
   // מסירים את הסיומת "/api" (אם קיימת) כדי לקבל את כתובת השורש של השרת

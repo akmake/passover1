@@ -5,11 +5,13 @@ import api from '@/api';
 import { Button } from '@/components/ui/Button';
 import { LoaderCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
-import { useTranslation } from 'react-i18next'; // <-- השורה הזו נוספה
-
+import { useTranslation } from 'react-i18next';
+// --- תיקון: ייבוא פונקציית העזר לתמונות ---
+import { toAbsoluteUrl } from '@/utils/url'; 
 
 const HeroSection = ({ content }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  
   useEffect(() => {
     if (content.mode === 'slideshow' && content.slides?.length > 1) {
       const interval = setInterval(() => {
@@ -20,7 +22,8 @@ const HeroSection = ({ content }) => {
   }, [content]);
 
   const currentSlide = content.slides?.[currentIndex] || {};
-  const heroUrl = currentSlide.image;
+  // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
+  const heroUrl = toAbsoluteUrl(currentSlide.image);
   const heroHeight = content.height || 75;
 
   return (
@@ -29,7 +32,7 @@ const HeroSection = ({ content }) => {
           backgroundImage: heroUrl ? `url("${heroUrl}")` : 'none',
           backgroundColor: '#333',
           minHeight: `${heroHeight}vh`
-      }}>
+    }}>
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative z-10 max-w-4xl mx-auto px-6">
         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
@@ -42,23 +45,23 @@ const HeroSection = ({ content }) => {
 
 const RichTextSection = ({ content }) => (
     <div className="max-w-4xl mx-auto px-4 text-center">
-        {/* תיקון: הוספת חיטוי אבטחה */}
         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.title) }} />
         <div className="mt-4 text-gray-700" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.text) }} />
     </div>
 );
 
 const ImageWithTextSection = ({ content }) => {
-    const imageUrl = content.image;
+    // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
+    const imageUrl = toAbsoluteUrl(content.image);
+
     return (
         <div className="relative bg-cover bg-center text-white flex items-center justify-center w-full"
-             style={{ backgroundImage: `url(${imageUrl})`, minHeight: `${content.height || 500}px` }}>
+             style={{ backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none', minHeight: `${content.height || 500}px` }}>
             <div className="absolute inset-0 bg-black/60"></div>
             <div className="relative z-10 container mx-auto px-6 text-center">
-                 {/* תיקון: הוספת חיטוי אבטחה */}
                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.title) }} />
                  <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.text) }} />
-                 {content.buttonText && content.buttonLink && (
+                  {content.buttonText && content.buttonLink && (
                     <Button asChild size="lg" className="mt-8">
                         <Link to={content.buttonLink}>{content.buttonLink.startsWith('http') ? '_blank' : '_self'}{content.buttonText}</Link>
                     </Button>
@@ -69,9 +72,8 @@ const ImageWithTextSection = ({ content }) => {
 };
 
 const CategoryGridSection = ({ content }) => {
-    // 2. הפעלת ה-hook כדי לקבל את השפה הנוכחית
     const { i18n } = useTranslation();
-    const currentLang = i18n.language; // 'he' or 'en'
+    const currentLang = i18n.language;
 
     const { data: categories, isLoading, isError } = useQuery({
         queryKey: ['publicCategories'],
@@ -80,7 +82,7 @@ const CategoryGridSection = ({ content }) => {
 
     if (isLoading) return <LoaderCircle className="mx-auto animate-spin" />;
     if (isError || !categories) return <p className="text-center text-red-500">שגיאה בטעינת הקטגוריות.</p>;
-    
+
     return (
         <div className="container mx-auto px-4">
             <div className="text-center mb-12">
@@ -88,8 +90,9 @@ const CategoryGridSection = ({ content }) => {
             </div>
             <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 {categories.map(cat => {
-                    // 3. בחירה דינמית של שם הקטגוריה להצגה
                     const displayName = cat.name?.[currentLang] || cat.name?.he;
+                    // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הקטגוריה ---
+                    const imageSrc = toAbsoluteUrl(cat.image);
 
                     return (
                         <Link
@@ -98,14 +101,14 @@ const CategoryGridSection = ({ content }) => {
                             className="group relative block aspect-[4/3] w-full rounded-lg overflow-hidden shadow-lg"
                         >
                             <img
-                                src={cat.image || 'https://via.placeholder.com/400x300'}
-                                alt={displayName} // שימוש בשם המתורגם עבור alt
+                                src={imageSrc || 'https://via.placeholder.com/400x300'}
+                                alt={displayName}
                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                             <div className="absolute bottom-0 left-0 right-0 p-4">
                                 <h3 className="text-white text-xl md:text-2xl font-bold text-center drop-shadow-md">
-                                    {displayName} {/* <-- הצגת השם הנכון במקום האובייקט */}
+                                  {displayName}
                                 </h3>
                             </div>
                         </Link>
@@ -115,6 +118,7 @@ const CategoryGridSection = ({ content }) => {
         </div>
     );
 };
+
 const FeaturesSection = ({ content }) => null;
 
 const sectionComponents = {
@@ -141,13 +145,13 @@ export default function HomePage() {
         if (!Component) return null;
 
         const backgroundColor = section.content?.backgroundColor;
-
+   
         if (section.type === 'hero' || section.type === 'imageWithText') {
              return <Component key={section._id} content={section.content} />;
         }
 
         const minHeight = section.content?.height;
-
+   
         return (
             <section
                 key={section._id}
