@@ -15,11 +15,10 @@ const router = express.Router();
 let csrfProtection;
 
 if (process.env.NODE_ENV === 'test') {
-  // בסביבת בדיקות, נשתמש ב-middleware "דמה" שלא עושה כלום
   csrfProtection = (req, res, next) => next();
 } else {
-  // בכל סביבה אחרת, נפעיל את ההגנה האמיתית
-  csrfProtection = csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'strict' } });
+  // התיקון כאן: שינינו את sameSite ל-'none'
+  csrfProtection = csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'none' } });
 }
 // ---------------------------------
 
@@ -29,12 +28,11 @@ const loginLimiter = rateLimit({
     message: { message: 'יותר מדי ניסיונות התחברות. נסה שוב בעוד 15 דקות.' }
 });
 
-// Route ציבורי לשליפת CSRF token (יעבוד רק מחוץ לסביבת בדיקות)
+// Route ציבורי לשליפת CSRF token
 router.get('/csrf-token', csrfProtection, (req, res) => {
     res.json({ csrfToken: req.csrfToken() });
 });
 
-// שימוש ב-csrfProtection שהוגדר באופן מותנה
 router.post('/register', csrfProtection, validate(registerSchema), registerUser);
 router.post('/login', loginLimiter, csrfProtection, loginUser);
 router.post('/logout', csrfProtection, logoutUser);
