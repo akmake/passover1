@@ -18,15 +18,16 @@ import couponRoutes from './routes/couponRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import getLanguage from './middleware/languageMiddleware.js'; // <-- 1. הוסף את שורת הייבוא הזו
+import getLanguage from './middleware/languageMiddleware.js';
 import { errorHandler } from './middleware/errorHandler.js';
-
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Render and other cloud providers use a proxy. This is required for secure cookies to work.
+app.set('trust proxy', 1);
 
 // Middlewares
 app.use(
@@ -38,15 +39,17 @@ app.use(
         }
     })
 );
+
 app.use(cors({
     origin: process.env.CLIENT_URL || 'https://localhost:5173',
     credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(mongoSanitize());
-app.use(getLanguage); // <-- 2. הוסף את השורה הזו כדי להפעיל את ה"בלש"
+app.use(getLanguage);
 
 
 // Routes
