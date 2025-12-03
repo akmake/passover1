@@ -4,6 +4,10 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import logger from './utils/logger.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Import Routes
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
@@ -16,8 +20,7 @@ import deliveryOptionsRoutes from './routes/deliveryOptionsRoutes.js';
 import homepageSettingsRoutes from './routes/homepageSettingsRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
+
 import getLanguage from './middleware/languageMiddleware.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -26,22 +29,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// הגדרה קריטית ל-Render ולספקים בענן - מאפשרת עבודה תקינה מאחורי Load Balancer
 app.set('trust proxy', 1);
 
 // Middlewares
 app.use(
     helmet({
+        crossOriginResourcePolicy: false, // מאפשר טעינת תמונות ממקור אחר (אם צריך)
         hsts: {
-            maxAge: 31536000, // 1 שנה בשניות
-            includeSubDomains: true, // כולל תת-דומיינים
-            preload: true // מאפשר הכללה ברשימת preload של דפדפנים
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true
         }
     })
 );
 
 app.use(cors({
-    // השרת יאשר בקשות מהכתובת שמוגדרת ב-CLIENT_URL, או מ-Localhost בפיתוח
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
 }));
@@ -52,6 +54,10 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
+// --- התיקון הקריטי: חשיפת תיקיית ההעלאות ---
+// זה מאפשר לגשת לקבצים דרך http://your-server.com/uploads/filename.jpg
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -69,10 +75,7 @@ app.use('/api/upload', uploadRoutes);
 
 app.use(errorHandler);
 
-// Make uploads folder static
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Error handling middleware
+// לוג שגיאות
 app.use((err, req, res, next) => {
     logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
     res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });

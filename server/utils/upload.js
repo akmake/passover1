@@ -1,20 +1,28 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
-// Set up storage engine
+// יצירת התיקייה אם היא לא קיימת
+const uploadDir = 'uploads/';
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir);
+}
+
+// הגדרת האחסון בדיסק
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, 'uploads/'); // שמירה לתיקיית uploads
   },
   filename: function (req, file, cb) {
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    );
+    // יצירת שם ייחודי ונקי
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    // ניקוי שם הקובץ מתווים בעייתיים או עברית שעלולה לשבור קישורים
+    const cleanName = file.originalname.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.\-_]/g, '');
+    cb(null, uniqueSuffix + '-' + cleanName);
   },
 });
 
-// Check file type
+// בדיקת סוג קובץ
 function checkFileType(file, cb) {
   const filetypes = /jpeg|jpg|png|gif|webp/;
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -23,7 +31,7 @@ function checkFileType(file, cb) {
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    cb('Error: Images Only!');
+    cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'));
   }
 }
 
@@ -32,7 +40,7 @@ const upload = multer({
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } // הגבלה ל-5MB
 });
 
 export default upload;
