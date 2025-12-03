@@ -102,13 +102,11 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* התאמת צבע כפתור שפה */}
-            <div className="text-slate-300 hover:text-white">
+          <div className="flex items-center gap-2 sm:gap-4 h-full">
+            {/* התאמת כפתור שפה: ללא רקע, ללא החלפת צבעים, מודגש מאוד */}
+            <div className="text-slate-300 font-bold select-none">
                 <LanguageSwitcher />
             </div>
-            
-            <img src="/bdz.svg" alt="סמל כשרות בד&quot;ץ" className="h-10 sm:h-12 hidden sm:block select-none opacity-90 grayscale hover:grayscale-0 transition-all" draggable={false} />
             
             <button onClick={toggleCart} className="relative p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50" 
               aria-label={t('cart.openLabel')} title={t('cart.title')}>
@@ -157,6 +155,12 @@ const Navbar = () => {
                 </Button>
               </div>
             )}
+
+            {/* בד"ץ: המיקום הוזז לסוף (ימין), ונוספו הגדרות גובה מלא וביטול שוליים */}
+            <div className="flex items-center h-20 -my-4 ml-2 border-l border-white/10 pl-4">
+               <img src="/bdz.svg" alt="סמל כשרות בד&quot;ץ" className="h-full w-auto select-none object-contain" draggable={false} />
+            </div>
+
           </div>
         </div>
       </nav>
