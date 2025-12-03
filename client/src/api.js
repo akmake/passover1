@@ -1,21 +1,21 @@
-// client/src/api.js
 import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
-// הגדרת כתובת הבסיס לפי משתנה הסביבה ב-Render
-// אם המשתנה לא קיים (למשל בפיתוח מקומי רגיל), הוא יהיה מחרוזת ריקה ויעבוד עם ה-Proxy
-const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+// תיקון "כוח גס": אם המשתנה לא נקלט, השתמש בכתובת השרת הישירה
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
+
+console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לראות בקונסול
 
 const api = axios.create({
     baseURL: baseURL,
     withCredentials: true,
 });
 
-// שליפת CSRF token לפני בקשות
+// שליפת CSRF token לפני בקשות POST/PUT/DELETE
 api.interceptors.request.use(async (config) => {
     if (['post', 'put', 'delete'].includes(config.method)) {
         try {
-            // שימוש ב-baseURL גם כאן כדי לפנות לשרת הנכון
+            // שימוש ב-baseURL המפורש
             const response = await axios.get(`${baseURL}/api/auth/csrf-token`, { withCredentials: true });
             config.headers['X-CSRF-Token'] = response.data.csrfToken;
         } catch (error) {
@@ -25,6 +25,7 @@ api.interceptors.request.use(async (config) => {
     return config;
 });
 
+// טיפול ב-Token Refresh אוטומטי
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -32,7 +33,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                // שימוש ב-baseURL בעת רענון הטוקן
+                // שימוש ב-baseURL המפורש
                 const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
                 useAuthStore.getState().login(refreshedUserData);
                 

@@ -402,7 +402,12 @@
       import axios from 'axios';
       import { useAuthStore } from './stores/authStore';
       
+      // הגדרת כתובת הבסיס לפי משתנה הסביבה ב-Render
+      // אם המשתנה לא קיים (למשל בפיתוח מקומי רגיל), הוא יהיה מחרוזת ריקה ויעבוד עם ה-Proxy
+      const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+      
       const api = axios.create({
+          baseURL: baseURL,
           withCredentials: true,
       });
       
@@ -410,7 +415,8 @@
       api.interceptors.request.use(async (config) => {
           if (['post', 'put', 'delete'].includes(config.method)) {
               try {
-                  const response = await axios.get('/api/auth/csrf-token', { withCredentials: true });
+                  // שימוש ב-baseURL גם כאן כדי לפנות לשרת הנכון
+                  const response = await axios.get(`${baseURL}/api/auth/csrf-token`, { withCredentials: true });
                   config.headers['X-CSRF-Token'] = response.data.csrfToken;
               } catch (error) {
                   console.error('Failed to fetch CSRF token:', error);
@@ -426,8 +432,12 @@
               if (error.response?.status === 401 && !originalRequest._retry) {
                   originalRequest._retry = true;
                   try {
-                      const { data: refreshedUserData } = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+                      // שימוש ב-baseURL בעת רענון הטוקן
+                      const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
                       useAuthStore.getState().login(refreshedUserData);
+      
+                      // עדכון ה-baseURL לבקשה החוזרת
+                      originalRequest.baseURL = baseURL;
                       return api(originalRequest);
                   } catch (refreshError) {
                       console.error("Session refresh failed. Logging out.");
@@ -7481,6 +7491,7 @@
         },
       };
     });
+📄 directory_structure.txt
 📄 folder_copier_gui.py
   #!/usr/bin/env python3
   # -*- coding: utf-8 -*-
@@ -7853,15 +7864,16 @@
     import uploadRoutes from './routes/uploadRoutes.js';
     import path from 'path';
     import { fileURLToPath } from 'url';
-    import getLanguage from './middleware/languageMiddleware.js'; // <-- 1. הוסף את שורת הייבוא הזו
+    import getLanguage from './middleware/languageMiddleware.js';
     import { errorHandler } from './middleware/errorHandler.js';
-    
-    
     
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     
     const app = express();
+    
+    // הגדרה קריטית ל-Render ולספקים בענן - מאפשרת עבודה תקינה מאחורי Load Balancer
+    app.set('trust proxy', 1);
     
     // Middlewares
     app.use(
@@ -7873,15 +7885,18 @@
             }
         })
     );
+    
     app.use(cors({
-        origin: process.env.CLIENT_URL || 'https://localhost:5173',
+        // השרת יאשר בקשות מהכתובת שמוגדרת ב-CLIENT_URL, או מ-Localhost בפיתוח
+        origin: process.env.CLIENT_URL || 'http://localhost:5173',
         credentials: true,
     }));
+    
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
     app.use(mongoSanitize());
-    app.use(getLanguage); // <-- 2. הוסף את השורה הזו כדי להפעיל את ה"בלש"
+    app.use(getLanguage);
     
     
     // Routes
@@ -7897,8 +7912,6 @@
     app.use('/api/homepage-settings', homepageSettingsRoutes);
     app.use('/api/coupons', couponRoutes);
     app.use('/api/upload', uploadRoutes);
-    
-    
     
     app.use(errorHandler);
     
@@ -7927,10 +7940,12 @@
       
       const connectDB = async () => {
         try {
+          // משיכת כתובת ההתחברות ממשתני הסביבה
           const conn = await mongoose.connect(process.env.MONGO_URI);
           console.log(`MongoDB Connected: ${conn.connection.host}`);
         } catch (error) {
           console.error(`Error: ${error.message}`);
+          // יציאה עם שגיאה כדי ש-Render ינסה להפעיל מחדש את השרת
           process.exit(1);
         }
       };
@@ -9980,7 +9995,8 @@
     // dotenv.config() must be called before any other imports that need it
     dotenv.config();
     
-    import app from './app.js'; // Import the configured app
+    import app from './app.js';
+    // Import the configured app
     import connectDB from './config/db.js';
     import logger from './utils/logger.js';
     import https from 'https';
@@ -9992,29 +10008,31 @@
     const __dirname = path.dirname(__filename);
     
     // Connect to database
-    
     connectDB();
     
-    // Start the server with HTTPS
+    // Render מגדיר את הפורט באופן אוטומטי, או שנשתמש ב-5000 כברירת מחדל
     const port = process.env.PORT || 5000;
-    const useHttps = process.env.NODE_ENV === 'production' || process.env.HTTPS_DEV === 'true';
     
-    if (useHttps) {
+    // בדיקה האם אנחנו רוצים HTTPS מקומי (רק בפיתוח)
+    const useLocalHttps = process.env.NODE_ENV !== 'production' && process.env.HTTPS_DEV === 'true';
+    
+    if (useLocalHttps) {
         try {
             const sslOptions = {
                 key: fs.readFileSync(path.join(__dirname, 'certs/key.pem')),
                 cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem')),
             };
             https.createServer(sslOptions, app).listen(port, () => {
-                logger.info(`Server is listening in HTTPS mode on https://localhost:${port}`);
+                logger.info(`Server is listening in HTTPS mode (Local) on https://localhost:${port}`);
             });
         } catch (error) {
             logger.error('Failed to start HTTPS server. Ensure certs/key.pem and certs/cert.pem exist.');
             process.exit(1);
         }
     } else {
+        // בפרודקשן (Render), השרת רץ כ-HTTP רגיל והענן מטפל ב-SSL
         app.listen(port, () => {
-            logger.info(`Server is listening in HTTP mode on http://localhost:${port}`);
+            logger.info(`Server is listening on port ${port}`);
         });
     }
   📄 jest.config.js
