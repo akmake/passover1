@@ -2,8 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
 // תיקון "כוח גס": אם המשתנה לא נקלט, השתמש בכתובת השרת הישירה
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
-
+const baseURL = 'https://passover1.onrender.com';
 console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לראות בקונסול
 
 const api = axios.create({
