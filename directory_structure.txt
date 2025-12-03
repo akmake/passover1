@@ -7491,6 +7491,7 @@
         },
       };
     });
+📄 directory_structure.txt
 📄 folder_copier_gui.py
   #!/usr/bin/env python3
   # -*- coding: utf-8 -*-
@@ -8609,16 +8610,17 @@
       export const registerUser = async (req, res) => {
           try {
               const { name, email, password } = req.body;
-              if (!name || !email || !password) { return res.status(400).json({ message: 'שם, אימייל וסיסמה הם שדות חובה' }); }
+              if (!name || !email || !password) { return res.status(400).json({ message: 'שם, אימייל וסיסמה הם שדות חובה' });
+              }
       
               const existingUser = await User.findOne({ email });
-              if (existingUser) { return res.status(409).json({ message: 'משתמש עם כתובת אימייל זו כבר קיים' }); }
+              if (existingUser) { return res.status(409).json({ message: 'משתמש עם כתובת אימייל זו כבר קיים' });
+              }
       
-              // --- THE FIX IS HERE ---
               const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-              // -------------------------
       
-              if (!strongPasswordRegex.test(password)) { return res.status(400).json({ message: 'הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה, מספר ותו מיוחד.' }); }
+              if (!strongPasswordRegex.test(password)) { return res.status(400).json({ message: 'הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה, מספר ותו מיוחד.' });
+              }
       
               const salt = await bcrypt.genSalt(12);
               const passwordHash = await bcrypt.hash(password, salt);
@@ -8626,7 +8628,6 @@
       
               createAndSendTokens(newUser, res);
       
-              // We are sending tokens via cookies, so the JSON response is for client-side state update.
               const userResponse = {
                   _id: newUser._id,
                   name: newUser.name,
@@ -8645,7 +8646,6 @@
                   console.error('שליחת מייל הרשמה נכשלה, אך המשתמש נוצר בהצלחה:', emailError);
               }
       
-              // Send the JSON response after setting cookies.
               res.status(201).json(userResponse);
       
           } catch (error) {
@@ -8657,11 +8657,12 @@
       export const loginUser = async (req, res) => {
           try {
               const { email, password, otp } = req.body;
-              if (!email || !password) { return res.status(400).json({ message: 'אימייל וסיסמה הם שדות חובה' }); }
+              if (!email || !password) { return res.status(400).json({ message: 'אימייל וסיסמה הם שדות חובה' });
+              }
       
               const user = await User.findOne({ email }).select('+passwordHash +mfaSecret');
-      
-              if (user && user.isLocked) { return res.status(403).json({ message: 'החשבון נעול זמנית. נסה שוב בעוד 15 דקות.' }); }
+              if (user && user.isLocked) { return res.status(403).json({ message: 'החשבון נעול זמנית. נסה שוב בעוד 15 דקות.' });
+              }
       
               const isMatch = user && (await bcrypt.compare(password, user.passwordHash));
               if (!isMatch) {
@@ -8693,31 +8694,33 @@
                   role: user.role,
                   shippingDetails: user.shippingDetails
               });
-      
           } catch (error) { res.status(500).json({ message: 'אירעה שגיאה בשרת בעת ההתחברות' }); }
       };
       
       export const logoutUser = async (req, res) => {
           try {
-              // מצא את המשתמש והגדל את tokenVersion
-              const user = await User.findById(req.user._id);
-              if (user) {
-                  user.tokenVersion += 1;
-                  await user.save();
+              // --- התיקון כאן ---
+              // אנחנו בודקים אם יש משתמש (req.user) לפני שאנחנו מנסים לגשת ל-_id שלו.
+              // זה מונע את הקריסה במקרה שהמשתמש מנסה להתנתק כשהטוקן שלו כבר פג תוקף.
+              if (req.user && req.user._id) {
+                  const user = await User.findById(req.user._id);
+                  if (user) {
+                      user.tokenVersion += 1;
+                      await user.save();
+                  }
               }
       
-              // נקה את העוגיות
+              // נקה את העוגיות בכל מקרה (גם אם לא מצאנו משתמש)
               res.clearCookie('access_token', {
                   httpOnly: true,
-                  secure: process.env.NODE_ENV !== 'test',
-                  sameSite: 'strict'
+                  secure: true, // חובה בפרודקשן עם SameSite=None
+                  sameSite: 'none'
               });
               res.clearCookie('refresh_token', {
                   httpOnly: true,
-                  secure: process.env.NODE_ENV !== 'test',
-                  sameSite: 'strict'
+                  secure: true, // חובה בפרודקשן עם SameSite=None
+                  sameSite: 'none'
               });
-      
               res.status(200).json({ message: 'Logged out successfully' });
           } catch (error) {
               console.error('Logout error:', error);
@@ -8727,7 +8730,6 @@
       
       export const refreshToken = async (req, res) => {
           const { refresh_token } = req.cookies;
-      
           if (!refresh_token) {
               return res.status(401).json({ message: 'No refresh token provided' });
           }
@@ -8757,7 +8759,8 @@
               }
               const resetToken = crypto.randomBytes(20).toString('hex');
               user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-              user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 דקות
+              user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+              // 10 דקות
               await user.save();
               const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
               const message = `קיבלת אימייל זה כי התקבלה בקשה לאיפוס סיסמה עבור חשבונך.\n\nאנא לחץ על הקישור הבא, או הדבק אותו בדפדפן כדי להשלים את התהליך:\n\n${resetUrl}\n\nאם לא ביקשת זאת, אנא התעלם מאימייל זה והסיסמה שלך תישאר ללא שינוי.`;
@@ -8810,6 +8813,7 @@
                       console.error(err);
                       return res.status(500).json({ message: 'שגיאה ביצירת קוד QR' });
                   }
+      
                   res.json({ qrCode: data_url });
               });
           } catch (error) {
@@ -10792,11 +10796,10 @@
       let csrfProtection;
       
       if (process.env.NODE_ENV === 'test') {
-        // בסביבת בדיקות, נשתמש ב-middleware "דמה" שלא עושה כלום
         csrfProtection = (req, res, next) => next();
       } else {
-        // בכל סביבה אחרת, נפעיל את ההגנה האמיתית
-        csrfProtection = csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'strict' } });
+        // התיקון כאן: שינינו את sameSite ל-'none'
+        csrfProtection = csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'none' } });
       }
       // ---------------------------------
       
@@ -10806,12 +10809,11 @@
           message: { message: 'יותר מדי ניסיונות התחברות. נסה שוב בעוד 15 דקות.' }
       });
       
-      // Route ציבורי לשליפת CSRF token (יעבוד רק מחוץ לסביבת בדיקות)
+      // Route ציבורי לשליפת CSRF token
       router.get('/csrf-token', csrfProtection, (req, res) => {
           res.json({ csrfToken: req.csrfToken() });
       });
       
-      // שימוש ב-csrfProtection שהוגדר באופן מותנה
       router.post('/register', csrfProtection, validate(registerSchema), registerUser);
       router.post('/login', loginLimiter, csrfProtection, loginUser);
       router.post('/logout', csrfProtection, logoutUser);
@@ -11344,37 +11346,38 @@
       
       export default sendEmail;
     📄 tokenHandler.js
-          import jwt from 'jsonwebtoken';
+      import jwt from 'jsonwebtoken';
       
-          const signAccessToken = (payload) =>
-              jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+      const signAccessToken = (payload) =>
+          jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
       
-          const signRefreshToken = (payload) =>
-              jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+      const signRefreshToken = (payload) =>
+          jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
       
-          export const createAndSendTokens = (user, res) => {
-              const accessTokenPayload = { id: user._id, role: user.role };
-              const refreshTokenPayload = { id: user._id, version: user.tokenVersion };
-              const accessToken = signAccessToken(accessTokenPayload);
-              const refreshToken = signRefreshToken(refreshTokenPayload);
+      export const createAndSendTokens = (user, res) => {
+          const accessTokenPayload = { id: user._id, role: user.role };
+          const refreshTokenPayload = { id: user._id, version: user.tokenVersion };
       
-              const cookieOptions = {
-                  httpOnly: true,
-                  secure: process.env.NODE_ENV !== 'test', // Secure except in test env
-                  sameSite: 'strict',
-              };
+          const accessToken = signAccessToken(accessTokenPayload);
+          const refreshToken = signRefreshToken(refreshTokenPayload);
       
-              res.cookie('access_token', accessToken, {
-                  ...cookieOptions,
-                  maxAge: 15 * 60 * 1000, // 15 minutes
-              });
-      
-              res.cookie('refresh_token', refreshToken, {
-                  ...cookieOptions,
-                  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-              });
+          // התיקון כאן: שינינו את sameSite ל-'none' כדי לאפשר עבודה בין דומיינים שונים ב-Render
+          const cookieOptions = {
+              httpOnly: true,
+              secure: true, // חובה שיהיה true כשמשתמשים ב-sameSite: 'none'
+              sameSite: 'none',
           };
       
+          res.cookie('access_token', accessToken, {
+              ...cookieOptions,
+              maxAge: 15 * 60 * 1000, // 15 minutes
+          });
+      
+          res.cookie('refresh_token', refreshToken, {
+              ...cookieOptions,
+              maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          });
+      };
     📄 upload.js
       import multer from 'multer';
       import path from 'path';
