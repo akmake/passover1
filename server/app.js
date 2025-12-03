@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Render and other cloud providers use a proxy. This is required for secure cookies to work.
+// הגדרה קריטית ל-Render ולספקים בענן - מאפשרת עבודה תקינה מאחורי Load Balancer
 app.set('trust proxy', 1);
 
 // Middlewares
@@ -41,7 +41,8 @@ app.use(
 );
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'https://localhost:5173',
+    // השרת יאשר בקשות מהכתובת שמוגדרת ב-CLIENT_URL, או מ-Localhost בפיתוח
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
 }));
 
@@ -65,8 +66,6 @@ app.use('/api/delivery-options', deliveryOptionsRoutes);
 app.use('/api/homepage-settings', homepageSettingsRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/upload', uploadRoutes);
-
-
 
 app.use(errorHandler);
 

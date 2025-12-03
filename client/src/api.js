@@ -2,7 +2,12 @@
 import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
+// הגדרת כתובת הבסיס לפי משתנה הסביבה ב-Render
+// אם המשתנה לא קיים (למשל בפיתוח מקומי רגיל), הוא יהיה מחרוזת ריקה ויעבוד עם ה-Proxy
+const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+
 const api = axios.create({
+    baseURL: baseURL,
     withCredentials: true,
 });
 
@@ -10,7 +15,8 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
     if (['post', 'put', 'delete'].includes(config.method)) {
         try {
-            const response = await axios.get('/api/auth/csrf-token', { withCredentials: true });
+            // שימוש ב-baseURL גם כאן כדי לפנות לשרת הנכון
+            const response = await axios.get(`${baseURL}/api/auth/csrf-token`, { withCredentials: true });
             config.headers['X-CSRF-Token'] = response.data.csrfToken;
         } catch (error) {
             console.error('Failed to fetch CSRF token:', error);
@@ -26,8 +32,12 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                const { data: refreshedUserData } = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+                // שימוש ב-baseURL בעת רענון הטוקן
+                const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
                 useAuthStore.getState().login(refreshedUserData);
+                
+                // עדכון ה-baseURL לבקשה החוזרת
+                originalRequest.baseURL = baseURL;
                 return api(originalRequest);
             } catch (refreshError) {
                 console.error("Session refresh failed. Logging out.");
