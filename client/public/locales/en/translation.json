@@ -1,0 +1,229 @@
+{
+  "navbar": {
+    "home": "Home",
+    "menu": "Menu",
+    "adminPanel": "Admin Panel",
+    "login": "Login",
+    "register": "Register"
+  },
+  "userMenu": {
+    "label": "User Menu",
+    "profile": "Profile",
+    "greeting": "Hello, {{name}}",
+    "myOrders": "My Orders",
+    "logout": "Logout"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "openLabel": "Open shopping cart",
+    "empty": {
+      "title": "Your shopping cart is empty",
+      "prompt": "Start adding products to see them here."
+    },
+    "subtotal": "Subtotal ({{count}} items)",
+    "checkout": "Proceed to Checkout"
+  },
+  "product": {
+    "addToCart": "Add to Cart"
+  },
+  "package": {
+    "label": "(Package)",
+    "detailsAndBuild": "Details & Assemble"
+  },
+  "packageBuilder": {
+    "fixedItems": "Fixed Items in Package",
+    "yourChoices": "Your Choices",
+    "youMustChoose": "Choose {{count}} of {{total}} ({{selected}}/{{count}} selected)",
+    "packagePrice": "Package Price",
+    "addToCart": "Add Package to Cart",
+    "selectionAlert": "Please make {{count}} selections for the \"{{category}}\" category"
+  },
+  "home": {
+    "toTheMenu": "To The Full Menu"
+  },
+  "common": {
+    "remove": "Remove",
+    "save": "Save",
+    "cancel": "Cancel",
+    "closePanel": "Close panel",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "hebrew": "עב",
+    "english": "EN"
+  },
+  "footer": {
+    "copyright": "© {{year}} Catering Plus. All rights reserved."
+  },
+  "login": {
+    "title": "Join the Passover Catering Celebration",
+    "rememberMe": "Remember Me",
+    "forgotPassword": "Forgot password?",
+    "submit": "Login to the Holiday",
+    "loading": "Loading...",
+    "noAccount": "Don't have an account?",
+    "registerNow": "Register now",
+    "error": "Login error"
+  },
+  "register": {
+    "title": "Create a New Account",
+    "subtitle": "It's quick and easy.",
+    "submit": "Create Account",
+    "creating": "Creating account...",
+    "hasAccount": "Already have an account?",
+    "loginHere": "Login here"
+  },
+  "forgotPassword": {
+    "title": "Reset Password",
+    "prompt": "Enter your email address and we'll send you a reset link.",
+    "submit": "Send Reset Link",
+    "sending": "Sending...",
+    "backToLogin": "Back to Login",
+    "successMessage": "If the email exists, a password reset message has been sent."
+  },
+  "resetPassword": {
+    "title": "Set a New Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "submit": "Reset Password",
+    "reseting": "Resetting...",
+    "successMessage": "Password reset successfully. You can now log in with the new password.",
+    "successRedirect": "You will be redirected to the login page shortly...",
+    "errorMismatch": "Passwords do not match.",
+    "errorInvalid": "The password reset link is invalid or has expired."
+  },
+  "menuPage": {
+    "title": "Our Menu",
+    "subtitle": "Choose a category or search for a dish",
+    "searchPlaceholder": "Search by dish name...",
+    "allTab": "All",
+    "noItemsFound": "No items found to display.",
+    "errorLoading": "Could not load the menu.",
+    "retry": "Try Again"
+  },
+  "orderHistory": {
+    "title": "My Orders",
+    "noOrders": "You haven't placed any orders yet.",
+    "startOrder": "to build your first order",
+    "orderNum": "Order #{{id}}",
+    "placedOn": "Placed on:",
+    "total": "Total:"
+  },
+  "orderDetails": {
+    "title": "Order Details #{{id}}",
+    "backToHistory": "Back to Order History",
+    "placedOn": "Placed on: {{date}}",
+    "itemsDetail": "Items Detail",
+    "package": "Package",
+    "quantity": "Quantity: {{count}}",
+    "total": "Total:",
+    "deliveryDetails": "Delivery Details",
+    "deliveryDate": "Delivery Date",
+    "notesLeft": "Notes you left:",
+    "statusTracker": "Order Tracking"
+  },
+  "orderSuccess": {
+    "title": "Your order was completed successfully!",
+    "subtitle": "An order confirmation with full details has been sent to your email.",
+    "orderNum": "Order Number:",
+    "summary": "Your Order Summary",
+    "backToMenu": "Back to Menu",
+    "viewAllOrders": "View All My Orders"
+  },
+  "checkout": {
+    "title": "Order Summary & Payment",
+    "secure": "Secured with advanced encryption",
+    "noDateSelected": "No date selected",
+    "fulfillmentMethod": "1. Fulfillment Method",
+    "delivery": "Delivery",
+    "toYourDoor": "To your door",
+    "pickup": "Self Pickup",
+    "fromPickupPoint": "From a pickup point",
+    "selectDate": "2. Select Date",
+    "noDatesAvailable": "No dates available at the moment",
+    "details": {
+      "title": "3. Details",
+      "deliveryZone": "Delivery Zone",
+      "required": "Required",
+      "specialZone": "Special Zone – Discounted Shipping",
+      "noZonesAvailable": "No delivery zones available at the moment",
+      "pickupPoint": "Pickup Point"
+    },
+    "summary": {
+      "title": "Payment Summary",
+      "itemsPrice": "Items Price:",
+      "couponDiscount": "Coupon Discount:",
+      "shippingCost": "Shipping Cost:",
+      "free": "Free!",
+      "total": "Total to pay:"
+    },
+    "coupon": {
+      "title": "Coupon",
+      "placeholder": "Enter coupon code",
+      "apply": "Apply",
+      "verifying": "Verifying...",
+      "applied": "\"{code}\" applied",
+      "remove": "Remove"
+    },
+    "payment": {
+      "submit": "Proceed to Payment",
+      "secureNote": "Secure payment • You can add invoice details on the next screen"
+    },
+    "errors": {
+      "chooseMethod": "Please choose a fulfillment method.",
+      "chooseDate": "Please select a date.",
+      "fillDetails": "Please fill in full name, phone, and email.",
+      "fillAddress": "Please select a delivery zone (or special zone) and fill in a complete address.",
+      "choosePickupPoint": "Please select a pickup point.",
+      "orderFailed": "Order creation failed",
+      "loginRequiredForCoupon": "You must be logged in to use a coupon.",
+      "minPurchaseRequired": "This coupon is valid for orders over ₪{{amount}}",
+      "invalidCoupon": "Error verifying coupon"
+    }
+  },
+  "form": {
+    "fullName": "Full Name*",
+    "phone": "Mobile Phone*",
+    "email": "Email Address*",
+    "city": "City*",
+    "streetAddress": "Street and House Number*",
+    "apartment": "Apartment (optional)",
+    "floor": "Floor (optional)",
+    "notes": "Notes (optional)",
+    "deliveryNotes": "Notes for the courier (optional)",
+    "deliveryNotesPlaceholder": "Entry code, gate, elevator, special instructions...",
+    "pickupNotes": "Notes (optional)",
+    "pickupNotesPlaceholder": "Special instructions for pickup...",
+    "password": "Password",
+    "passwordRequirement": "At least 8 characters, one uppercase, one lowercase, one number, and one special character."
+  },
+  "categories": {
+    "salad": "Salads",
+    "fish": "Fish",
+    "appetizer": "Appetizers",
+    "soup": "Soups",
+    "main_course": "Main Courses",
+    "side_dish": "Side Dishes",
+    "dairy": "Dairy",
+    "dessert": "Desserts & Cakes",
+    "drink": "Drinks",
+    "seder_plate": "Seder Plate",
+    "package": "Family Packages"
+  },
+  "kashrut": {
+    "parve": "Parve",
+    "dairy": "Dairy",
+    "meat": "Meat"
+  },
+  "richTextEditor": {
+    "fontSize": "Text Size"
+  },
+  "units": {
+    "unit": "Unit",
+    "g": "g",
+    "kg": "kg",
+    "ml": "ml",
+    "l": "Liter"
+  }
+
+  
+}

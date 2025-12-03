@@ -1,0 +1,228 @@
+{
+  "navbar": {
+    "home": "בית",
+    "menu": "תפריט",
+    "adminPanel": "פאנל ניהול",
+    "login": "התחברות",
+    "register": "הרשמה"
+  },
+  "userMenu": {
+    "label": "תפריט משתמש",
+    "profile": "פרופיל",
+    "greeting": "שלום, {{name}}",
+    "myOrders": "ההזמנות שלי",
+    "logout": "התנתקות"
+  },
+  "cart": {
+    "title": "עגלת קניות",
+    "openLabel": "פתיחת עגלת קניות",
+    "empty": {
+      "title": "עגלת הקניות שלך ריקה",
+      "prompt": "התחל להוסיף מוצרים כדי לראות אותם כאן."
+    },
+    "subtotal": "סך הכל ({{count}} פריטים)",
+    "checkout": "המשך לתשלום"
+  },
+  "product": {
+    "addToCart": "הוספה לעגלה"
+  },
+  "package": {
+    "label": "(חבילה)",
+    "detailsAndBuild": "פרטים והרכבה"
+  },
+  "packageBuilder": {
+    "fixedItems": "פריטים קבועים בחבילה",
+    "yourChoices": "הבחירות שלך",
+    "youMustChoose": "יש לבחור {{count}} מתוך {{total}} (נבחרו {{selected}}/{{count}})",
+    "packagePrice": "מחיר החבילה",
+    "addToCart": "הוסף חבילה לעגלה",
+    "selectionAlert": "אנא בצע {{count}} בחירות עבור קטגוריית \"{{category}}\""
+  },
+  "home": {
+    "toTheMenu": "לתפריט המלא"
+  },
+  "common": {
+    "remove": "הסר",
+    "save": "שמור",
+    "cancel": "ביטול",
+    "closePanel": "סגור פאנל",
+    "loading": "טוען...",
+    "error": "אירעה שגיאה",
+    "hebrew": "עב",
+    "english": "EN"
+  },
+  "footer": {
+    "copyright": "© {{year}} קייטרינג פלוס. כל הזכויות שמורות."
+  },
+  "login": {
+    "title": "התחבר לחגיגה של קייטרינג פסח",
+    "rememberMe": "זכור אותי",
+    "forgotPassword": "שכחת סיסמה?",
+    "submit": "התחבר לחג",
+    "loading": "טוען...",
+    "noAccount": "אין לך חשבון?",
+    "registerNow": "הירשם עכשיו",
+    "error": "שגיאה בהתחברות"
+  },
+  "register": {
+    "title": "יצירת חשבון חדש",
+    "subtitle": "זה מהיר וקל.",
+    "submit": "צור חשבון",
+    "creating": "יוצר חשבון...",
+    "hasAccount": "כבר יש לך חשבון?",
+    "loginHere": "התחבר כאן"
+  },
+  "forgotPassword": {
+    "title": "איפוס סיסמה",
+    "prompt": "הזן את כתובת המייל שלך ונשלח אליך קישור לאיפוס.",
+    "submit": "שלח קישור לאיפוס",
+    "sending": "שולח...",
+    "backToLogin": "חזרה להתחברות",
+    "successMessage": "אם האימייל קיים, נשלחה אליו הודעה לאיפוס סיסמה."
+  },
+  "resetPassword": {
+    "title": "קביעת סיסמה חדשה",
+    "newPassword": "סיסמה חדשה",
+    "confirmPassword": "אימות סיסמה חדשה",
+    "submit": "אפס סיסמה",
+    "reseting": "מאפס סיסמה...",
+    "successMessage": "הסיסמה אופסה בהצלחה. ניתן כעת להתחבר עם הסיסמה החדשה.",
+    "successRedirect": "מיד תועבר לעמוד ההתחברות...",
+    "errorMismatch": "הסיסמאות אינן תואמות.",
+    "errorInvalid": "הקישור לאיפוס סיסמה אינו תקין או שפג תוקפו."
+  },
+  "menuPage": {
+    "title": "התפריט שלנו",
+    "subtitle": "בחרו קטגוריה או חפשו מנה",
+    "searchPlaceholder": "חיפוש לפי שם מנה...",
+    "allTab": "הכול",
+    "noItemsFound": "לא נמצאו פריטים לתצוגה.",
+    "errorLoading": "לא ניתן היה לטעון את התפריט.",
+    "retry": "נסו שוב"
+  },
+  "orderHistory": {
+    "title": "ההזמנות שלי",
+    "noOrders": "עדיין לא ביצעת הזמנות.",
+    "startOrder": "להרכבת ההזמנה הראשונה שלך",
+    "orderNum": "הזמנה #{{id}}",
+    "placedOn": "בוצעה ב:",
+    "total": "סה\"כ:"
+  },
+  "orderDetails": {
+    "title": "פרטי הזמנה #{{id}}",
+    "backToHistory": "חזרה להיסטוריית ההזמנות",
+    "placedOn": "בוצעה בתאריך: {{date}}",
+    "itemsDetail": "פירוט פריטים",
+    "package": "חבילה",
+    "quantity": "כמות: {{count}}",
+    "total": "סך הכל:",
+    "deliveryDetails": "פרטי משלוח",
+    "deliveryDate": "תאריך משלוח",
+    "notesLeft": "הערות שהשארת:",
+    "statusTracker": "מעקב אחר הזמנה"
+  },
+  "orderSuccess": {
+    "title": "הזמנתך הושלמה בהצלחה!",
+    "subtitle": "אישור הזמנה עם הפרטים המלאים נשלח אליך למייל.",
+    "orderNum": "מספר הזמנה:",
+    "summary": "סיכום ההזמנה שלך",
+    "backToMenu": "חזרה לתפריט",
+    "viewAllOrders": "צפה בכל ההזמנות שלי"
+  },
+  "checkout": {
+    "title": "סיכום הזמנה ותשלום",
+    "secure": "מאובטח באמצעות הצפנה מתקדמת",
+    "noDateSelected": "לא נבחר תאריך",
+    "fulfillmentMethod": "1. שיטת קבלת הזמנה",
+    "delivery": "משלוח",
+    "toYourDoor": "עד הבית",
+    "pickup": "איסוף עצמי",
+    "fromPickupPoint": "מנקודת חלוקה",
+    "selectDate": "2. בחירת תאריך",
+    "noDatesAvailable": "אין תאריכים זמינים כרגע",
+    "details": {
+      "title": "3. פרטים",
+      "deliveryZone": "אזור משלוח",
+      "required": "חובה",
+      "specialZone": "אזור נבחר – משלוח מוזל",
+      "noZonesAvailable": "אין אזורי משלוח זמינים כרגע",
+      "pickupPoint": "נקודת האיסוף"
+    },
+    "summary": {
+      "title": "סיכום לתשלום",
+      "itemsPrice": "מחיר פריטים:",
+      "couponDiscount": "הנחת קופון:",
+      "shippingCost": "עלות משלוח:",
+      "free": "חינם!",
+      "total": "סך הכל לתשלום:"
+    },
+    "coupon": {
+      "title": "קופון",
+      "placeholder": "הזן קוד קופון",
+      "apply": "הפעל",
+      "verifying": "מאמת...",
+      "applied": "\"{code}\" הופעל",
+      "remove": "הסר"
+    },
+    "payment": {
+      "submit": "מעבר לתשלום",
+      "secureNote": "תשלום מאובטח • ניתן להוסיף פרטי חשבונית במסך הבא"
+    },
+    "errors": {
+      "chooseMethod": "יש לבחור שיטת קבלת הזמנה.",
+      "chooseDate": "יש לבחור תאריך.",
+      "fillDetails": "יש למלא שם מלא, טלפון ואימייל.",
+      "fillAddress": "יש לבחור אזור משלוח (או אזור נבחר) ולמלא כתובת מלאה.",
+      "choosePickupPoint": "יש לבחור נקודת איסוף.",
+      "orderFailed": "יצירת ההזמנה נכשלה",
+      "loginRequiredForCoupon": "יש להתחבר לחשבון כדי להשתמש בקופון.",
+      "minPurchaseRequired": "הקופון תקף להזמנות מעל ₪{{amount}}",
+      "invalidCoupon": "שגיאה באימות הקופון"
+    }
+  },
+  "form": {
+    "fullName": "שם מלא*",
+    "phone": "טלפון נייד*",
+    "email": "כתובת אימייל*",
+    "city": "עיר*",
+    "streetAddress": "רחוב ומספר בית*",
+    "apartment": "דירה (אופציונלי)",
+    "floor": "קומה (אופציונלי)",
+    "notes": "הערות (אופציונלי)",
+    "deliveryNotes": "הערות למשלוחן (אופציונלי)",
+    "deliveryNotesPlaceholder": "קוד כניסה, שער, מעלית, הנחיות מיוחדות...",
+    "pickupNotes": "הערות (אופציונלי)",
+    "pickupNotesPlaceholder": "הנחיות מיוחדות לאיסוף...",
+    "password": "סיסמה",
+    "passwordRequirement": "לפחות 8 תווים, אות גדולה, קטנה, מספר ותו מיוחד."
+  },
+  "categories": {
+    "salad": "סלטים",
+    "fish": "דגים",
+    "appetizer": "ביניים",
+    "soup": "מרק",
+    "main_course": "עיקריות",
+    "side_dish": "תוספות",
+    "dairy": "חלבי",
+    "dessert": "קינוחים ועוגות",
+    "drink": "שתיה",
+    "seder_plate": "קערת ליל סדר",
+    "package": "החבילות המשפחתיות"
+  },
+  "kashrut": {
+    "parve": "פרווה",
+    "dairy": "חלבי",
+    "meat": "בשרי"
+  },
+  "richTextEditor": {
+    "fontSize": "גודל טקסט"
+  },
+  "units": {
+    "unit": "יחידה",
+    "g": "גרם",
+    "kg": "ק\"ג",
+    "ml": "מ\"ל",
+    "l": "ליטר"
+  }
+
+}
