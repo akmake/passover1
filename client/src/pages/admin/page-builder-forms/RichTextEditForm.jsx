@@ -1,5 +1,3 @@
-// client/src/pages/admin/page-builder-forms/RichTextEditForm.jsx
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -7,14 +5,12 @@ import RichTextEditor from '@/components/RichTextEditor';
 const RichTextEditForm = ({ content, onSave, onCancel }) => {
     const [formData, setFormData] = useState(content);
 
-    // פונקציה חדשה לטיפול בשינוי גובה (ושדות רגילים אחרים)
     const handleSimpleChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     return (
         <div className="space-y-6">
-            {/* --- הוספתי את החלק הזה להגדרת הגובה --- */}
             <div>
                 <h3 className="text-lg font-medium border-b pb-2 mb-4">הגדרות הבלוק</h3>
                 <div className="p-4 border rounded-md bg-gray-50">
@@ -22,7 +18,7 @@ const RichTextEditForm = ({ content, onSave, onCancel }) => {
                     <input
                         type="number"
                         name="height"
-                        value={formData.height || ''} // מאפשר להשאיר ריק
+                        value={formData.height || ''}
                         onChange={handleSimpleChange}
                         placeholder="השאר ריק כדי שהגובה יקבע לפי הטקסט (מומלץ)"
                         className="w-full mt-1 p-2 border rounded-md"
@@ -33,20 +29,11 @@ const RichTextEditForm = ({ content, onSave, onCancel }) => {
                 </div>
             </div>
 
-            {/* --- עורכי הטקסט הקיימים --- */}
             <div>
                 <h3 className="text-lg font-medium border-b pb-2 mb-4">תוכן</h3>
-                
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-2">כותרת</label>
-                        <RichTextEditor
-                            content={formData.title || ''}
-                            onChange={(html) => setFormData(prev => ({ ...prev, title: html }))}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">תוכן טקסט</label>
+                        <label className="block text-sm font-medium mb-2">תוכן הבלוק (כולל כותרות וטקסט)</label>
                         <RichTextEditor
                             content={formData.text || ''}
                             onChange={(html) => setFormData(prev => ({ ...prev, text: html }))}

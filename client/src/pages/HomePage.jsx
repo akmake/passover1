@@ -6,12 +6,11 @@ import { Button } from '@/components/ui/Button';
 import { LoaderCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
-// --- תיקון: ייבוא פונקציית העזר לתמונות ---
-import { toAbsoluteUrl } from '@/utils/url'; 
+import { toAbsoluteUrl } from '@/utils/url';
 
 const HeroSection = ({ content }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   useEffect(() => {
     if (content.mode === 'slideshow' && content.slides?.length > 1) {
       const interval = setInterval(() => {
@@ -22,7 +21,6 @@ const HeroSection = ({ content }) => {
   }, [content]);
 
   const currentSlide = content.slides?.[currentIndex] || {};
-  // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
   const heroUrl = toAbsoluteUrl(currentSlide.image);
   const heroHeight = content.height || 75;
 
@@ -33,10 +31,14 @@ const HeroSection = ({ content }) => {
           backgroundColor: '#333',
           minHeight: `${heroHeight}vh`
     }}>
-      <div className="absolute inset-0 bg-black/50" />
-      <div className="relative z-10 max-w-4xl mx-auto px-6">
-        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
-        <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.subheadline) }} />
+      {/* השינוי: bg-black/20 במקום bg-black/50
+         זה הופך את התמונה לבהירה וברורה הרבה יותר
+      */}
+      <div className="absolute inset-0 bg-black/20" />
+      
+      <div className="relative z-10 max-w-4xl mx-auto px-6 w-full">
+        {/* הצגת תיבת הטקסט היחידה (Headline) שמכילה עכשיו הכל */}
+        <div className="hero-content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
       </div>
     </div>
   );
@@ -50,9 +52,7 @@ const RichTextSection = ({ content }) => (
 );
 
 const ImageWithTextSection = ({ content }) => {
-    // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
     const imageUrl = toAbsoluteUrl(content.image);
-
     return (
         <div className="relative bg-cover bg-center text-white flex items-center justify-center w-full"
              style={{ backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none', minHeight: `${content.height || 500}px` }}>
@@ -61,10 +61,10 @@ const ImageWithTextSection = ({ content }) => {
                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.title) }} />
                  <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.text) }} />
                   {content.buttonText && content.buttonLink && (
-                    <Button asChild size="lg" className="mt-8">
+                     <Button asChild size="lg" className="mt-8">
                         <Link to={content.buttonLink}>{content.buttonLink.startsWith('http') ? '_blank' : '_self'}{content.buttonText}</Link>
                     </Button>
-                 )}
+                  )}
             </div>
         </div>
     );
@@ -90,7 +90,6 @@ const CategoryGridSection = ({ content }) => {
             <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 {categories.map(cat => {
                     const displayName = cat.name?.[currentLang] || cat.name?.he;
-                    // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הקטגוריה ---
                     const imageSrc = toAbsoluteUrl(cat.image);
 
                     return (
@@ -144,13 +143,13 @@ export default function HomePage() {
         if (!Component) return null;
 
         const backgroundColor = section.content?.backgroundColor;
-   
+        
         if (section.type === 'hero' || section.type === 'imageWithText') {
              return <Component key={section._id} content={section.content} />;
         }
 
         const minHeight = section.content?.height;
-   
+        
         return (
             <section
                 key={section._id}

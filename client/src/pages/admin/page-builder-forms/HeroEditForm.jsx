@@ -9,25 +9,31 @@ const HeroEditForm = ({ content, onSave, onCancel }) => {
     const [formData, setFormData] = useState({ ...content, slides: content.slides || [] });
 
     const handleSimpleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
     const handleSlideChange = (index, field, value) => {
         const updatedSlides = [...formData.slides];
         updatedSlides[index][field] = value;
         setFormData(prev => ({ ...prev, slides: updatedSlides }));
     };
+
     const addSlide = () => {
-        const newSlide = { id: uuidv4(), image: '', headline: '<p>כותרת חדשה</p>', subheadline: '<p>תיאור חדש</p>' };
+        // יצירת שקופית חדשה עם תיבת טקסט אחת בלבד
+        const newSlide = { id: uuidv4(), image: '', headline: '<p style="text-align: center"><span style="font-size: 48px">כותרת ראשית</span></p><p style="text-align: center"><span style="font-size: 24px">טקסט משנה</span></p>' };
         setFormData(prev => ({...prev, slides: [...prev.slides, newSlide]}));
     };
+
     const removeSlide = (index) => {
         if (window.confirm('האם למחוק שקופית זו?')) {
             setFormData(prev => ({ ...prev, slides: prev.slides.filter((_, i) => i !== index) }));
         }
     };
+
     const handleImageUpload = async (e, index) => {
         const file = e.target.files[0];
         if (!file) return;
         const uploadFormData = new FormData();
         uploadFormData.append('images', file);
+
         try {
             const { data } = await api.post('/api/upload', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true });
             handleSlideChange(index, 'image', data.images[0]);
@@ -64,6 +70,7 @@ const HeroEditForm = ({ content, onSave, onCancel }) => {
                                 <h4 className="font-semibold">שקופית {index + 1}</h4>
                                 <Button type="button" variant="destructive" size="sm" onClick={() => removeSlide(index)}><Trash2 size={16} /></Button>
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium">תמונת רקע</label>
                                 <div className="mt-1 flex items-center gap-4">
@@ -74,13 +81,11 @@ const HeroEditForm = ({ content, onSave, onCancel }) => {
                                     </label>
                                 </div>
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium">כותרת</label>
+                                <label className="block text-sm font-medium mb-1">תוכן השקופית</label>
+                                {/* כאן משתמשים רק ב-Headline עבור כל התוכן */}
                                 <RichTextEditor content={slide.headline} onChange={(html) => handleSlideChange(index, 'headline', html)} />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium">כותרת משנה / טקסט</label>
-                                <RichTextEditor content={slide.subheadline} onChange={(html) => handleSlideChange(index, 'subheadline', html)} />
                             </div>
                         </div>
                     ))}
@@ -94,4 +99,5 @@ const HeroEditForm = ({ content, onSave, onCancel }) => {
         </div>
     );
 };
+
 export default HeroEditForm;

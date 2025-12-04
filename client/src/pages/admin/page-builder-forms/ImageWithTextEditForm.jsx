@@ -8,12 +8,15 @@ const ImageWithTextEditForm = ({ content, onSave, onCancel }) => {
     const [formData, setFormData] = useState(content);
 
     const handleContentChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+    
     const handleSimpleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const uploadFormData = new FormData();
         uploadFormData.append('images', file);
+
         try {
             const { data } = await api.post('/api/upload', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true });
             setFormData(prev => ({ ...prev, image: data.images[0] }));
@@ -38,19 +41,16 @@ const ImageWithTextEditForm = ({ content, onSave, onCancel }) => {
                     <div>
                         <label className="block text-sm font-medium mb-2">תמונת רקע</label>
                         <div className="flex items-center gap-4">
-                           {formData.image ? <img src={formData.image} alt="" className="w-32 h-20 object-cover rounded-md my-2"/> : <div className="w-32 h-20 rounded-md bg-gray-200 flex items-center justify-center"><ImageIcon className="text-gray-400" /></div>}
+                            {formData.image ? <img src={formData.image} alt="" className="w-32 h-20 object-cover rounded-md my-2"/> : <div className="w-32 h-20 rounded-md bg-gray-200 flex items-center justify-center"><ImageIcon className="text-gray-400" /></div>}
                            <label className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 bg-white border border-gray-300 hover:bg-gray-100 cursor-pointer">
                                 <Upload className="h-4 w-4 mr-2" /> העלה/החלף תמונה
                                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                            </label>
                         </div>
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium mt-2">כותרת</label>
-                        <RichTextEditor content={formData.title} onChange={(html) => handleContentChange('title', html)} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mt-2">טקסט</label>
+                        <label className="block text-sm font-medium mt-2">תוכן (כותרת וטקסט)</label>
                         <RichTextEditor content={formData.text} onChange={(html) => handleContentChange('text', html)} />
                     </div>
                 </div>
@@ -58,7 +58,7 @@ const ImageWithTextEditForm = ({ content, onSave, onCancel }) => {
 
             <div>
                 <h3 className="text-lg font-medium border-b pb-2 mb-4">כפתור (אופציונלי)</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md bg-white">
                     <div>
                         <label className="block text-sm font-medium">טקסט הכפתור</label>
                         <input name="buttonText" value={formData.buttonText || ''} onChange={handleSimpleChange} className="w-full mt-1 p-2 border rounded-md" />
@@ -77,4 +77,5 @@ const ImageWithTextEditForm = ({ content, onSave, onCancel }) => {
         </div>
     );
 };
+
 export default ImageWithTextEditForm;
