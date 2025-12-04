@@ -37,7 +37,6 @@ const HeroSection = ({ content }) => {
       <div className="relative z-10 max-w-4xl mx-auto px-6">
         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
         <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.subheadline) }} />
-        <Button asChild size="lg" className="mt-8"><Link to="/menu">לתפריט המלא</Link></Button>
       </div>
     </div>
   );
