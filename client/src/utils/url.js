@@ -8,28 +8,24 @@ export function toAbsoluteUrl(raw) {
     return raw;
   }
 
-  // 2. נרמול הנתיב (החלפת סלאשים הפוכים לרגילים והסרת רווחים)
+  // 2. נרמול הנתיב
   let path = String(raw).replace(/\\/g, '/').trim();
-
-  // וודא שיש סלאש בהתחלה
   if (!path.startsWith('/')) {
       path = '/' + path;
   }
 
-  // --- התיקון החדש ---
-  // אם הנתיב מתחיל ב-/uploads, זה אומר שהקובץ נמצא בתיקיית public/uploads של הקליינט.
-  // במקרה כזה, אנחנו מחזירים את הנתיב כמו שהוא, ללא תוספת כתובת ה-API.
-  // הדפדפן ידע למשוך את זה מהדומיין הנוכחי (הקליינט).
-  if (path.startsWith('/uploads')) {
-      return path;
-  }
+  // --- מחק או שים בהערה את החלק הזה ---
+  // if (path.startsWith('/uploads')) {
+  //     return path;
+  // }
+  // ------------------------------------
 
-  // 3. חישוב שורש השרת (רק למקרים שאינם uploads, אם יהיו בעתיד)
+  // 3. חישוב שורש השרת
   const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
-  
+
   // מסירים את הסיומת "/api" (אם קיימת)
   const serverRoot = apiBase.replace(/\/api\/?$/, '');
 
-  // 4. החזרת הכתובת המלאה (ברירת מחדל ישנה למקרה הצורך)
+  // 4. כעת הכתובת תמיד תכלול את השרת, גם עבור uploads
   return `${serverRoot}${path}`;
 }
