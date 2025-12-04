@@ -1,17 +1,25 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-// יצירת התיקייה אם היא לא קיימת
-const uploadDir = 'uploads/';
+// הגדרת נתיבים (חובה ב-ES Modules כדי להשתמש ב-dirname)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// --- שינוי הנתיב: שמירה בתיקיית ה-Public של הקליינט ---
+// הולכים אחורה מ-utils (..) ומ-server (..) ואז נכנסים ל-client/public/uploads
+const uploadDir = path.join(__dirname, '../../client/public/uploads');
+
+// יצירת התיקייה אם היא לא קיימת (כולל תיקיות אב אם חסרות)
 if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir);
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // הגדרת האחסון בדיסק
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // שמירה לתיקיית uploads
+    cb(null, uploadDir); // שמירה לנתיב החדש ב-client
   },
   filename: function (req, file, cb) {
     // יצירת שם ייחודי ונקי

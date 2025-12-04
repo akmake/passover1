@@ -242,12 +242,12 @@
         <script type="module" src="/src/main.jsx"></script>
       </body>
     </html>
+  🚫 node_modules/ (נפסל לסריקה)
   📄 npm
   📄 npx
   📄 package-lock.json
   📄 package.json
   📁 public/
-    📄 2.svg
     📄 bdz.svg
     📁 locales/
       📁 en/
@@ -717,8 +717,9 @@
         import { useScroll } from '@/hooks/useScroll';
         import LanguageSwitcher from './LanguageSwitcher';
         
-        const navLinkBase = "relative inline-flex items-center px-1 py-2 text-slate-700/90 transition-colors duration-200 " + "hover:text-amber-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 " + "after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 " + "after:bg-amber-700 after:transition-all after:duration-300";
-        const navLinkActive = "text-amber-900 font-semibold after:w-full";
+        // עדכון צבעי הלינקים לרקע כהה
+        const navLinkBase = "relative inline-flex items-center px-1 py-2 text-slate-300 transition-colors duration-200 " + "hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 " + "after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 " + "after:bg-amber-400 after:transition-all after:duration-300";
+        const navLinkActive = "text-white font-semibold after:w-full";
         
         function getInitials(name) {
           if (!name) return 'א';
@@ -728,7 +729,7 @@
         }
         
         const Navbar = () => {
-          const { t } = useTranslation(); // שימוש ב-hook של התרגום
+          const { t } = useTranslation();
           const { isAuthenticated, user, logout: logoutFromStore } = useAuthStore();
           const { items, toggleCart } = useCartStore();
           const totalItems = items.reduce((total, item) => total + (item.quantity || 1), 0);
@@ -766,7 +767,8 @@
               if (e.key === 'Escape') {
                 e.preventDefault();
                 closeUserMenu();
-                if (userMenuButtonRef.current) userMenuButtonRef.current.focus();
+                if (userMenuButtonRef.current)
+                  userMenuButtonRef.current.focus();
               }
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -779,14 +781,16 @@
           }, [isUserMenuOpen, closeUserMenu]);
         
           return (
-            <header className={["sticky top-0 z-50 transition-all duration-300 border-b", isScrolled ? "backdrop-blur-md bg-white/85 shadow-md" : "bg-white/70 backdrop-blur-sm"].join(' ')}>
+            // שינוי הרקע לשחור/כהה מאוד עם גבול עדין
+            <header className={["sticky top-0 z-50 transition-all duration-300 border-b border-white/10", isScrolled ? "backdrop-blur-md bg-black/90 shadow-md" : "bg-black/80 backdrop-blur-sm"].join(' ')}>
               <nav className="container mx-auto px-4">
-                <div className="flex items-center justify-between py-2">
-                  <Link to="/" className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 rounded-lg">
-                    <img src="/logo.png" alt="לוגו ציפורי - בית האוכל היהודי" className="h-16 sm:h-20 select-none" draggable={false} />
+                <div className="flex items-center justify-between py-3">
+                  <Link to="/" className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 rounded-lg group">
+                    {/* הוספת פילטר ללוגו כדי שיראה טוב על שחור במידה והוא לא שקוף */}
+                    <img src="/logo.png" alt="לוגו ציפורי - בית האוכל היהודי" className="h-14 sm:h-16 select-none transition-transform group-hover:scale-105" draggable={false} />
                     <div className="hidden sm:flex flex-col leading-tight">
-                      <span className="text-xl font-semibold text-slate-900">ציפורי</span>
-                      <span className="text-xs text-slate-500">בית האוכל היהודי</span>
+                      <span className="text-xl font-semibold text-white tracking-wide">צפורי</span>
+                      <span className="text-xs text-slate-400">בית האוכל היהודי</span>
                     </div>
                   </Link>
         
@@ -804,13 +808,17 @@
                     )}
                   </div>
         
-                  <div className="flex items-center gap-1 sm:gap-3">
-                    <LanguageSwitcher />
-                    <img src="/bdz.svg" alt="סמל כשרות בד&quot;ץ" className="h-12 sm:h-16 hidden sm:block select-none" draggable={false} />
-                    <button onClick={toggleCart} className="relative p-2 rounded-full hover:bg-slate-100 text-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50" aria-label={t('cart.openLabel')} title={t('cart.title')}>
-                      <ShoppingCart className="h-6 w-6" />
+                  <div className="flex items-center gap-2 sm:gap-4 h-full">
+                    {/* התאמת כפתור שפה: ללא רקע, ללא החלפת צבעים, מודגש מאוד */}
+                    <div className="text-slate-300 font-bold select-none">
+                        <LanguageSwitcher />
+                    </div>
+        
+                    <button onClick={toggleCart} className="relative p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
+                      aria-label={t('cart.openLabel')} title={t('cart.title')}>
+                      <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
                       {totalItems > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs text-white shadow-sm animate-[pop_180ms_ease-out] origin-center min-w-[1.25rem]" aria-live="polite">
+                        <span className="absolute -top-1 -right-1 flex h-5 items-center justify-center rounded-full bg-amber-600 px-1 text-xs text-white shadow-sm animate-[pop_180ms_ease-out] origin-center min-w-[1.25rem]" aria-live="polite">
                           {totalItems}
                         </span>
                       )}
@@ -818,20 +826,21 @@
         
                     {isAuthenticated ? (
                       <div className="relative" ref={userMenuRef}>
-                        <button ref={userMenuButtonRef} onClick={() => setIsUserMenuOpen(v => !v)} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white hover:bg-slate-100 text-slate-700 shadow-sm ring-1 ring-slate-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50" aria-haspopup="menu" aria-expanded={isUserMenuOpen} aria-label={t('userMenu.label')} title={t('userMenu.profile')}>
-                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-white text-sm font-semibold">
+                        {/* כפתור פרופיל מינימליסטי - ללא רקע צבעוני */}
+                        <button ref={userMenuButtonRef} onClick={() => setIsUserMenuOpen(v => !v)} className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-transparent border border-slate-600 text-slate-200 hover:text-white hover:border-white hover:bg-white/10 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50" aria-haspopup="menu" aria-expanded={isUserMenuOpen} aria-label={t('userMenu.label')} title={t('userMenu.profile')}>
+                          <span className="text-sm font-medium">
                             {getInitials(user?.name)}
                           </span>
                         </button>
         
                         {isUserMenuOpen && (
-                          <div role="menu" aria-label={t('userMenu.label')} className="absolute left-0 mt-2 w-64 origin-top-left rounded-xl bg-white shadow-lg ring-1 ring-black/5 overflow-hidden">
-                            <div className="px-4 py-3 border-b bg-gradient-to-b from-white to-amber-50/30">
+                          <div role="menu" aria-label={t('userMenu.label')} className="absolute left-0 mt-2 w-64 origin-top-left rounded-lg bg-white shadow-xl ring-1 ring-black/5 overflow-hidden z-50">
+                            <div className="px-4 py-3 border-b bg-slate-50">
                               <p className="font-semibold text-slate-900 truncate">{t('userMenu.greeting', { name: user?.name })}</p>
                               <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                             </div>
         
-                            <Link to="/my-orders" ref={firstMenuItemRef} onClick={() => setIsUserMenuOpen(false)} role="menuitem" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none">
+                            <Link to="/my-orders" ref={firstMenuItemRef} onClick={() => setIsUserMenuOpen(false)} role="menuitem" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none">
                               <History className="h-4 w-4 text-slate-500" />
                               {t('userMenu.myOrders')}
                             </Link>
@@ -844,14 +853,20 @@
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 sm:gap-4">
-                        <NavLink to="/login" className="text-slate-700 hover:text-amber-800 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 rounded">
+                        <NavLink to="/login" className="text-slate-300 hover:text-white font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 rounded px-2 py-1">
                           {t('navbar.login')}
                         </NavLink>
-                        <Button asChild>
+                        <Button asChild variant="outline" className="border-slate-600 text-slate-200 hover:bg-white hover:text-black hover:border-white transition-all bg-transparent">
                           <Link to="/register" className="font-medium">{t('navbar.register')}</Link>
                         </Button>
                       </div>
                     )}
+        
+                    {/* בד"ץ: המיקום הוזז לסוף (ימין), ונוספו הגדרות גובה מלא וביטול שוליים */}
+                    <div className="flex items-center h-20 -my-4 ml-2 border-l border-white/10 pl-4">
+                       <img src="/bdz.svg" alt="סמל כשרות בד&quot;ץ" className="h-full w-auto select-none object-contain" draggable={false} />
+                    </div>
+        
                   </div>
                 </div>
               </nav>
@@ -2852,11 +2867,13 @@
         import { Button } from '@/components/ui/Button';
         import { LoaderCircle } from 'lucide-react';
         import DOMPurify from 'dompurify';
-        import { useTranslation } from 'react-i18next'; // <-- השורה הזו נוספה
-        
+        import { useTranslation } from 'react-i18next';
+        // --- תיקון: ייבוא פונקציית העזר לתמונות ---
+        import { toAbsoluteUrl } from '@/utils/url';
         
         const HeroSection = ({ content }) => {
           const [currentIndex, setCurrentIndex] = useState(0);
+        
           useEffect(() => {
             if (content.mode === 'slideshow' && content.slides?.length > 1) {
               const interval = setInterval(() => {
@@ -2867,7 +2884,8 @@
           }, [content]);
         
           const currentSlide = content.slides?.[currentIndex] || {};
-          const heroUrl = currentSlide.image;
+          // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
+          const heroUrl = toAbsoluteUrl(currentSlide.image);
           const heroHeight = content.height || 75;
         
           return (
@@ -2876,7 +2894,7 @@
                   backgroundImage: heroUrl ? `url("${heroUrl}")` : 'none',
                   backgroundColor: '#333',
                   minHeight: `${heroHeight}vh`
-              }}>
+            }}>
               <div className="absolute inset-0 bg-black/50" />
               <div className="relative z-10 max-w-4xl mx-auto px-6">
                 <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
@@ -2889,23 +2907,23 @@
         
         const RichTextSection = ({ content }) => (
             <div className="max-w-4xl mx-auto px-4 text-center">
-                {/* תיקון: הוספת חיטוי אבטחה */}
                 <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.title) }} />
                 <div className="mt-4 text-gray-700" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.text) }} />
             </div>
         );
         
         const ImageWithTextSection = ({ content }) => {
-            const imageUrl = content.image;
+            // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
+            const imageUrl = toAbsoluteUrl(content.image);
+        
             return (
                 <div className="relative bg-cover bg-center text-white flex items-center justify-center w-full"
-                     style={{ backgroundImage: `url(${imageUrl})`, minHeight: `${content.height || 500}px` }}>
+                     style={{ backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none', minHeight: `${content.height || 500}px` }}>
                     <div className="absolute inset-0 bg-black/60"></div>
                     <div className="relative z-10 container mx-auto px-6 text-center">
-                         {/* תיקון: הוספת חיטוי אבטחה */}
                          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.title) }} />
                          <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.text) }} />
-                         {content.buttonText && content.buttonLink && (
+                          {content.buttonText && content.buttonLink && (
                             <Button asChild size="lg" className="mt-8">
                                 <Link to={content.buttonLink}>{content.buttonLink.startsWith('http') ? '_blank' : '_self'}{content.buttonText}</Link>
                             </Button>
@@ -2916,9 +2934,8 @@
         };
         
         const CategoryGridSection = ({ content }) => {
-            // 2. הפעלת ה-hook כדי לקבל את השפה הנוכחית
             const { i18n } = useTranslation();
-            const currentLang = i18n.language; // 'he' or 'en'
+            const currentLang = i18n.language;
         
             const { data: categories, isLoading, isError } = useQuery({
                 queryKey: ['publicCategories'],
@@ -2935,8 +2952,9 @@
                     </div>
                     <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         {categories.map(cat => {
-                            // 3. בחירה דינמית של שם הקטגוריה להצגה
                             const displayName = cat.name?.[currentLang] || cat.name?.he;
+                            // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הקטגוריה ---
+                            const imageSrc = toAbsoluteUrl(cat.image);
         
                             return (
                                 <Link
@@ -2945,14 +2963,14 @@
                                     className="group relative block aspect-[4/3] w-full rounded-lg overflow-hidden shadow-lg"
                                 >
                                     <img
-                                        src={cat.image || 'https://via.placeholder.com/400x300'}
-                                        alt={displayName} // שימוש בשם המתורגם עבור alt
+                                        src={imageSrc || 'https://via.placeholder.com/400x300'}
+                                        alt={displayName}
                                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                                     <div className="absolute bottom-0 left-0 right-0 p-4">
                                         <h3 className="text-white text-xl md:text-2xl font-bold text-center drop-shadow-md">
-                                            {displayName} {/* <-- הצגת השם הנכון במקום האובייקט */}
+                                          {displayName}
                                         </h3>
                                     </div>
                                 </Link>
@@ -2962,6 +2980,7 @@
                 </div>
             );
         };
+        
         const FeaturesSection = ({ content }) => null;
         
         const sectionComponents = {
@@ -7423,29 +7442,34 @@
     📁 utils/
       📄 url.js
         // client/src/utils/url.js
-        export function toAbsoluteUrl(raw, base) {
+        
+        export function toAbsoluteUrl(raw) {
           if (!raw) return null;
         
-          // אם כבר מוחלט (http/https, data:, blob:) — החזר כמו שהוא
+          // 1. אם זה כבר קישור מלא (למשל תמונה חיצונית או base64), החזר כמו שהוא
           if (/^(https?:)?\/\//i.test(raw) || /^data:/.test(raw) || /^blob:/.test(raw)) {
             return raw;
           }
         
-          // נרמול backslashes -> forward slashes
+          // 2. נרמול הנתיב (החלפת סלאשים הפוכים לרגילים והסרת רווחים)
           let path = String(raw).replace(/\\/g, '/').trim();
         
-          // בסיס (שרת) – מה-ENV או פרמטר
-          const origin = (base || import.meta.env.VITE_SERVER_ORIGIN || 'https://localhost:5000')
-            .replace(/\/+$/,'');
+          // וודא שיש סלאש בהתחלה
+          if (!path.startsWith('/')) {
+              path = '/' + path;
+          }
         
-          // אם הנתיב מתחיל בסלאש — הצמד ישירות
-          if (path.startsWith('/')) return `${origin}${path}`;
+          // 3. חישוב שורש השרת
+          // לוקחים את כתובת ה-API המוגדרת (למשל https://passover1.onrender.com/api)
+          const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
         
-          // מקרים כמו "uploads/..." או "images/..."
-          if (/^(uploads|images)\b/i.test(path)) return `${origin}/${path}`;
+          // מסירים את הסיומת "/api" (אם קיימת) כדי לקבל את כתובת השורש של השרת
+          // לדוגמה: הופך את https://site.com/api ל- https://site.com
+          const serverRoot = apiBase.replace(/\/api\/?$/, '');
         
-          // אחרת: נתיב יחסי בצד הקליינט
-          return path;
+          // 4. החזרת הכתובת המלאה
+          // התוצאה תהיה: https://passover1.onrender.com/uploads/filename.jpg
+          return `${serverRoot}${path}`;
         }
   📄 vite.config.js
     import { defineConfig, loadEnv } from 'vite';
@@ -7491,7 +7515,6 @@
         },
       };
     });
-📄 directory_structure.txt
 📄 folder_copier_gui.py
   #!/usr/bin/env python3
   # -*- coding: utf-8 -*-
@@ -7842,7 +7865,6 @@
   if __name__ == "__main__":
       main()
 📁 server/
-  📄 .env
   📄 app.js
     import express from 'express';
     import cors from 'cors';
@@ -7850,6 +7872,10 @@
     import cookieParser from 'cookie-parser';
     import mongoSanitize from 'express-mongo-sanitize';
     import logger from './utils/logger.js';
+    import path from 'path';
+    import { fileURLToPath } from 'url';
+    
+    // Import Routes
     import authRoutes from './routes/authRoutes.js';
     import productRoutes from './routes/productRoutes.js';
     import cartRoutes from './routes/cartRoutes.js';
@@ -7862,8 +7888,7 @@
     import homepageSettingsRoutes from './routes/homepageSettingsRoutes.js';
     import couponRoutes from './routes/couponRoutes.js';
     import uploadRoutes from './routes/uploadRoutes.js';
-    import path from 'path';
-    import { fileURLToPath } from 'url';
+    
     import getLanguage from './middleware/languageMiddleware.js';
     import { errorHandler } from './middleware/errorHandler.js';
     
@@ -7872,22 +7897,21 @@
     
     const app = express();
     
-    // הגדרה קריטית ל-Render ולספקים בענן - מאפשרת עבודה תקינה מאחורי Load Balancer
     app.set('trust proxy', 1);
     
     // Middlewares
     app.use(
         helmet({
+            crossOriginResourcePolicy: false, // מאפשר טעינת תמונות ממקור אחר (אם צריך)
             hsts: {
-                maxAge: 31536000, // 1 שנה בשניות
-                includeSubDomains: true, // כולל תת-דומיינים
-                preload: true // מאפשר הכללה ברשימת preload של דפדפנים
+                maxAge: 31536000,
+                includeSubDomains: true,
+                preload: true
             }
         })
     );
     
     app.use(cors({
-        // השרת יאשר בקשות מהכתובת שמוגדרת ב-CLIENT_URL, או מ-Localhost בפיתוח
         origin: process.env.CLIENT_URL || 'http://localhost:5173',
         credentials: true,
     }));
@@ -7898,6 +7922,10 @@
     app.use(mongoSanitize());
     app.use(getLanguage);
     
+    // --- התיקון הקריטי: חשיפת תיקיית ההעלאות ---
+    // זה מאפשר לגשת לקבצים דרך http://your-server.com/uploads/filename.jpg
+    const uploadsPath = path.join(__dirname, 'uploads');
+    app.use('/uploads', express.static(uploadsPath));
     
     // Routes
     app.use('/api/auth', authRoutes);
@@ -7915,10 +7943,7 @@
     
     app.use(errorHandler);
     
-    // Make uploads folder static
-    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-    
-    // Error handling middleware
+    // לוג שגיאות
     app.use((err, req, res, next) => {
         logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
@@ -9380,618 +9405,6 @@
     
     createAdmin();
   📁 data/
-    📄 products.js
-      export default [
-        // --- 10 מנות עיקריות (Main Courses) ---
-        {
-          "name": { "he": "צלי בקר קלאסי ברוטב יין", "en": "Classic Beef Roast in Wine Sauce" },
-          "description": { "he": "נתחי כתף בקר מובחרים בבישול ארוך ואיטי ברוטב יין אדום, ירקות שורש ועשבי תיבול ארומטיים.", "en": "Choice cuts of beef shoulder, slow-cooked in a rich red wine sauce with root vegetables and aromatic herbs." },
-          "price": 185,
-          "image": "/uploads/classic-beef-roast-wine-sauce.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-001",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "פרגיות עסיסיות במרינדת סילאן ושום", "en": "Juicy Chicken Thighs in Silan & Garlic Marinade" },
-          "description": { "he": "נתחי פרגית ללא עצם במרינדה מתוקה-מלוחה של סילאן, רוטב סויה, שום וג'ינג'ר, צלויים בגריל לשלמות.", "en": "Boneless chicken thighs in a sweet and savory marinade of date honey, soy sauce, garlic, and ginger, grilled to perfection." },
-          "price": 155,
-          "image": "/uploads/juicy-chicken-thighs-silan-garlic.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-002",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "פילה סלמון אפוי בעשבי תיבול ולימון", "en": "Baked Salmon Fillet with Herbs and Lemon" },
-          "description": { "he": "פילה סלמון טרי אפוי בתנור עם ציפוי קראנצ'י של פטרוזיליה, שמיר, שום, שמן זית ופרוסות לימון.", "en": "Fresh salmon fillet baked with a crunchy crust of parsley, dill, garlic, olive oil, and lemon slices." },
-          "price": 98,
-          "image": "/uploads/baked-salmon-fillet-herbs-lemon.jpg",
-          "category": "main_course",
-          "kashrut": "parve",
-          "sku": "MC-003",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "קציצות בקר ברוטב עגבניות איטלקי", "en": "Beef Meatballs in Italian Tomato Sauce" },
-          "description": { "he": "קציצות בקר רכות ואווריריות ברוטב עגבניות עשיר עם בזיליקום טרי ושמן זית.", "en": "Soft and fluffy beef meatballs in a rich tomato sauce with fresh basil and olive oil." },
-          "price": 135,
-          "image": "/uploads/beef-meatballs-italian-tomato-sauce.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-004",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "עוף שלם צלוי קלאסי", "en": "Classic Roasted Whole Chicken" },
-          "description": { "he": "עוף שלם צלוי בתנור עם תבלינים קלאסיים של פפריקה, שום ורוזמרין, לקבלת עור פריך ובשר עסיסי.", "en": "A whole chicken roasted with classic spices of paprika, garlic, and rosemary for crispy skin and juicy meat." },
-          "price": 95,
-          "image": "/uploads/classic-roasted-whole-chicken.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-005",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "כתף טלה בבישול ארוך עם שום ודבש", "en": "Slow-Cooked Lamb Shoulder with Garlic and Honey" },
-          "description": { "he": "כתף טלה נימוחה שבושלה במשך 6 שעות עם שום, דבש, ויין לבן, עד שהבשר נופל מהעצם.", "en": "Tender lamb shoulder cooked for 6 hours with garlic, honey, and white wine until the meat falls off the bone." },
-          "price": 230,
-          "image": "/uploads/slow-cooked-lamb-shoulder.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-006",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "דג מרוקאי חריף עם גרגרי חומוס", "en": "Spicy Moroccan Fish with Chickpeas" },
-          "description": { "he": "נתחי פילה דג לבן מבושלים ברוטב אדום פיקנטי עם פלפלים, עגבניות, כוסברה, שום וגרגרי חומוס.", "en": "White fish fillets cooked in a spicy red sauce with peppers, tomatoes, cilantro, garlic, and chickpeas." },
-          "price": 145,
-          "image": "/uploads/spicy-moroccan-fish.jpg",
-          "category": "main_course",
-          "kashrut": "parve",
-          "sku": "MC-007",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "שניצל ענק כשר לפסח", "en": "Giant Passover Schnitzel" },
-          "description": { "he": "שניצל חזה עוף דק בציפוי קמח מצה מתובל, מטוגן לפריכות מושלמת.", "en": "Thin chicken breast schnitzel coated in seasoned matza flour, fried to perfect crispiness." },
-          "price": 125,
-          "image": "/uploads/passover-schnitzel.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-008",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "כרעי עוף בתפוזים וסילאן", "en": "Chicken Legs with Oranges and Silan" },
-          "description": { "he": "כרעי עוף צלויות בתנור ברוטב מתקתק של מיץ תפוזים טרי, סילאן, ג'ינג'ר וטימין.", "en": "Chicken legs roasted in a sweet glaze of fresh orange juice, date honey, ginger, and thyme." },
-          "price": 105,
-          "image": "/uploads/chicken-legs-oranges-silan.jpg",
-          "category": "main_course",
-          "kashrut": "meat",
-          "sku": "MC-009",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "קציצות דג (געפילטע פיש) מסורתיות", "en": "Traditional Gefilte Fish" },
-          "description": { "he": "קציצות דג קרפיון קלאסיות, מבושלות בציר ירקות מתוק ומוגשות עם פרוסת גזר.", "en": "Classic carp fish patties, cooked in a sweet vegetable broth and served with a slice of carrot." },
-          "price": 16,
-          "image": "/uploads/gefilte-fish.jpg",
-          "category": "main_course",
-          "kashrut": "parve",
-          "sku": "MC-010",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-      
-        // --- 10 תוספות (Side Dishes) ---
-        {
-          "name": { "he": "תפוחי אדמה אפויים ברוזמרין", "en": "Rosemary Roasted Potatoes" },
-          "description": { "he": "קוביות תפוחי אדמה זהובות ופריכות, אפויות עם ענפי רוזמרין טרי, שיני שום ושמן זית.", "en": "Golden and crispy potato cubes, baked with fresh rosemary sprigs, garlic cloves, and olive oil." },
-          "price": 65,
-          "image": "/uploads/rosemary-roasted-potatoes.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-001",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "אורז חגיגי עם שקדים וצימוקים", "en": "Festive Rice with Almonds and Raisins" },
-          "description": { "he": "אורז בסמטי לבן ואוורירי, מעוטר בשקדים קלויים, צימוקים בהירים ובצל מטוגן.", "en": "Fluffy white basmati rice, garnished with toasted almonds, golden raisins, and fried onions." },
-          "price": 70,
-          "image": "/uploads/festive-rice-almonds-raisins.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-002",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "בטטות צלויות בדבש וקינמון", "en": "Roasted Sweet Potatoes with Honey and Cinnamon" },
-          "description": { "he": "פרוסות בטטה מתוקות, צלויות בתנור עם זיגוג של דבש, קינמון ומעט צ'ילי גרוס.", "en": "Sweet potato slices, roasted with a glaze of honey, cinnamon, and a hint of chili flakes." },
-          "price": 68,
-          "image": "/uploads/roasted-sweet-potatoes-honey-cinnamon.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-003",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "אנטיפסטי - ירקות קלויים", "en": "Antipasti - Roasted Vegetables" },
-          "description": { "he": "מגש צבעוני של בטטה, קישוא, חציל, פלפלים ובצל קלויים בתנור עם שמן זית ועשבי תיבול.", "en": "A colorful tray of sweet potato, zucchini, eggplant, peppers, and onion roasted with olive oil and herbs." },
-          "price": 80,
-          "image": "/uploads/antipasti-roasted-vegetables.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-004",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "פירה תפוחי אדמה קטיפתי", "en": "Velvety Mashed Potatoes" },
-          "description": { "he": "פירה חלק ועשיר, מתובל בשמן זית ומלח, ללא חמאה או חלב.", "en": "Smooth and rich mashed potatoes, seasoned with olive oil and salt, dairy-free." },
-          "price": 55,
-          "image": "/uploads/velvety-mashed-potatoes.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-005",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "שעועית ירוקה מוקפצת בשום ושקדים", "en": "Sautéed Green Beans with Garlic and Almonds" },
-          "description": { "he": "שעועית ירוקה טרייה מוקפצת קלות עם שום פרוס ושבבי שקדים קלויים.", "en": "Fresh green beans lightly sautéed with sliced garlic and toasted almond flakes." },
-          "price": 60,
-          "image": "/uploads/sauteed-green-beans-garlic-almonds.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-006",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "קיגל אטריות ירושלמי מתוק-חריף", "en": "Sweet & Spicy Jerusalem Kugel" },
-          "description": { "he": "קיגל אטריות קלאסי עם קרמל שרוף ופלפל שחור, המשלב מתיקות וחריפות.", "en": "Classic noodle kugel with burnt caramel and black pepper, combining sweetness and spice." },
-          "price": 75,
-          "image": "/uploads/jerusalem-kugel.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-007",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "כרובית אפויה בטחינה וסומק", "en": "Baked Cauliflower with Tahini and Sumac" },
-          "description": { "he": "פרחי כרובית צלויים בתנור עד להזהבה, מוגשים עם טחינה ירוקה ופיזור סומק.", "en": "Cauliflower florets roasted until golden, served with green tahini and a sprinkle of sumac." },
-          "price": 78,
-          "image": "/uploads/baked-cauliflower-tahini-sumac.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-008",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "צימעס - גזר ושזיפים מתוקים", "en": "Tzimmes - Sweet Carrots and Prunes" },
-          "description": { "he": "תבשיל גזר ושזיפים מתוק ונימוח, קלאסיקה של המטבח האשכנזי לחג.", "en": "A sweet and tender dish of carrots and prunes, a classic of Ashkenazi holiday cuisine." },
-          "price": 72,
-          "image": "/uploads/tzimmes-sweet-carrots-prunes.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-009",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "כופתאות מצה (קניידלך)", "en": "Matza Balls (Kneidlach)" },
-          "description": { "he": "כדורי קניידלך רכים ואווריריים למרק, עשויים מקמח מצה משובח.", "en": "Soft and fluffy matza balls for soup, made from fine matza meal." },
-          "price": 6,
-          "image": "/uploads/matza-balls-kneidlach.jpg",
-          "category": "side_dish",
-          "kashrut": "parve",
-          "sku": "SD-010",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-      
-        // --- 10 סלטים (Salads) ---
-        {
-          "name": { "he": "סלט מטבוחה פיקנטי", "en": "Spicy Matbucha Salad" },
-          "description": { "he": "סלט עגבניות ופלפלים מבושלים, בבישול ארוך על אש קטנה עם שום ותבלינים פיקנטיים.", "en": "A slow-cooked salad of tomatoes and peppers, with garlic and spicy seasonings." },
-          "price": 45,
-          "image": "/uploads/spicy-matbucha-salad.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-001",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט חצילים בטחינה", "en": "Eggplant Salad with Tahini" },
-          "description": { "he": "קוביות חצילים קלויות בתנור, מעורבבות עם טחינה גולמית, פטרוזיליה קצוצה ומיץ לימון.", "en": "Roasted eggplant cubes mixed with raw tahini, chopped parsley, and lemon juice." },
-          "price": 50,
-          "image": "/uploads/eggplant-salad-tahini.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-002",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט סלק ואגוזים", "en": "Beet and Walnut Salad" },
-          "description": { "he": "סלק מבושל חתוך לקוביות, בתיבול עדין של חומץ בלסמי, שמן זית, ואגוזי מלך קצוצים.", "en": "Cooked beet cubes, lightly seasoned with balsamic vinegar, olive oil, and chopped walnuts." },
-          "price": 48,
-          "image": "/uploads/beet-walnut-salad.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-003",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "חומוס ביתי", "en": "Homemade Hummus" },
-          "description": { "he": "ממרח חומוס קטיפתי עשוי מגרגרי חומוס טריים וטחינה איכותית.", "en": "A velvety hummus spread made from fresh chickpeas and high-quality tahini." },
-          "price": 40,
-          "image": "/uploads/homemade-hummus.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-004",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "טחינה ירוקה", "en": "Green Tahini" },
-          "description": { "he": "סלט טחינה קלאסי עם המון פטרוזיליה, שום ולימון.", "en": "Classic tahini salad with plenty of parsley, garlic, and lemon." },
-          "price": 40,
-          "image": "/uploads/green-tahini.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-005",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט ביצים קלאסי", "en": "Classic Egg Salad" },
-          "description": { "he": "ביצים קשות קצוצות עם בצל ירוק ומיונז איכותי כשר לפסח.", "en": "Chopped hard-boiled eggs with green onion and quality kosher for Passover mayonnaise." },
-          "price": 45,
-          "image": "/uploads/classic-egg-salad.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-006",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט כרוב לבן ושמיר", "en": "White Cabbage and Dill Salad" },
-          "description": { "he": "סלט כרוב פריך ומרענן ברוטב ויניגרט עדין עם שמיר קצוץ.", "en": "A crispy and refreshing cabbage salad in a light vinaigrette with chopped dill." },
-          "price": 42,
-          "image": "/uploads/white-cabbage-dill-salad.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-007",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט גזר מרוקאי", "en": "Moroccan Carrot Salad" },
-          "description": { "he": "פרוסות גזר מבושלות ומתובלות בשום, כמון, פפריקה ולימון.", "en": "Cooked carrot slices seasoned with garlic, cumin, paprika, and lemon." },
-          "price": 44,
-          "image": "/uploads/moroccan-carrot-salad.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-008",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-        {
-          "name": { "he": "חציל בלאדי על האש עם טחינה", "en": "Fire-Roasted Baladi Eggplant with Tahini" },
-          "description": { "he": "חציל שלם קלוי על אש גלויה, מוגש עם טחינה, עגבניות קצוצות ופטרוזיליה.", "en": "A whole eggplant roasted on an open flame, served with tahini, chopped tomatoes, and parsley." },
-          "price": 32,
-          "image": "/uploads/fire-roasted-eggplant-tahini.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-009",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט פלפלים קלויים", "en": "Roasted Pepper Salad" },
-          "description": { "he": "רצועות פלפלים צבעוניים קלויים בתנור, מתובלים בשום, חומץ ושמן זית.", "en": "Strips of colorful peppers roasted in the oven, seasoned with garlic, vinegar, and olive oil." },
-          "price": 55,
-          "image": "/uploads/roasted-pepper-salad.jpg",
-          "category": "salad",
-          "kashrut": "parve",
-          "sku": "SLD-010",
-          "unitType": "גרם",
-          "unitAmount": 500,
-          "isActive": true
-        },
-      
-        // --- 10 קינוחים (Desserts) ---
-        {
-          "name": { "he": "מוס שוקולד עשיר (פרווה)", "en": "Rich Chocolate Mousse (Parve)" },
-          "description": { "he": "מוס שוקולד מריר אוורירי וקטיפתי, ללא מוצרי חלב, מושלם לסיום ארוחה בשרית.", "en": "An airy and velvety dark chocolate mousse, dairy-free, perfect for finishing a meat meal." },
-          "price": 40,
-          "image": "/uploads/rich-chocolate-mousse-parve.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-001",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "עוגת קוקוס ושקדים כשרה לפסח", "en": "Passover Coconut and Almond Cake" },
-          "description": { "he": "עוגה בחושה, לחה ועשירה בטעמי קוקוס ושקדים, ללא קמח.", "en": "A moist and rich pound cake with coconut and almond flavors, flourless." },
-          "price": 85,
-          "image": "/uploads/passover-coconut-almond-cake.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-002",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סלט פירות העונה", "en": "Seasonal Fruit Salad" },
-          "description": { "he": "מבחר פירות טריים וצבעוניים, חתוכים ומוגשים בסירופ לימון ונענע עדין.", "en": "A selection of fresh and colorful fruits, chopped and served in a light lemon and mint syrup." },
-          "price": 90,
-          "image": "/uploads/seasonal-fruit-salad.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-003",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "כדורי שוקולד כשרים לפסח", "en": "Passover Chocolate Balls" },
-          "description": { "he": "כדורי שוקולד נימוחים עשויים מעוגיות יין כשרות לפסח, בציפוי קוקוס.", "en": "Tender chocolate balls made from kosher for Passover wine cookies, coated in coconut." },
-          "price": 55,
-          "image": "/uploads/passover-chocolate-balls.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-004",
-          "unitType": "גרם",
-          "unitAmount": 250,
-          "isActive": true
-        },
-        {
-          "name": { "he": "עוגת בראוניז ללא קמח", "en": "Flourless Brownie Cake" },
-          "description": { "he": "בראוניז שוקולדיים, דחוסים ומושחתים, על בסיס שקדים טחונים ושוקולד מריר איכותי.", "en": "Fudgy and decadent chocolate brownies, based on ground almonds and quality dark chocolate." },
-          "price": 95,
-          "image": "/uploads/flourless-brownie-cake.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-005",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "לפתן פירות יבשים ביין", "en": "Dried Fruit Compote in Wine" },
-          "description": { "he": "קומפוט קלאסי של פירות יבשים (שזיפים, משמשים, צימוקים) מבושלים ביין מתוק ותבלינים.", "en": "A classic compote of dried fruits (prunes, apricots, raisins) cooked in sweet wine and spices." },
-          "price": 70,
-          "image": "/uploads/dried-fruit-compote.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-006",
-          "unitType": "ק\"ג",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "עוגיות מקרון קוקוס", "en": "Coconut Macaroons" },
-          "description": { "he": "עוגיות קוקוס מתוקות, לעיסות מבפנים ופריכות מבחוץ.", "en": "Sweet coconut cookies, chewy on the inside and crispy on the outside." },
-          "price": 60,
-          "image": "/uploads/coconut-macaroons.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-007",
-          "unitType": "גרם",
-          "unitAmount": 250,
-          "isActive": true
-        },
-        {
-          "name": { "he": "מרקיז שוקולד", "en": "Chocolate Marquis" },
-          "description": { "he": "קינוח שוקולד קפוא, עשיר ויוקרתי, פרוס לפרוסות.", "en": "A rich and luxurious frozen chocolate dessert, sliced." },
-          "price": 100,
-          "image": "/uploads/chocolate-marquis.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-008",
-          "unitType": "יחידה",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "חרוסת ביתית", "en": "Homemade Charoset" },
-          "description": { "he": "ממרח תמרים, תפוחים, אגוזים ויין מתוק, סמל החג.", "en": "A spread of dates, apples, walnuts, and sweet wine, a symbol of the holiday." },
-          "price": 50,
-          "image": "/uploads/homemade-charoset.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-009",
-          "unitType": "גרם",
-          "unitAmount": 250,
-          "isActive": true
-        },
-        {
-          "name": { "he": "תמרים ממולאים באגוזים", "en": "Dates Stuffed with Walnuts" },
-          "description": { "he": "תמרי מג'הול גדולים ועסיסיים במילוי אגוז מלך.", "en": "Large, juicy Medjool dates filled with a whole walnut." },
-          "price": 65,
-          "image": "/uploads/dates-stuffed-with-walnuts.jpg",
-          "category": "dessert",
-          "kashrut": "parve",
-          "sku": "DES-010",
-          "unitType": "גרם",
-          "unitAmount": 250,
-          "isActive": true
-        },
-      
-        // --- 10 משקאות (Drinks) ---
-        {
-          "name": { "he": "בקבוק קוקה קולה", "en": "Coca-Cola Bottle" },
-          "description": { "he": "משקה קולה קלאסי ומרווה.", "en": "A classic and refreshing cola drink." },
-          "price": 12,
-          "image": "/uploads/coca-cola-bottle.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-001",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        },
-        {
-          "name": { "he": "מים מינרליים", "en": "Mineral Water" },
-          "description": { "he": "בקבוק מים מינרליים טבעיים.", "en": "A bottle of natural mineral water." },
-          "price": 8,
-          "image": "/uploads/mineral-water.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-002",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        },
-        {
-          "name": { "he": "מיץ ענבים תירוש", "en": "Tirosh Grape Juice" },
-          "description": { "he": "מיץ ענבים אדום מתוק, 100% טבעי, לקידוש.", "en": "Sweet red grape juice, 100% natural, for Kiddush." },
-          "price": 25,
-          "image": "/uploads/tirosh-grape-juice.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-003",
-          "unitType": "ליטר",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "קוקה קולה זירו", "en": "Coca-Cola Zero" },
-          "description": { "he": "משקה קולה ללא סוכר.", "en": "A sugar-free cola drink." },
-          "price": 12,
-          "image": "/uploads/coca-cola-zero.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-004",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        },
-        {
-          "name": { "he": "ספרייט", "en": "Sprite" },
-          "description": { "he": "משקה מוגז בטעם לימון-ליים.", "en": "A carbonated lemon-lime flavored drink." },
-          "price": 11,
-          "image": "/uploads/sprite.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-005",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        },
-        {
-          "name": { "he": "ספרייט זירו", "en": "Sprite Zero" },
-          "description": { "he": "משקה מוגז בטעם לימון-ליים, ללא סוכר.", "en": "A sugar-free carbonated lemon-lime flavored drink." },
-          "price": 11,
-          "image": "/uploads/sprite-zero.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-006",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        },
-        {
-          "name": { "he": "מיץ תפוזים סחוט טרי", "en": "Freshly Squeezed Orange Juice" },
-          "description": { "he": "מיץ תפוזים טבעי, נסחט במקום.", "en": "Natural orange juice, freshly squeezed on-site." },
-          "price": 35,
-          "image": "/uploads/fresh-orange-juice.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-007",
-          "unitType": "ליטר",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "לימונדה ביתית עם נענע", "en": "Homemade Lemonade with Mint" },
-          "description": { "he": "לימונדה מרעננת עם עלי נענע טריים.", "en": "Refreshing lemonade with fresh mint leaves." },
-          "price": 30,
-          "image": "/uploads/homemade-lemonade-mint.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-008",
-          "unitType": "ליטר",
-          "unitAmount": 1,
-          "isActive": true
-        },
-        {
-          "name": { "he": "סודה", "en": "Soda Water" },
-          "description": { "he": "בקבוק סודה.", "en": "A bottle of soda water." },
-          "price": 8,
-          "image": "/uploads/soda-water.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-009",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        },
-        {
-          "name": { "he": "פיוז-טי אפרסק", "en": "Fuze Tea Peach" },
-          "description": { "he": "תה קר בטעם אפרסק.", "en": "Peach-flavored iced tea." },
-          "price": 11,
-          "image": "/uploads/fuze-tea-peach.jpg",
-          "category": "drink",
-          "kashrut": "parve",
-          "sku": "DRNK-010",
-          "unitType": "ליטר",
-          "unitAmount": 1.5,
-          "isActive": true
-        }
-      ]
   📄 error.log
   📄 index.js
     import dotenv from 'dotenv';
@@ -10647,6 +10060,7 @@
       
       const User = mongoose.models.User || mongoose.model('User', userSchema);
       export default User;
+  🚫 node_modules/ (נפסל לסריקה)
   📄 npm
   📄 package-lock.json
   📄 package.json
@@ -10936,11 +10350,11 @@
           return res.status(400).send({ message: 'Please upload at least one file.' });
         }
       
-        // Return the paths of the uploaded files
-        const filePaths = req.files.map(file => `/${file.path.replace(/\\/g, '/')}`);
+        const filePaths = req.files.map(file => `/uploads/${file.filename}`);
+      
         res.status(201).send({
           message: 'Images uploaded successfully',
-          images: filePaths,
+          images: filePaths, // זה מה שנשמר ב-DB בסופו של דבר
         });
       });
       
@@ -11062,7 +10476,7 @@
     import path from 'path';
     import { fileURLToPath } from 'url';
     
-    // טוען את נתוני המוצרים
+    // טוען את נתוני המוצרים שיצרנו
     import products from './data/products.js';
     // טוען את המודל
     import Product from './models/productModel.js';
@@ -11219,54 +10633,6 @@
       
       });
   📁 uploads/
-    📄 images-1759610630869.JPG
-    📄 images-1759610741237.jpg
-    📄 images-1759611331702.gif
-    📄 images-1759611345704.jpg
-    📄 images-1759612885891.jpg
-    📄 images-1759613428940.jpg
-    📄 images-1759620898140.png
-    📄 images-1759620912794.jpg
-    📄 images-1759681995835.jpg
-    📄 images-1759682819230.jpg
-    📄 images-1759682830494.jpeg
-    📄 images-1759693655033.jpg
-    📄 images-1759705577258.jpg
-    📄 images-1760617080029.png
-    📄 images-1760958423281.jpg
-    📄 images-1760958438896.jpg
-    📄 images-1760958447706.jpg
-    📄 images-1760958457412.jpg
-    📄 images-1760958471091.jpg
-    📄 images-1760958481630.jpg
-    📄 images-1760958487278.jpg
-    📄 images-1760958491801.jpg
-    📄 images-1760958496940.jpg
-    📄 images-1760958926260.jpg
-    📄 images-1760958931362.jpg
-    📄 images-1760958934803.jpg
-    📄 images-1760958957296.jpg
-    📄 images-1760958962822.jpg
-    📄 images-1760959001584.jpg
-    📄 images-1760959006580.jpg
-    📄 images-1760959012395.jpg
-    📄 images-1760959017651.jpg
-    📄 images-1764330378720.jpg
-    📄 images-1764330457024.jpg
-    📄 images-1764330510076.jpg
-    📄 images-1764330626903.jpg
-    📄 images-1764330910028.jpg
-    📄 images-1764331743981.jpg
-    📄 images-1764332175481.jpg
-    📄 images-1764332208037.jpg
-    📄 images-1764332218606.jpg
-    📄 images-1764332227943.jpg
-    📄 images-1764332267650.jpg
-    📄 images-1764332287688.jpg
-    📄 images-1764332298900.jpg
-    📄 images-1764332321492.jpg
-    📄 images-1764332332432.jpg
-    📄 images-1764446036847.jpeg
   📁 utils/
     📄 localize.js
       // server/utils/localize.js
@@ -11381,21 +10747,29 @@
     📄 upload.js
       import multer from 'multer';
       import path from 'path';
+      import fs from 'fs';
       
-      // Set up storage engine
+      // יצירת התיקייה אם היא לא קיימת
+      const uploadDir = 'uploads/';
+      if (!fs.existsSync(uploadDir)){
+          fs.mkdirSync(uploadDir);
+      }
+      
+      // הגדרת האחסון בדיסק
       const storage = multer.diskStorage({
         destination: function (req, file, cb) {
-          cb(null, 'uploads/');
+          cb(null, 'uploads/'); // שמירה לתיקיית uploads
         },
         filename: function (req, file, cb) {
-          cb(
-            null,
-            `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-          );
+          // יצירת שם ייחודי ונקי
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          // ניקוי שם הקובץ מתווים בעייתיים או עברית שעלולה לשבור קישורים
+          const cleanName = file.originalname.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.\-_]/g, '');
+          cb(null, uniqueSuffix + '-' + cleanName);
         },
       });
       
-      // Check file type
+      // בדיקת סוג קובץ
       function checkFileType(file, cb) {
         const filetypes = /jpeg|jpg|png|gif|webp/;
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -11404,7 +10778,7 @@
         if (extname && mimetype) {
           return cb(null, true);
         } else {
-          cb('Error: Images Only!');
+          cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'));
         }
       }
       
@@ -11413,7 +10787,7 @@
         fileFilter: function (req, file, cb) {
           checkFileType(file, cb);
         },
-        limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+        limits: { fileSize: 5 * 1024 * 1024 } // הגבלה ל-5MB
       });
       
       export default upload;

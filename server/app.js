@@ -20,7 +20,6 @@ import deliveryOptionsRoutes from './routes/deliveryOptionsRoutes.js';
 import homepageSettingsRoutes from './routes/homepageSettingsRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
-
 import getLanguage from './middleware/languageMiddleware.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -54,9 +53,9 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
-// --- התיקון הקריטי: חשיפת תיקיית ההעלאות ---
-// זה מאפשר לגשת לקבצים דרך http://your-server.com/uploads/filename.jpg
-const uploadsPath = path.join(__dirname, 'uploads');
+// --- תיקון: הפניית נתיב ה-Static למיקום החדש ב-Client ---
+// זה מאפשר גישה לקבצים גם דרך השרת אם צריך, למרות שהם יושבים בקליינט
+const uploadsPath = path.join(__dirname, '../client/public/uploads');
 app.use('/uploads', express.static(uploadsPath));
 
 // Routes
