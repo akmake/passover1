@@ -36,12 +36,11 @@ const AdminPackageCreatePage = () => {
     const [productSearch, setProductSearch] = useState('');
     const navigate = useNavigate();
 
-    // --- תיקון קריטי: פונקציית עזר להצגת שם מוצר בטוחה ---
-    // פונקציה זו מונעת את השגיאה Object with keys {he, en, _id}
+    // פונקציית עזר למניעת קריסות - מטפלת באובייקטי שמות
     const getProductName = (product) => {
         if (!product || !product.name) return 'שם לא זמין';
         if (typeof product.name === 'string') return product.name;
-        // מחזיר את השם בשפה הפעילה, או עברית כברירת מחדל, או מחרוזת ריקה
+        // מחזיר את השפה הפעילה, או עברית, או מחרוזת ריקה (אבל לעולם לא אובייקט!)
         return product.name[activeLang] || product.name.he || '';
     };
 
@@ -254,8 +253,7 @@ const AdminPackageCreatePage = () => {
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
                                 const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
-                                // --- תיקון: שימוש בפונקציה הבטוחה ---
-                                const prodName = getProductName(productDetails); 
+                                const prodName = getProductName(productDetails); // שימוש בפונקציה הבטוחה
 
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
@@ -285,7 +283,6 @@ const AdminPackageCreatePage = () => {
                         </div>
                     )}
                 </section>
-
 
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
@@ -355,7 +352,7 @@ const AdminPackageCreatePage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
-                                                            // --- תיקון: שימוש בפונקציה הבטוחה ---
+                                                            // --- התיקון קורה כאן: שימוש ב-getProductName במקום גישה ישירה ---
                                                             const prodName = getProductName(product); 
 
                                                             return (
@@ -372,6 +369,7 @@ const AdminPackageCreatePage = () => {
                                                                         checked={isSelected}
                                                                         onChange={() => toggleProductInRule(ruleIndex, product._id)}
                                                                     />
+                                                                    {/* וכאן היה הבאג - החלפנו את הגישה הישירה במשתנה הבטוח */}
                                                                     <span className="text-sm truncate select-none" title={prodName}>
                                                                         {prodName}
                                                                     </span>
@@ -412,7 +410,8 @@ const AdminPackageCreatePage = () => {
                 <div className="max-h-[60vh] overflow-y-auto space-y-6">
                     {categoriesList.map(catKey => {
                         const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
-                            const name = getProductName(p); // --- תיקון בתוך הפילטר ---
+                            // --- שימוש ב-getProductName גם בחיפוש ---
+                            const name = getProductName(p); 
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
 
@@ -428,7 +427,6 @@ const AdminPackageCreatePage = () => {
                                             onClick={() => handleAddFixedItem(product)}
                                             className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
                                         >
-                                            {/* --- תיקון: שימוש בפונקציה הבטוחה --- */}
                                             <span className="font-medium text-gray-700 group-hover:text-blue-600">{getProductName(product)}</span>
                                             <span className="text-sm text-gray-400">₪{product.price}</span>
                                         </button>
