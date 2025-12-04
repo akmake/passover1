@@ -1,10 +1,9 @@
-// client/src/pages/admin/AdminPackageEditPage.jsx
-
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '@/api';
 import { Button } from '@/components/ui/Button';
-import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X, Upload, ImageIcon } from 'lucide-react';
+import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, Upload, ImageIcon } from 'lucide-react';
+import { Switch } from '@/components/ui/Switch';
 import Modal from '@/components/ui/Modal';
 
 // מילון קטגוריות לעברית
@@ -44,12 +43,21 @@ const AdminPackageEditPage = () => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
 
-    // --- תיקון: פונקציית עזר להצגת שם מוצר בטוחה (מונעת את השגיאה) ---
+    // --- תיקון קריטי: פונקציית עזר להצגת שם מוצר בטוחה ---
+    // פונקציה זו מונעת את קריסת האתר אם השם הוא אובייקט ולא מחרוזת
     const getProductName = (product) => {
-        if (!product || !product.name) return 'שם לא זמין';
+        if (!product) return 'מוצר לא נמצא';
+        
+        // אם זה מחרוזת רגילה (נתונים ישנים)
         if (typeof product.name === 'string') return product.name;
-        // מנסה להחזיר את השפה הפעילה, אחרת עברית, אחרת מחרוזת ריקה (אבל לא אובייקט!)
-        return product.name[activeLang] || product.name.he || '';
+        
+        // אם זה אובייקט תרגום - נחזיר מחרוזת בלבד!
+        if (product.name && typeof product.name === 'object') {
+            const translated = product.name[activeLang] || product.name.he || '';
+            return String(translated); 
+        }
+
+        return 'שם לא תקין';
     };
 
     // Fetch Data
@@ -138,7 +146,6 @@ const AdminPackageEditPage = () => {
     };
 
     const removeFixedItem = (index) => setFixedItems(fixedItems.filter((_, i) => i !== index));
-
     const updateFixedItemQty = (index, newQty) => {
         const updated = [...fixedItems];
         updated[index].quantity = Number(newQty);
@@ -147,9 +154,7 @@ const AdminPackageEditPage = () => {
 
     // --- Choice Rules Logic ---
     const addChoiceRule = () => setChoiceRules([...choiceRules, { category: 'קטגוריה חדשה', quantityToChoose: 1, options: [] }]);
-    
     const removeChoiceRule = (index) => setChoiceRules(choiceRules.filter((_, i) => i !== index));
-    
     const updateChoiceRule = (index, field, value) => {
         const updated = [...choiceRules];
         updated[index][field] = value;
@@ -194,16 +199,16 @@ const AdminPackageEditPage = () => {
                 quantityToChoose: Number(rule.quantityToChoose)
             }));
 
-            const packageData = { 
-                name, 
-                price: Number(price), 
-                description, 
-                image, 
-                isActive, 
-                fixedItems: validFixedItems, 
-                choiceRules: sanitizedRules 
+            const packageData = {
+                name,
+                price: Number(price),
+                description,
+                image,
+                isActive,
+                fixedItems: validFixedItems,
+                choiceRules: sanitizedRules
             };
-            
+
             await api.put(`/api/admin/packages/${packageId}`, packageData, { withCredentials: true });
             navigate('/admin/packages');
         } catch (err) {
@@ -276,7 +281,7 @@ const AdminPackageEditPage = () => {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                                <Switch id="isActive" checked={isActive} onCheckedChange={setIsActive} />
                                 <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה</label>
                             </div>
                         </div>
@@ -302,7 +307,7 @@ const AdminPackageEditPage = () => {
                     ) : (
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
-                                // --- תיקון: שימוש ב-getProductName ---
+                                // --- שימוש בפונקציה הבטוחה ---
                                 let prodName = 'טוען...';
                                 if (item._productDetails) {
                                     prodName = getProductName(item._productDetails);
@@ -310,12 +315,12 @@ const AdminPackageEditPage = () => {
                                     const p = allProducts.find(p => p._id === item.product);
                                     if (p) prodName = getProductName(p);
                                 }
-                                
+
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>
-                                            <span className="font-medium text-gray-800">{prodName}</span>
+                                            <span className="font-medium text-gray-800">{String(prodName)}</span>
                                         </div>
 
                                         <div className="flex items-center gap-4">
@@ -411,7 +416,7 @@ const AdminPackageEditPage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
-                                                            // --- תיקון: שימוש ב-getProductName ---
+                                                            // --- שימוש ב-getProductName ---
                                                             const prodName = getProductName(product);
 
                                                             return (
@@ -428,8 +433,8 @@ const AdminPackageEditPage = () => {
                                                                         checked={isSelected}
                                                                         onChange={() => toggleProductInRule(ruleIndex, product._id)}
                                                                     />
-                                                                    <span className="text-sm truncate select-none" title={prodName}>
-                                                                        {prodName}
+                                                                    <span className="text-sm truncate select-none" title={String(prodName)}>
+                                                                        {String(prodName)}
                                                                     </span>
                                                                 </label>
                                                             );
@@ -443,7 +448,6 @@ const AdminPackageEditPage = () => {
                             </div>
                         ))}
                     </div>
-
                 </section>
 
                 <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
@@ -470,7 +474,6 @@ const AdminPackageEditPage = () => {
                             const name = getProductName(p);
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
-
                         if (filteredProducts.length === 0) return null;
 
                         return (
