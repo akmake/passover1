@@ -30,14 +30,7 @@
     "label": "(חבילה)",
     "detailsAndBuild": "פרטים והרכבה"
   },
-  "packageBuilder": {
-    "fixedItems": "פריטים קבועים בחבילה",
-    "yourChoices": "הבחירות שלך",
-    "youMustChoose": "יש לבחור {{count}} מתוך {{total}} (נבחרו {{selected}}/{{count}})",
-    "packagePrice": "מחיר החבילה",
-    "addToCart": "הוסף חבילה לעגלה",
-    "selectionAlert": "אנא בצע {{count}} בחירות עבור קטגוריית \"{{category}}\""
-  },
+
   "home": {
     "toTheMenu": "לתפריט המלא"
   },
@@ -223,6 +216,17 @@
     "kg": "ק\"ג",
     "ml": "מ\"ל",
     "l": "ליטר"
-  }
+  },
+  "packageBuilder": {
+  "title": "הרכבת חבילה",
+  "fixedItemsTitle": "החבילה כוללת (קבוע):",
+  "composeTitle": "הרכב את החבילה שלך:",
+  "selectedCount": "נבחרו {{count}} מתוך {{limit}}",
+  "summaryTitle": "סיכום חבילה",
+  "totalPrice": "מחיר כולל:",
+  "addToCart": "הוסף חבילה לעגלה",
+  "warningSelectAll": "ודא שסיימת לבחור את כל הפריטים לפני ההוספה.",
+  "alertSelectionMissing": "אנא בחר בדיוק {{count}} פריטים מקטגוריית \"{{category}}\""
+}
 
 }

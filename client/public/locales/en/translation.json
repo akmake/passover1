@@ -31,13 +31,16 @@
     "detailsAndBuild": "Details & Assemble"
   },
   "packageBuilder": {
-    "fixedItems": "Fixed Items in Package",
-    "yourChoices": "Your Choices",
-    "youMustChoose": "Choose {{count}} of {{total}} ({{selected}}/{{count}} selected)",
-    "packagePrice": "Package Price",
-    "addToCart": "Add Package to Cart",
-    "selectionAlert": "Please make {{count}} selections for the \"{{category}}\" category"
-  },
+  "title": "Package Builder",
+  "fixedItemsTitle": "Package Includes (Fixed):",
+  "composeTitle": "Compose Your Package:",
+  "selectedCount": "Selected {{count}} of {{limit}}",
+  "summaryTitle": "Package Summary",
+  "totalPrice": "Total Price:",
+  "addToCart": "Add Package to Cart",
+  "warningSelectAll": "Please ensure all selections are made before adding.",
+  "alertSelectionMissing": "Please select exactly {{count}} items from \"{{category}}\""
+ },
   "home": {
     "toTheMenu": "To The Full Menu"
   },

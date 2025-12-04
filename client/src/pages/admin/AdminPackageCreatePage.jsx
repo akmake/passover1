@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { Button } from '@/components/ui/Button';
-import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X } from 'lucide-react';
-import Modal from '@/components/ui/Modal'; // וודא שיש לך את הקומפוננטה הזו משיחות קודמות
+import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X, Upload, ImageIcon } from 'lucide-react'; // הוספתי אייקונים לתמונה
+import Modal from '@/components/ui/Modal';
 
-// מילון קטגוריות לעברית
+// מילון קטגוריות לעברית (נשמר מהקוד המקורי)
 const CATEGORY_LABELS = {
     'salad': 'סלטים',
     'fish': 'דגים',
@@ -24,6 +24,7 @@ const AdminPackageCreatePage = () => {
     const [name, setName] = useState({ he: '', en: '' });
     const [description, setDescription] = useState({ he: '', en: '' });
     const [price, setPrice] = useState('');
+    const [image, setImage] = useState(''); // --- הוספה: שדה תמונה ---
     const [isActive, setIsActive] = useState(true);
     const [fixedItems, setFixedItems] = useState([]);
     const [choiceRules, setChoiceRules] = useState([]);
@@ -63,26 +64,39 @@ const AdminPackageCreatePage = () => {
 
     const categoriesList = useMemo(() => {
         return Object.keys(productsByCategory).sort((a, b) => {
-            // מיון לפי סדר לוגי אם רוצים, כרגע לפי א-ב של המפתח או לפי המילון
             return (CATEGORY_LABELS[a] || a).localeCompare(CATEGORY_LABELS[b] || b, 'he');
         });
     }, [productsByCategory]);
 
+    // --- הוספה: פונקציה להעלאת תמונה ---
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const uploadFormData = new FormData();
+        uploadFormData.append('images', file);
+        try {
+            const { data } = await api.post('/api/upload', uploadFormData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                withCredentials: true
+            });
+            setImage(data.images[0]);
+        } catch (error) {
+            alert('העלאת התמונה נכשלה: ' + (error.response?.data?.message || 'שגיאה לא ידועה'));
+        }
+    };
+
     // --- Fixed Items Logic ---
     const handleAddFixedItem = (product) => {
-        // בודק אם כבר קיים
         const exists = fixedItems.find(item => item.product === product._id);
         if (exists) {
-            // אם קיים, נגדיל כמות
             setFixedItems(prev => prev.map(item => item.product === product._id ? { ...item, quantity: item.quantity + 1 } : item));
         } else {
             setFixedItems([...fixedItems, { product: product._id, quantity: 1, _productDetails: product }]);
         }
-        setIsProductModalOpen(false); // סוגר מודל אחרי בחירה
+        setIsProductModalOpen(false);
     };
 
     const removeFixedItem = (index) => setFixedItems(fixedItems.filter((_, i) => i !== index));
-    
     const updateFixedItemQty = (index, newQty) => {
         const updated = [...fixedItems];
         updated[index].quantity = Number(newQty);
@@ -91,15 +105,14 @@ const AdminPackageCreatePage = () => {
 
     // --- Choice Rules Logic ---
     const addChoiceRule = () => {
-        setChoiceRules([...choiceRules, { 
-            category: 'בחירה חדשה', // כותרת ברירת מחדל בעברית
-            quantityToChoose: 1, 
-            options: [] 
+        setChoiceRules([...choiceRules, {
+            category: 'בחירה חדשה',
+            quantityToChoose: 1,
+            options: []
         }]);
     };
 
     const removeChoiceRule = (index) => setChoiceRules(choiceRules.filter((_, i) => i !== index));
-    
     const updateChoiceRule = (index, field, value) => {
         const updated = [...choiceRules];
         updated[index][field] = value;
@@ -109,7 +122,7 @@ const AdminPackageCreatePage = () => {
     const toggleProductInRule = (ruleIndex, productId) => {
         const updatedRules = [...choiceRules];
         const currentOptions = updatedRules[ruleIndex].options;
-        
+
         if (currentOptions.includes(productId)) {
             updatedRules[ruleIndex].options = currentOptions.filter(id => id !== productId);
         } else {
@@ -121,18 +134,14 @@ const AdminPackageCreatePage = () => {
     const toggleCategoryInRule = (ruleIndex, categoryKey) => {
         const productsInCat = productsByCategory[categoryKey] || [];
         const idsInCat = productsInCat.map(p => p._id);
-        
+
         const updatedRules = [...choiceRules];
         const currentOptions = updatedRules[ruleIndex].options;
-
-        // בודק אם כל המוצרים בקטגוריה הזו כבר נבחרו
         const allSelected = idsInCat.every(id => currentOptions.includes(id));
 
         if (allSelected) {
-            // הסר את כולם
             updatedRules[ruleIndex].options = currentOptions.filter(id => !idsInCat.includes(id));
         } else {
-            // הוסף את החסרים
             const newOptions = new Set([...currentOptions, ...idsInCat]);
             updatedRules[ruleIndex].options = Array.from(newOptions);
         }
@@ -148,11 +157,11 @@ const AdminPackageCreatePage = () => {
                 name,
                 description,
                 price: Number(price),
+                image, // --- הוספה: שליחת התמונה ---
                 isActive,
                 fixedItems: fixedItems.map(i => ({ product: i.product, quantity: i.quantity })),
                 choiceRules: choiceRules.map(r => ({ ...r, quantityToChoose: Number(r.quantityToChoose) }))
             };
-
             await api.post('/api/admin/packages', packageData, { withCredentials: true });
             navigate('/admin/packages');
         } catch (error) {
@@ -180,29 +189,50 @@ const AdminPackageCreatePage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-                
-                {/* 1. Basic Info */}
+
+                {/* 1. Basic Info & Image (עודכן לכלול תמונה) */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
                         <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
                         פרטי החבילה
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
-                            <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="לדוגמה: ארוחת חג זוגית" />
+                    
+                    <div className="flex flex-col md:flex-row gap-6 mb-6">
+                        {/* אזור העלאת תמונה */}
+                        <div className="w-full md:w-1/3">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-center h-48 bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
+                                {image ? (
+                                    <img src={image} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                                ) : (
+                                    <div className="text-gray-400 flex flex-col items-center">
+                                        <ImageIcon className="h-10 w-10 mb-2" />
+                                        <span className="text-xs">לחץ להעלאה</span>
+                                    </div>
+                                )}
+                                <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                            </div>
+                            {image && <Button type="button" variant="ghost" size="sm" onClick={() => setImage('')} className="w-full mt-2 text-red-500">הסר תמונה</Button>}
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
-                            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
-                            <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} placeholder="תיאור קצר של מה כלול בחבילה..." />
-                        </div>
-                        <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg md:col-span-2 border border-blue-100">
-                            <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
-                            <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה ומוצגת באתר</label>
+
+                        {/* שדות טקסט */}
+                        <div className="w-full md:w-2/3 grid grid-cols-1 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                                <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder={activeLang === 'he' ? "לדוגמה: ארוחת חג" : "e.g. Holiday Meal"} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                                <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
+                                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
+                            </div>
+                            <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                                <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה ומוצגת באתר</label>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -226,10 +256,9 @@ const AdminPackageCreatePage = () => {
                     ) : (
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
-                                // מנסים למצוא את פרטי המוצר המלאים (או מהסטייט או מהמערך הראשי)
                                 const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
                                 const prodName = productDetails?.name?.he || productDetails?.name || 'מוצר לא נמצא';
-                                
+
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
                                         <div className="flex items-center gap-4">
@@ -239,10 +268,10 @@ const AdminPackageCreatePage = () => {
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
                                                 <span className="text-xs text-gray-500">כמות:</span>
-                                                <input 
-                                                    type="number" 
-                                                    min="1" 
-                                                    value={item.quantity} 
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
                                                     onChange={(e) => updateFixedItemQty(index, e.target.value)}
                                                     className="w-12 text-center outline-none font-bold"
                                                 />
@@ -278,21 +307,22 @@ const AdminPackageCreatePage = () => {
                                     <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה (לדוג': בחירה למנה עיקרית)</label>
-                                            <input 
-                                                type="text" 
-                                                value={rule.category} 
-                                                onChange={(e) => updateChoiceRule(ruleIndex, 'category', e.target.value)} 
-                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none" 
+                                            <input
+                                                type="text"
+                                                value={rule.category}
+                                                onChange={(e) => updateChoiceRule(ruleIndex, 'category', e.target.value)}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none"
                                             />
                                         </div>
+
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 mb-1">כמות לבחירה</label>
-                                            <input 
-                                                type="number" 
-                                                min="1" 
-                                                value={rule.quantityToChoose} 
-                                                onChange={(e) => updateChoiceRule(ruleIndex, 'quantityToChoose', e.target.value)} 
-                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none" 
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={rule.quantityToChoose}
+                                                onChange={(e) => updateChoiceRule(ruleIndex, 'quantityToChoose', e.target.value)}
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none"
                                             />
                                         </div>
                                     </div>
@@ -304,7 +334,7 @@ const AdminPackageCreatePage = () => {
                                 {/* Product Selection Area */}
                                 <div className="p-4 bg-white">
                                     <p className="text-sm font-medium text-gray-700 mb-3">סמן את המוצרים שהלקוח יכול לבחור בקטגוריה זו:</p>
-                                    
+
                                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                                         {categoriesList.map(catKey => {
                                             const productsInThisCat = productsByCategory[catKey];
@@ -312,37 +342,36 @@ const AdminPackageCreatePage = () => {
 
                                             // בדיקה אם כל המוצרים בקטגוריה זו נבחרו
                                             const allSelected = productsInThisCat.every(p => rule.options.includes(p._id));
-                                            const someSelected = productsInThisCat.some(p => rule.options.includes(p._id));
 
                                             return (
                                                 <div key={catKey} className="border border-gray-100 rounded-lg p-3">
                                                     <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
                                                         <h4 className="font-bold text-gray-700">{CATEGORY_LABELS[catKey] || catKey}</h4>
-                                                        <button 
-                                                            type="button" 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => toggleCategoryInRule(ruleIndex, catKey)}
                                                             className={`text-xs font-medium px-2 py-1 rounded transition-colors ${allSelected ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                                                         >
                                                             {allSelected ? 'הסר הכל' : 'בחר הכל בקטגוריה'}
                                                         </button>
                                                     </div>
-                                                    
+
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
                                                             return (
-                                                                <label 
-                                                                    key={product._id} 
+                                                                <label
+                                                                    key={product._id}
                                                                     className={`flex items-center p-2 rounded cursor-pointer transition-all border ${isSelected ? 'bg-purple-50 border-purple-200 text-purple-900' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
                                                                 >
                                                                     <div className={`w-4 h-4 rounded border flex items-center justify-center mr-2 transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'}`}>
                                                                         {isSelected && <Check size={10} className="text-white" />}
                                                                     </div>
-                                                                    <input 
-                                                                        type="checkbox" 
-                                                                        className="hidden" 
-                                                                        checked={isSelected} 
-                                                                        onChange={() => toggleProductInRule(ruleIndex, product._id)} 
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="hidden"
+                                                                        checked={isSelected}
+                                                                        onChange={() => toggleProductInRule(ruleIndex, product._id)}
                                                                     />
                                                                     <span className="text-sm truncate select-none" title={product.name?.he || product.name}>
                                                                         {product.name?.he || product.name}
@@ -379,9 +408,9 @@ const AdminPackageCreatePage = () => {
             <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="בחר מוצר להוספה">
                 <div className="mb-4 relative">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input 
-                        type="text" 
-                        placeholder="חפש מוצר..." 
+                    <input
+                        type="text"
+                        placeholder="חפש מוצר..."
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
                         className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -394,7 +423,6 @@ const AdminPackageCreatePage = () => {
                             const name = p.name?.he || p.name || '';
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
-
                         if (filteredProducts.length === 0) return null;
 
                         return (
@@ -402,8 +430,8 @@ const AdminPackageCreatePage = () => {
                                 <h3 className="font-bold text-gray-800 bg-gray-100 p-2 rounded mb-2 sticky top-0">{CATEGORY_LABELS[catKey] || catKey}</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {filteredProducts.map(product => (
-                                        <button 
-                                            key={product._id} 
+                                        <button
+                                            key={product._id}
                                             onClick={() => handleAddFixedItem(product)}
                                             className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
                                         >

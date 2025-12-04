@@ -1,14 +1,13 @@
-// client/src/pages/PackageBuilderPage.jsx
-
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '@/api';
 import { LoaderCircle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCartStore } from '@/stores/cartStore';
 import { useTranslation } from 'react-i18next';
-// ייבוא סדר הקטגוריות כדי למיין את הקבוצות בצורה הגיונית
+// ייבוא קריטי למיון קטגוריות
 import { CATEGORY_DETAILS } from '@/config/constants';
+import { toAbsoluteUrl } from '@/utils/url';
 
 const PackageBuilderPage = () => {
     const { id: packageId } = useParams();
@@ -28,20 +27,19 @@ const PackageBuilderPage = () => {
             try {
                 const { data } = await api.get(`/api/packages/${packageId}`);
                 setPackage(data);
-                // אתחול אובייקט הבחירות
                 const initialSelections = {};
                 data.choiceRules.forEach((_, index) => {
                     initialSelections[index] = [];
                 });
                 setSelections(initialSelections);
             } catch (err) {
-                setError('לא ניתן היה לטעון את פרטי החבילה.');
+                setError(t('common.errorLoading') || 'שגיאה בטעינת הנתונים');
             } finally {
                 setLoading(false);
             }
         };
         fetchPackage();
-    }, [packageId]);
+    }, [packageId, t]);
 
     const handleSelectionChange = (ruleIndex, optionId, quantityToChoose) => {
         const limit = Number(quantityToChoose);
@@ -49,12 +47,10 @@ const PackageBuilderPage = () => {
             const currentSelections = [...(prev[ruleIndex] || [])];
             const isSelected = currentSelections.includes(optionId);
 
-            // אם הבחירה היא פריט בודד (רדיו)
             if (limit === 1) {
                 return { ...prev, [ruleIndex]: [optionId] };
             }
 
-            // אם זה צ'קבוקס (מרובה)
             if (isSelected) {
                 return { ...prev, [ruleIndex]: currentSelections.filter(id => id !== optionId) };
             } else if (currentSelections.length < limit) {
@@ -66,18 +62,16 @@ const PackageBuilderPage = () => {
     };
 
     const handleAddToCart = () => {
-        // ולידציה
         for (const rule of pkg.choiceRules) {
             const ruleIndex = pkg.choiceRules.indexOf(rule);
             const currentCount = selections[ruleIndex]?.length || 0;
             const requiredCount = Number(rule.quantityToChoose);
             if (currentCount !== requiredCount) {
-                alert(`אנא בחר בדיוק ${requiredCount} פריטים מקטגוריית "${rule.category}"`);
+                alert(t('packageBuilder.alertSelectionMissing', { count: requiredCount, category: rule.category }));
                 return;
             }
         }
 
-        // בניית אובייקט החבילה
         const userChoices = Object.entries(selections).map(([ruleIndex, optionIds]) => {
             const rule = pkg.choiceRules[ruleIndex];
             const options = rule.options.filter(opt => optionIds.includes(opt._id.toString()));
@@ -100,7 +94,7 @@ const PackageBuilderPage = () => {
         navigate('/menu');
     };
 
-    // פונקציית עזר לקיבוץ מוצרים לפי קטגוריה ומיון הקטגוריות
+    // --- הפונקציה שממיינת ומקבצת לקטגוריות ---
     const getGroupedOptions = (options) => {
         // 1. קיבוץ
         const grouped = options.reduce((acc, opt) => {
@@ -110,7 +104,7 @@ const PackageBuilderPage = () => {
             return acc;
         }, {});
 
-        // 2. מיון המפתחות (הקטגוריות) לפי הסדר המוגדר ב-constants
+        // 2. מיון המפתחות לפי הסדר הקבוע במערכת
         const sortedKeys = Object.keys(grouped).sort((a, b) => {
             const orderA = CATEGORY_DETAILS[a]?.order ?? 999;
             const orderB = CATEGORY_DETAILS[b]?.order ?? 999;
@@ -124,14 +118,22 @@ const PackageBuilderPage = () => {
     if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
     if (!pkg) return <p className="text-center mt-10">החבילה לא נמצאה.</p>;
 
-    // תרגום שמות החבילה
     const pkgName = pkg.name?.[currentLang] || pkg.name?.he || pkg.name;
     const pkgDesc = pkg.description?.[currentLang] || pkg.description?.he || pkg.description;
+    const pkgImage = toAbsoluteUrl(pkg.image);
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">{pkgName}</h1>
-            <p className="text-lg text-gray-600 mb-8">{pkgDesc}</p>
+            {/* Header Area with Image */}
+            <div className="mb-8">
+                {pkgImage && (
+                    <div className="w-full h-64 md:h-80 rounded-xl overflow-hidden mb-6 shadow-md">
+                        <img src={pkgImage} alt={pkgName} className="w-full h-full object-cover" />
+                    </div>
+                )}
+                <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">{pkgName}</h1>
+                <p className="text-lg text-gray-600">{pkgDesc}</p>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
@@ -139,16 +141,16 @@ const PackageBuilderPage = () => {
                     {/* פריטים קבועים */}
                     {pkg.fixedItems && pkg.fixedItems.length > 0 && (
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h2 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">החבילה כוללת (קבוע):</h2>
+                            <h2 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">{t('packageBuilder.fixedItemsTitle')}</h2>
                             <ul className="space-y-3">
                                 {pkg.fixedItems.map(item => {
                                     const prodName = item.product?.name?.[currentLang] || item.product?.name?.he || item.product?.name;
                                     return (
                                         <li key={item._id} className="flex items-center text-gray-700">
-                                            <span className="bg-green-100 text-green-700 p-1 rounded-full ml-3">
+                                            <span className="bg-green-100 text-green-700 p-1 rounded-full ml-3 rtl:ml-3 ltr:mr-3">
                                                 <Check size={14} />
                                             </span>
-                                            <span className="font-medium ml-2">{item.quantity} x</span>
+                                            <span className="font-medium mx-2">{item.quantity} x</span>
                                             {prodName}
                                         </li>
                                     );
@@ -159,14 +161,11 @@ const PackageBuilderPage = () => {
 
                     {/* בחירות המשתמש */}
                     <div>
-                        <h2 className="text-2xl font-bold pb-2 mb-4 text-gray-800">הרכב את החבילה שלך:</h2>
+                        <h2 className="text-2xl font-bold pb-2 mb-4 text-gray-800">{t('packageBuilder.composeTitle')}</h2>
                         {pkg.choiceRules.map((rule, index) => {
                             const selectedCount = selections[index]?.length || 0;
                             const limit = Number(rule.quantityToChoose);
-                            const isMaxed = selectedCount >= limit;
                             const isFulfilled = selectedCount === limit;
-
-                            // כאן אנחנו מפעילים את המיון והקיבוץ
                             const { grouped, sortedKeys } = getGroupedOptions(rule.options);
 
                             return (
@@ -174,17 +173,15 @@ const PackageBuilderPage = () => {
                                     <div className="flex justify-between items-center mb-3">
                                         <h3 className="text-lg font-bold text-gray-800">{rule.category}</h3>
                                         <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isFulfilled ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                            נבחרו {selectedCount} מתוך {limit}
+                                            {t('packageBuilder.selectedCount', { count: selectedCount, limit: limit })}
                                         </span>
                                     </div>
 
-                                    {/* מעבר על הקטגוריות הממוינות בתוך החוק */}
-                                    <div className="space-y-4">
+                                    <div className="space-y-6">
                                         {sortedKeys.map(catKey => (
                                             <div key={catKey}>
-                                                {/* כותרת קטגוריה - תוצג רק אם יש יותר מקטגוריה אחת בחוק, או ליופי */}
                                                 {sortedKeys.length > 0 && (
-                                                    <h4 className="text-sm font-semibold text-gray-500 mb-2 border-b border-gray-200 pb-1">
+                                                    <h4 className="text-sm font-semibold text-gray-500 mb-3 border-b border-gray-200 pb-1">
                                                         {t(`categories.${catKey}`)}
                                                     </h4>
                                                 )}
@@ -193,6 +190,7 @@ const PackageBuilderPage = () => {
                                                     {grouped[catKey].map(option => {
                                                         const optionId = option._id.toString();
                                                         const isSelected = selections[index]?.includes(optionId);
+                                                        const isMaxed = selectedCount >= limit;
                                                         const isDisabled = !isSelected && isMaxed && limit > 1;
                                                         const optName = option.name?.[currentLang] || option.name?.he || option.name;
 
@@ -216,10 +214,10 @@ const PackageBuilderPage = () => {
                                                                     className="sr-only"
                                                                 />
 
-                                                                <div className={`w-5 h-5 border-2 rounded mr-3 flex items-center justify-center transition-colors ${limit === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'}`}>
+                                                                <div className={`w-5 h-5 border-2 rounded mx-3 flex items-center justify-center transition-colors ${limit === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'}`}>
                                                                     {isSelected && <div className={`bg-white ${limit === 1 ? 'rounded-full w-2.5 h-2.5' : 'w-3 h-3 rounded-sm'}`} />}
                                                                 </div>
-                                                                <span className="font-medium mr-2">{optName}</span>
+                                                                <span className="font-medium">{optName}</span>
                                                             </label>
                                                         );
                                                     })}
@@ -236,16 +234,16 @@ const PackageBuilderPage = () => {
                 {/* סיכום צד */}
                 <div className="lg:col-span-1">
                     <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 sticky top-24">
-                        <h2 className="text-2xl font-bold mb-4 text-gray-900 border-b pb-4">סיכום חבילה</h2>
+                        <h2 className="text-2xl font-bold mb-4 text-gray-900 border-b pb-4">{t('packageBuilder.summaryTitle')}</h2>
                         <div className="flex justify-between items-center mb-6">
-                            <span className="text-gray-600 font-medium">מחיר כולל:</span>
+                            <span className="text-gray-600 font-medium">{t('packageBuilder.totalPrice')}</span>
                             <span className="text-4xl font-extrabold text-blue-600">₪{pkg.price.toFixed(2)}</span>
                         </div>
                         <Button className="w-full h-12 text-lg shadow-blue-200 shadow-lg hover:shadow-blue-300 transition-all" onClick={handleAddToCart}>
-                            הוסף חבילה לעגלה
+                            {t('packageBuilder.addToCart')}
                         </Button>
                         <p className="text-xs text-center text-gray-400 mt-4">
-                            ודא שסיימת לבחור את כל הפריטים לפני ההוספה.
+                            {t('packageBuilder.warningSelectAll')}
                         </p>
                     </div>
                 </div>
