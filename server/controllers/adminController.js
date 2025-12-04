@@ -4,9 +4,9 @@ import Order from '../models/orderModel.js';
 import MealPackage from '../models/mealPackageModel.js';
 import DeliveryCenter from '../models/deliveryCenterModel.js';
 import Category from '../models/categoryModel.js';
-import Coupon from '../models/couponModel.js'; // <-- הוספת ייבוא
-import DeliveryDate from '../models/deliveryDateModel.js'; // <-- ייבוא חדש
-import GeneralSettings from '../models/generalSettingsModel.js'; // <-- ייבוא חדש
+import Coupon from '../models/couponModel.js';
+import DeliveryDate from '../models/deliveryDateModel.js';
+import GeneralSettings from '../models/generalSettingsModel.js';
 
 // --- General Stats ---
 export const getDashboardStats = async (req, res) => {
@@ -17,6 +17,7 @@ export const getDashboardStats = async (req, res) => {
         res.json({ users: userCount, products: productCount, orders: orderCount });
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
+
 // --- Product Management ---
 export const getProducts = async (req, res) => {
     try {
@@ -25,18 +26,16 @@ export const getProducts = async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
-// server/controllers/adminController.js
-
 export const createProduct = async (req, res) => {
     try {
         const { name, description, ...otherFields } = req.body;
-
+        
         // בנייה מחדש ואחראית של אובייקט המוצר
         const productData = {
-            ...otherFields, // כל השדות הרגילים (מחיר, מק"ט וכו')
+            ...otherFields,
             name: {
-                he: name?.he || '', // ודא ששדה 'he' קיים, גם אם הוא ריק
-                en: name?.en || '', // ודא ששדה 'en' קיים, גם אם הוא ריק
+                he: name?.he || '',
+                en: name?.en || '',
             },
             description: {
                 he: description?.he || '',
@@ -62,12 +61,9 @@ export const createProduct = async (req, res) => {
 export const getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
-        if (product) { res.json(product); } else { res.status(404).json({ message: 'Product not found' });
-        }
-    } catch (error) { res.status(500).json({ message: 'Server Error' });
-    }
+        if (product) { res.json(product); } else { res.status(404).json({ message: 'Product not found' }); }
+    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
-// server/controllers/adminController.js
 
 export const updateProduct = async (req, res) => {
     try {
@@ -75,10 +71,7 @@ export const updateProduct = async (req, res) => {
         const product = await Product.findById(req.params.id);
 
         if (product) {
-            // עדכון השדות הרגילים
             Object.assign(product, otherFields);
-
-            // עדכון אחראי של השדות הדו-לשוניים
             product.name = {
                 he: name?.he !== undefined ? name.he : product.name.he,
                 en: name?.en !== undefined ? name.en : product.name.en,
@@ -87,7 +80,6 @@ export const updateProduct = async (req, res) => {
                 he: description?.he !== undefined ? description.he : product.description.he,
                 en: description?.en !== undefined ? description.en : product.description.en,
             };
-
             const updatedProduct = await product.save();
             res.json(updatedProduct);
         } else {
@@ -111,10 +103,8 @@ export const deleteProduct = async (req, res) => {
         if (product) {
             await Product.deleteOne({ _id: product._id });
             res.json({ message: 'Product removed' });
-        } else { res.status(404).json({ message: 'Product not found' });
-        }
-    } catch (error) { res.status(500).json({ message: 'Server Error' });
-    }
+        } else { res.status(404).json({ message: 'Product not found' }); }
+    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
 // --- User Management ---
@@ -124,18 +114,16 @@ export const getUsers = async (req, res) => {
         res.json(users);
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
+
 export const deleteUser = async (req, res) => {
     try {
-        if (req.user.id === req.params.id) { return res.status(400).json({ message: 'Admin cannot delete their own account' });
-        }
+        if (req.user.id === req.params.id) { return res.status(400).json({ message: 'Admin cannot delete their own account' }); }
         const user = await User.findById(req.params.id);
         if (user) {
             await User.deleteOne({ _id: user._id });
             res.json({ message: 'User removed' });
-        } else { return res.status(404).json({ message: 'User not found' });
-        }
-    } catch (error) { res.status(500).json({ message: 'Server Error' });
-    }
+        } else { return res.status(404).json({ message: 'User not found' }); }
+    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
 // --- Order Management ---
@@ -145,6 +133,7 @@ export const getOrders = async (req, res) => {
         res.json(orders);
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
+
 // --- Meal Package Management ---
 export const getMealPackages = async (req, res) => {
     try {
@@ -155,52 +144,96 @@ export const getMealPackages = async (req, res) => {
 
 export const createMealPackage = async (req, res) => {
     try {
-        const newPackage = new MealPackage(req.body);
+        // ולידציה בסיסית לפני הניסיון לשמור
+        const { name, description, ...rest } = req.body;
+        
+        const packageData = {
+            ...rest,
+            name: {
+                he: name?.he || '',
+                en: name?.en || ''
+            },
+            description: {
+                he: description?.he || '',
+                en: description?.en || ''
+            }
+        };
+
+        const newPackage = new MealPackage(packageData);
         const savedPackage = await newPackage.save();
         res.status(201).json(savedPackage);
     } catch (error) {
+        console.error("Create Package Error:", error); // לוג לשרת
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(val => val.message).join(', ');
             return res.status(400).json({ message: messages });
         }
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Server Error: ' + error.message });
     }
 };
 
 export const getMealPackageById = async (req, res) => {
     try {
         const mealPackage = await MealPackage.findById(req.params.id).populate('fixedItems.product').populate('choiceRules.options');
-        if (mealPackage) { res.json(mealPackage); } else { res.status(404).json({ message: 'Package not found' });
-        }
-    } catch (error) { res.status(500).json({ message: 'Server Error' });
-    }
+        if (mealPackage) { res.json(mealPackage); } else { res.status(404).json({ message: 'Package not found' }); }
+    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
+
 export const updateMealPackage = async (req, res) => {
     try {
-        const updatedPackage = await MealPackage.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (updatedPackage) { res.json(updatedPackage); } else { res.status(404).json({ message: 'Package not found' });
+        const { name, description, ...rest } = req.body;
+        
+        // הכנת אובייקט עדכון בטוח
+        const updateData = { ...rest };
+        
+        // עדכון שדות טקסט רק אם סופקו
+        if (name) {
+            updateData.name = {
+                he: name.he || '',
+                en: name.en || ''
+            };
         }
-    } catch (error) { res.status(500).json({ message: 'Server Error' });
+        
+        if (description) {
+            updateData.description = {
+                he: description.he || '',
+                en: description.en || ''
+            };
+        }
+
+        const updatedPackage = await MealPackage.findByIdAndUpdate(
+            req.params.id, 
+            updateData, 
+            { new: true, runValidators: true }
+        );
+
+        if (updatedPackage) { res.json(updatedPackage); } 
+        else { res.status(404).json({ message: 'Package not found' }); }
+    } catch (error) { 
+        console.error("Update Package Error:", error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message).join(', ');
+            return res.status(400).json({ message: messages });
+        }
+        res.status(500).json({ message: 'Server Error' }); 
     }
 };
+
 export const deleteMealPackage = async (req, res) => {
     try {
         const mealPackage = await MealPackage.findById(req.params.id);
         if (mealPackage) {
             await MealPackage.deleteOne({ _id: mealPackage._id });
             res.json({ message: 'Package removed' });
-        } else { res.status(404).json({ message: 'Package not found' });
-        }
-    } catch (error) { res.status(500).json({ message: 'Server Error' });
-    }
+        } else { res.status(404).json({ message: 'Package not found' }); }
+    } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
-// --- פונקציה חדשה ---
 export const getOrderByIdForAdmin = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id)
-            .populate('user', 'name email') // מביא את פרטי המשתמש
-            .populate('orderItems.item'); // מנסה להביא את פרטי המוצרים/חבילות
+            .populate('user', 'name email')
+            .populate('orderItems.item');
 
         if (order) {
             res.json(order);
@@ -212,7 +245,6 @@ export const getOrderByIdForAdmin = async (req, res) => {
     }
 };
 
-// --- פונקציה חדשה ---
 export const updateOrderStatus = async (req, res) => {
     try {
         const { status } = req.body;
@@ -229,32 +261,28 @@ export const updateOrderStatus = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
-// --- דוחות ---
+
+// --- Reports ---
 export const getPreparationReport = async (req, res) => {
-    const { deliveryDate } = req.query; // קבלת התאריך מה-URL Query
+    const { deliveryDate } = req.query;
     if (!deliveryDate) {
         return res.status(400).json({ message: 'A delivery date is required' });
     }
 
     try {
         const orders = await Order.find({ deliveryDate });
-
         const preparationSummary = {};
 
         orders.forEach(order => {
             order.orderItems.forEach(item => {
-                // טיפול במוצרים רגילים
                 if (item.itemType === 'Product') {
                     const productName = item.name;
                     preparationSummary[productName] = (preparationSummary[productName] || 0) + item.quantity;
                 }
-                // טיפול בחבילות
                 else if (item.itemType === 'MealPackage') {
-                    // הוספת החבילה עצמה (למשל, "סעודת חג זוגית")
                     const packageName = `${item.name} (חבילה)`;
                     preparationSummary[packageName] = (preparationSummary[packageName] || 0) + 1;
 
-                    // הוספת הפריטים שהלקוח בחר בחבילה
                     item.packageSelections.forEach(selection => {
                         selection.selectedOptions.forEach(option => {
                             const optionName = option.name;
@@ -265,18 +293,17 @@ export const getPreparationReport = async (req, res) => {
             });
         });
 
-        // המרה למערך ממוין כדי שיהיה קל להציג ב-Frontend
         const sortedReport = Object.entries(preparationSummary).map(([name, quantity]) => ({
             name,
             quantity
         })).sort((a, b) => a.name.localeCompare(b.name, 'he'));
-
         res.json(sortedReport);
 
     } catch (error) {
         res.status(500).json({ message: 'Server Error: ' + error.message });
     }
 };
+
 export const getDeliveryReport = async (req, res) => {
     const { deliveryDate } = req.query;
     if (!deliveryDate) {
@@ -285,12 +312,7 @@ export const getDeliveryReport = async (req, res) => {
 
     try {
         const orders = await Order.find({ deliveryDate }).populate('user', 'name');
-        
-        const finalReport = {
-            pickups: [],
-            deliveries: {}
-        };
-
+        const finalReport = { pickups: [], deliveries: {} };
         orders.forEach(order => {
             if (order.fulfillmentType === 'Pickup') {
                 finalReport.pickups.push({
@@ -301,7 +323,7 @@ export const getDeliveryReport = async (req, res) => {
                     totalPrice: order.totalPrice,
                     fulfillmentDetails: order.fulfillmentDetails
                 });
-            } else { // fulfillmentType === 'Delivery'
+            } else { 
                 const city = order.shippingDetails.city;
                 if (!finalReport.deliveries[city]) {
                     finalReport.deliveries[city] = [];
@@ -310,7 +332,6 @@ export const getDeliveryReport = async (req, res) => {
                     orderId: order._id.toString().substring(18).toUpperCase(),
                     customerName: order.shippingDetails.customerName,
                     phone: order.shippingDetails.phone,
-                    // --- פיצול הכתובת לשדות נפרדים ---
                     streetAddress: order.shippingDetails.streetAddress,
                     city: order.shippingDetails.city,
                     floor: order.shippingDetails.floor || '-',
@@ -319,9 +340,8 @@ export const getDeliveryReport = async (req, res) => {
                 });
             }
         });
-        
-        finalReport.pickups.sort((a, b) => a.customerName.localeCompare(b.customerName, 'he'));
 
+        finalReport.pickups.sort((a, b) => a.customerName.localeCompare(b.customerName, 'he'));
         res.json(finalReport);
 
     } catch (error) {
@@ -329,13 +349,6 @@ export const getDeliveryReport = async (req, res) => {
     }
 };
 
-// @desc    Create a new delivery center
-// @route   POST /api/admin/delivery-centers
-// @access  Admin
-
-// @desc    Get delivery center by ID
-// @route   GET /api/admin/delivery-centers/:id
-// @access  Admin
 export const getDeliveryCenterById = async (req, res) => {
   try {
     const center = await DeliveryCenter.findById(req.params.id);
@@ -349,16 +362,7 @@ export const getDeliveryCenterById = async (req, res) => {
   }
 };
 
-// @desc    Update a delivery center
-// @route   PUT /api/admin/delivery-centers/:id
-// @access  Admin
-
-// @desc    Delete a delivery center
-// @route   DELETE /api/admin/delivery-centers/:id
-// @access  Admin
-
 // --- Category Management ---
-
 export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find({}).sort({ displayOrder: 1 });
@@ -409,10 +413,6 @@ export const deleteCategory = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION ---
-// @desc    Get all existing product category keys from the schema
-// @route   GET /api/admin/product-categories
-// @access  Admin
 export const getProductCategoryKeys = async (req, res) => {
   try {
     const categoryKeys = Product.schema.path('category').enumValues;
@@ -422,7 +422,7 @@ export const getProductCategoryKeys = async (req, res) => {
   }
 };
 
-
+// --- Coupon Management ---
 export const getCoupons = async (req, res) => {
     try {
         const coupons = await Coupon.find({}).sort({ createdAt: -1 });
@@ -489,7 +489,9 @@ export const deleteCoupon = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }
-};export const getGeneralSettings = async (req, res) => {
+};
+
+export const getGeneralSettings = async (req, res) => {
     try {
         let settings = await GeneralSettings.findOne({ identifier: 'main' });
         if (!settings) {
@@ -515,8 +517,7 @@ export const updateGeneralSettings = async (req, res) => {
     }
 };
 
-
-// --- Global Delivery Dates Management (NEW) ---
+// --- Global Delivery Dates Management ---
 export const getDeliveryDates = async (req, res) => {
   try {
     const dates = await DeliveryDate.find({}).sort({ date: 1 });
@@ -530,7 +531,7 @@ export const createDeliveryDate = async (req, res) => {
   try {
     const { date } = req.body;
     if (!date) return res.status(400).json({ message: 'Date is required' });
-    
+
     const newDate = new DeliveryDate({ date, isActive: true });
     const savedDate = await newDate.save();
     res.status(201).json(savedDate);
@@ -554,8 +555,6 @@ export const deleteDeliveryDate = async (req, res) => {
   }
 };
 
-
-
 const ensureBaseDeliveryZones = async () => {
     const requiredZones = ['צפון', 'מרכז', 'דרום', 'אזורים נבחרים'];
     for (const zoneName of requiredZones) {
@@ -572,7 +571,6 @@ const ensureBaseDeliveryZones = async () => {
     }
 };
 
-// --- Delivery Centers (Zones & Pickups) Management (UPDATED LOGIC) ---
 export const getDeliveryCenters = async (req, res) => {
   try {
     await ensureBaseDeliveryZones();
@@ -601,7 +599,7 @@ export const updateDeliveryCenter = async (req, res) => {
     try {
         const { id } = req.params;
         const { price, cities, isActive, availableDates, name, address } = req.body;
-        
+
         const center = await DeliveryCenter.findById(id);
         if(!center) {
             return res.status(404).json({ message: 'Center not found' });
@@ -610,14 +608,13 @@ export const updateDeliveryCenter = async (req, res) => {
         if (center.type === 'DeliveryZone') {
             if (price !== undefined) center.price = price;
             if (cities !== undefined) center.cities = cities;
-        } else { // Pickup
+        } else { 
             if (name !== undefined) center.name = name;
             if (address !== undefined) center.address = address;
             if (availableDates !== undefined) center.availableDates = availableDates;
         }
-        
+
         if (isActive !== undefined) center.isActive = isActive;
-        
         const updatedCenter = await center.save();
         res.json(updatedCenter);
 

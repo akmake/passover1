@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 
-// יצרנו תבנית קטנה עבור שדה טקסט שצריך להיות דו-לשוני
+// הגדרת סכמה גמישה יותר לטקסט - אנגלית לא חובה
 const localizedStringSchema = {
   he: { type: String, required: true, trim: true },
-  en: { type: String, required: true, trim: true },
+  en: { type: String, default: '' } // <-- השינוי: לא חובה, ברירת מחדל ריקה
 };
 
-const choiceRuleSchema = new mongoose.Schema({ // <-- שם התבנית הוא choiceRuleSchema
+const choiceRuleSchema = new mongoose.Schema({
   category: { type: String, required: true },
   quantityToChoose: { type: Number, required: true },
   options: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
@@ -24,9 +24,7 @@ const mealPackageSchema = new mongoose.Schema({
   image: { type: String, required: false },
   isActive: { type: Boolean, default: true },
   fixedItems: [fixedItemSchema],
-  
-  // -- התיקון נמצא כאן --
-  choiceRules: [choiceRuleSchema], // השתמשנו בשם הנכון של התבנית
+  choiceRules: [choiceRuleSchema], 
 
 }, { timestamps: true });
 

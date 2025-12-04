@@ -1,210 +1,422 @@
-// client/src/pages/admin/AdminPackageCreatePage.jsx
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { Button } from '@/components/ui/Button';
-import { LoaderCircle, ArrowRight, PlusCircle, XCircle } from 'lucide-react';
+import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X } from 'lucide-react';
+import Modal from '@/components/ui/Modal'; // וודא שיש לך את הקומפוננטה הזו משיחות קודמות
+
+// מילון קטגוריות לעברית
+const CATEGORY_LABELS = {
+    'salad': 'סלטים',
+    'fish': 'דגים',
+    'appetizer': 'מנות ביניים',
+    'soup': 'מרקים',
+    'main_course': 'מנות עיקריות',
+    'side_dish': 'תוספות',
+    'dairy': 'חלבי',
+    'dessert': 'קינוחים',
+    'drink': 'שתייה',
+    'seder_plate': 'קערת ליל הסדר'
+};
 
 const AdminPackageCreatePage = () => {
-    // הוספנו תמיכה בשפות גם כאן
+    // State
     const [name, setName] = useState({ he: '', en: '' });
     const [description, setDescription] = useState({ he: '', en: '' });
     const [price, setPrice] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [fixedItems, setFixedItems] = useState([]);
     const [choiceRules, setChoiceRules] = useState([]);
-
     const [allProducts, setAllProducts] = useState([]);
-    const [productCategories, setProductCategories] = useState([]);
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-    const [activeLang, setActiveLang] = useState('he'); // לשוניות שפה
+    const [activeLang, setActiveLang] = useState('he');
 
+    // Modal State for Fixed Items
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [productSearch, setProductSearch] = useState('');
+
+    const navigate = useNavigate();
+
+    // Fetch Products
     useEffect(() => {
         const fetchProducts = async () => {
-            const { data } = await api.get('/api/admin/products', { withCredentials: true });
-            setAllProducts(data);
-            // חילוץ דינמי של הקטגוריות הקיימות
-            const categories = [...new Set(data.map(p => p.category))];
-            setProductCategories(categories);
+            try {
+                const { data } = await api.get('/api/admin/products', { withCredentials: true });
+                setAllProducts(data);
+            } catch (err) {
+                console.error("Failed to load products", err);
+            }
         };
         fetchProducts();
     }, []);
 
-    const addFixedItem = () => setFixedItems([...fixedItems, { product: '', quantity: 1 }]);
+    // --- Helpers for Grouping ---
+    const productsByCategory = useMemo(() => {
+        const groups = {};
+        allProducts.forEach(p => {
+            const cat = p.category || 'other';
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(p);
+        });
+        return groups;
+    }, [allProducts]);
+
+    const categoriesList = useMemo(() => {
+        return Object.keys(productsByCategory).sort((a, b) => {
+            // מיון לפי סדר לוגי אם רוצים, כרגע לפי א-ב של המפתח או לפי המילון
+            return (CATEGORY_LABELS[a] || a).localeCompare(CATEGORY_LABELS[b] || b, 'he');
+        });
+    }, [productsByCategory]);
+
+    // --- Fixed Items Logic ---
+    const handleAddFixedItem = (product) => {
+        // בודק אם כבר קיים
+        const exists = fixedItems.find(item => item.product === product._id);
+        if (exists) {
+            // אם קיים, נגדיל כמות
+            setFixedItems(prev => prev.map(item => item.product === product._id ? { ...item, quantity: item.quantity + 1 } : item));
+        } else {
+            setFixedItems([...fixedItems, { product: product._id, quantity: 1, _productDetails: product }]);
+        }
+        setIsProductModalOpen(false); // סוגר מודל אחרי בחירה
+    };
+
     const removeFixedItem = (index) => setFixedItems(fixedItems.filter((_, i) => i !== index));
-    const handleFixedItemChange = (index, field, value) => {
+    
+    const updateFixedItemQty = (index, newQty) => {
         const updated = [...fixedItems];
-        updated[index][field] = value;
+        updated[index].quantity = Number(newQty);
         setFixedItems(updated);
     };
 
-    const addChoiceRule = () => setChoiceRules([...choiceRules, { category: '', quantityToChoose: 1, options: [] }]);
+    // --- Choice Rules Logic ---
+    const addChoiceRule = () => {
+        setChoiceRules([...choiceRules, { 
+            category: 'בחירה חדשה', // כותרת ברירת מחדל בעברית
+            quantityToChoose: 1, 
+            options: [] 
+        }]);
+    };
+
     const removeChoiceRule = (index) => setChoiceRules(choiceRules.filter((_, i) => i !== index));
-    const handleChoiceRuleChange = (index, field, value) => {
+    
+    const updateChoiceRule = (index, field, value) => {
         const updated = [...choiceRules];
         updated[index][field] = value;
         setChoiceRules(updated);
     };
 
-    const handleOptionToggle = (ruleIndex, optionId) => {
+    const toggleProductInRule = (ruleIndex, productId) => {
         const updatedRules = [...choiceRules];
-        const currentOptions = new Set(updatedRules[ruleIndex].options);
-        if (currentOptions.has(optionId)) {
-            currentOptions.delete(optionId);
+        const currentOptions = updatedRules[ruleIndex].options;
+        
+        if (currentOptions.includes(productId)) {
+            updatedRules[ruleIndex].options = currentOptions.filter(id => id !== productId);
         } else {
-            currentOptions.add(optionId);
+            updatedRules[ruleIndex].options = [...currentOptions, productId];
         }
-        updatedRules[ruleIndex].options = Array.from(currentOptions);
         setChoiceRules(updatedRules);
     };
 
-    const handleSelectCategory = (ruleIndex, category) => {
-        const productIdsInCategory = allProducts.filter(p => p.category === category).map(p => p._id);
+    const toggleCategoryInRule = (ruleIndex, categoryKey) => {
+        const productsInCat = productsByCategory[categoryKey] || [];
+        const idsInCat = productsInCat.map(p => p._id);
+        
         const updatedRules = [...choiceRules];
-        const currentOptions = new Set(updatedRules[ruleIndex].options);
-        productIdsInCategory.forEach(id => currentOptions.add(id));
-        updatedRules[ruleIndex].options = Array.from(currentOptions);
+        const currentOptions = updatedRules[ruleIndex].options;
+
+        // בודק אם כל המוצרים בקטגוריה הזו כבר נבחרו
+        const allSelected = idsInCat.every(id => currentOptions.includes(id));
+
+        if (allSelected) {
+            // הסר את כולם
+            updatedRules[ruleIndex].options = currentOptions.filter(id => !idsInCat.includes(id));
+        } else {
+            // הוסף את החסרים
+            const newOptions = new Set([...currentOptions, ...idsInCat]);
+            updatedRules[ruleIndex].options = Array.from(newOptions);
+        }
         setChoiceRules(updatedRules);
     };
 
+    // --- Submit ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const validFixedItems = fixedItems.filter(item => item.product);
-            
-            // המרה קריטית: לוודא ש quantityToChoose הוא מספר
-            const sanitizedRules = choiceRules.map(rule => ({
-                ...rule,
-                quantityToChoose: Number(rule.quantityToChoose)
-            }));
-
             const packageData = {
                 name,
                 description,
                 price: Number(price),
                 isActive,
-                fixedItems: validFixedItems,
-                choiceRules: sanitizedRules
+                fixedItems: fixedItems.map(i => ({ product: i.product, quantity: i.quantity })),
+                choiceRules: choiceRules.map(r => ({ ...r, quantityToChoose: Number(r.quantityToChoose) }))
             };
 
             await api.post('/api/admin/packages', packageData, { withCredentials: true });
             navigate('/admin/packages');
         } catch (error) {
-            alert(error.response?.data?.message || "Failed to create package");
-            console.error("Failed to create package", error);
+            alert(error.response?.data?.message || "שגיאה ביצירת החבילה");
         } finally {
             setLoading(false);
         }
     };
 
-    // טיפול בטקסט דו לשוני
     const handleNameChange = (val) => setName(prev => ({ ...prev, [activeLang]: val }));
     const handleDescChange = (val) => setDescription(prev => ({ ...prev, [activeLang]: val }));
 
     return (
-        <div>
-            <div className="flex items-center mb-6"><Link to="/admin/packages"><ArrowRight/></Link><h1 className="text-3xl font-bold mr-4">הוספת חבילה חדשה</h1></div>
-            
-            <div className="flex border-b mb-6">
-                <button type="button" onClick={() => setActiveLang('he')} className={`px-4 py-2 text-sm font-medium ${activeLang === 'he' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}>עברית</button>
-                <button type="button" onClick={() => setActiveLang('en')} className={`px-4 py-2 text-sm font-medium ${activeLang === 'en' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}>English</button>
+        <div className="max-w-5xl mx-auto pb-20">
+            {/* Header */}
+            <div className="flex items-center mb-6 gap-4">
+                <Link to="/admin/packages" className="p-2 rounded-full hover:bg-gray-100 transition"><ArrowRight className="h-6 w-6 text-gray-600"/></Link>
+                <h1 className="text-3xl font-bold text-gray-800">יצירת חבילה חדשה</h1>
+            </div>
+
+            {/* Language Tabs */}
+            <div className="flex gap-2 mb-6 border-b border-gray-200">
+                <button type="button" onClick={() => setActiveLang('he')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'he' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>עברית</button>
+                <button type="button" onClick={() => setActiveLang('en')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'en' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>English</button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-4">פרטים בסיסיים</h2>
+                
+                {/* 1. Basic Info */}
+                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+                        פרטי החבילה
+                    </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium mb-1">שם החבילה ({activeLang})</label>
-                            <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2 border border-gray-300 rounded-md" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                            <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="לדוגמה: ארוחת חג זוגית" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">מחיר (₪)</label>
-                            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full p-2 border border-gray-300 rounded-md" />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
+                            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium mb-1">תיאור ({activeLang})</label>
-                            <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" rows={3} />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                            <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} placeholder="תיאור קצר של מה כלול בחבילה..." />
+                        </div>
+                        <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg md:col-span-2 border border-blue-100">
+                            <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                            <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה ומוצגת באתר</label>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">פריטים קבועים</h2>
-                        <Button type="button" variant="ghost" onClick={addFixedItem}><PlusCircle className="mr-2"/>הוסף פריט קבוע</Button>
+                {/* 2. Fixed Items */}
+                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-green-500 rounded-full"></span>
+                            פריטים קבועים (מה הלקוח מקבל בטוח)
+                        </h2>
+                        <Button type="button" onClick={() => setIsProductModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white gap-2 rounded-full px-6">
+                            <Plus size={18} /> הוסף מוצר
+                        </Button>
                     </div>
-                    <div className="space-y-4">
-                        {fixedItems.map((item, index) => (
-                            <div key={index} className="flex items-center gap-4">
-                                <select value={item.product} onChange={(e) => handleFixedItemChange(index, 'product', e.target.value)} className="flex-grow p-2 border rounded-md">
-                                    <option value="">בחר מוצר...</option>
-                                    {allProducts.map(p => <option key={p._id} value={p._id}>{p.name?.he || p.name}</option>)}
-                                </select>
-                                <input type="number" value={item.quantity} onChange={(e) => handleFixedItemChange(index, 'quantity', e.target.value)} min="1" className="w-20 p-2 border rounded-md" />
-                                <Button type="button" variant="destructive" size="sm" onClick={() => removeFixedItem(index)}><XCircle/></Button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">חוקי בחירה (מה הלקוח בוחר)</h2>
-                        <Button type="button" variant="ghost" onClick={addChoiceRule}><PlusCircle className="mr-2"/>הוסף חוק בחירה</Button>
-                    </div>
-                    <div className="space-y-6">
-                        {choiceRules.map((rule, index) => (
-                            <div key={index} className="border p-4 rounded-lg bg-gray-50">
-                                <div className="flex justify-end mb-2">
-                                    <Button type="button" variant="destructive" size="sm" onClick={() => removeChoiceRule(index)}>הסר חוק</Button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה (לדוג': בחירה למנה עיקרית)</label>
-                                        <input type="text" value={rule.category} onChange={(e) => handleChoiceRuleChange(index, 'category', e.target.value)} className="w-full p-2 border rounded-md" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1">כמות שהלקוח יכול לבחור</label>
-                                        <input type="number" value={rule.quantityToChoose} onChange={(e) => handleChoiceRuleChange(index, 'quantityToChoose', e.target.value)} min="1" className="w-full p-2 border rounded-md" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">מוצרים זמינים לבחירה בחוק זה:</label>
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                        {productCategories.map(cat => (
-                                            <Button type="button" variant="outline" size="sm" key={cat} onClick={() => handleSelectCategory(index, cat)}>
-                                                הוסף הכל מ"{cat}"
-                                            </Button>
-                                        ))}
-                                    </div>
-                                    <div className="w-full h-48 p-2 border rounded-md overflow-y-auto bg-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                        {allProducts.map(p => (
-                                            <label key={p._id} className="flex items-center p-1 hover:bg-gray-100 rounded cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={rule.options.includes(p._id)}
-                                                    onChange={() => handleOptionToggle(index, p._id)}
-                                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    {fixedItems.length === 0 ? (
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 text-gray-400">
+                            לא נבחרו פריטים קבועים עדיין.
+                        </div>
+                    ) : (
+                        <div className="grid gap-3">
+                            {fixedItems.map((item, index) => {
+                                // מנסים למצוא את פרטי המוצר המלאים (או מהסטייט או מהמערך הראשי)
+                                const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
+                                const prodName = productDetails?.name?.he || productDetails?.name || 'מוצר לא נמצא';
+                                
+                                return (
+                                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>
+                                            <span className="font-medium text-gray-800">{prodName}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
+                                                <span className="text-xs text-gray-500">כמות:</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="1" 
+                                                    value={item.quantity} 
+                                                    onChange={(e) => updateFixedItemQty(index, e.target.value)}
+                                                    className="w-12 text-center outline-none font-bold"
                                                 />
-                                                <span className="mr-2 text-sm">{p.name?.he || p.name}</span>
-                                            </label>
-                                        ))}
+                                            </div>
+                                            <button type="button" onClick={() => removeFixedItem(index)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
+
+                {/* 3. Choice Rules */}
+                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                            חוקי בחירה (מה הלקוח בוחר)
+                        </h2>
+                        <Button type="button" onClick={addChoiceRule} className="bg-purple-600 hover:bg-purple-700 text-white gap-2 rounded-full px-6">
+                            <Plus size={18} /> הוסף קטגוריית בחירה
+                        </Button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {choiceRules.map((rule, ruleIndex) => (
+                            <div key={ruleIndex} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                {/* Rule Header */}
+                                <div className="bg-gray-50 p-4 border-b border-gray-200 flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
+                                    <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה (לדוג': בחירה למנה עיקרית)</label>
+                                            <input 
+                                                type="text" 
+                                                value={rule.category} 
+                                                onChange={(e) => updateChoiceRule(ruleIndex, 'category', e.target.value)} 
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">כמות לבחירה</label>
+                                            <input 
+                                                type="number" 
+                                                min="1" 
+                                                value={rule.quantityToChoose} 
+                                                onChange={(e) => updateChoiceRule(ruleIndex, 'quantityToChoose', e.target.value)} 
+                                                className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <button type="button" onClick={() => removeChoiceRule(ruleIndex)} className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition flex items-center gap-1 text-sm font-medium">
+                                        <Trash2 size={16} /> הסר חוק
+                                    </button>
+                                </div>
+
+                                {/* Product Selection Area */}
+                                <div className="p-4 bg-white">
+                                    <p className="text-sm font-medium text-gray-700 mb-3">סמן את המוצרים שהלקוח יכול לבחור בקטגוריה זו:</p>
+                                    
+                                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                        {categoriesList.map(catKey => {
+                                            const productsInThisCat = productsByCategory[catKey];
+                                            if (!productsInThisCat) return null;
+
+                                            // בדיקה אם כל המוצרים בקטגוריה זו נבחרו
+                                            const allSelected = productsInThisCat.every(p => rule.options.includes(p._id));
+                                            const someSelected = productsInThisCat.some(p => rule.options.includes(p._id));
+
+                                            return (
+                                                <div key={catKey} className="border border-gray-100 rounded-lg p-3">
+                                                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
+                                                        <h4 className="font-bold text-gray-700">{CATEGORY_LABELS[catKey] || catKey}</h4>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => toggleCategoryInRule(ruleIndex, catKey)}
+                                                            className={`text-xs font-medium px-2 py-1 rounded transition-colors ${allSelected ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                                                        >
+                                                            {allSelected ? 'הסר הכל' : 'בחר הכל בקטגוריה'}
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                        {productsInThisCat.map(product => {
+                                                            const isSelected = rule.options.includes(product._id);
+                                                            return (
+                                                                <label 
+                                                                    key={product._id} 
+                                                                    className={`flex items-center p-2 rounded cursor-pointer transition-all border ${isSelected ? 'bg-purple-50 border-purple-200 text-purple-900' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
+                                                                >
+                                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center mr-2 transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'}`}>
+                                                                        {isSelected && <Check size={10} className="text-white" />}
+                                                                    </div>
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        className="hidden" 
+                                                                        checked={isSelected} 
+                                                                        onChange={() => toggleProductInRule(ruleIndex, product._id)} 
+                                                                    />
+                                                                    <span className="text-sm truncate select-none" title={product.name?.he || product.name}>
+                                                                        {product.name?.he || product.name}
+                                                                    </span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
                         ))}
+                        {choiceRules.length === 0 && (
+                            <div className="text-center py-10 text-gray-400">
+                                לחץ על "הוסף קטגוריית בחירה" כדי להתחיל.
+                            </div>
+                        )}
                     </div>
-                </div>
+                </section>
 
-                <div className="flex justify-end gap-4 pb-10">
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/packages')}>ביטול</Button>
-                    <Button type="submit" disabled={loading}>{loading ? 'שומר...' : 'שמור חבילה'}</Button>
+                {/* Footer Buttons */}
+                <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/packages')} className="border-gray-300">ביטול</Button>
+                    <Button type="submit" disabled={loading} className="px-8 text-lg">
+                        {loading ? <LoaderCircle className="animate-spin" /> : 'צור חבילה'}
+                    </Button>
                 </div>
             </form>
+
+            {/* --- Modal for Selecting Fixed Items --- */}
+            <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="בחר מוצר להוספה">
+                <div className="mb-4 relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input 
+                        type="text" 
+                        placeholder="חפש מוצר..." 
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto space-y-6">
+                    {categoriesList.map(catKey => {
+                        // סינון לפי חיפוש
+                        const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
+                            const name = p.name?.he || p.name || '';
+                            return name.toLowerCase().includes(productSearch.toLowerCase());
+                        });
+
+                        if (filteredProducts.length === 0) return null;
+
+                        return (
+                            <div key={catKey}>
+                                <h3 className="font-bold text-gray-800 bg-gray-100 p-2 rounded mb-2 sticky top-0">{CATEGORY_LABELS[catKey] || catKey}</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {filteredProducts.map(product => (
+                                        <button 
+                                            key={product._id} 
+                                            onClick={() => handleAddFixedItem(product)}
+                                            className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
+                                        >
+                                            <span className="font-medium text-gray-700 group-hover:text-blue-600">{product.name?.he || product.name}</span>
+                                            <span className="text-sm text-gray-400">₪{product.price}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </Modal>
         </div>
     );
 };
