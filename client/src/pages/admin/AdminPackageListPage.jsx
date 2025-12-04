@@ -8,6 +8,14 @@ const AdminPackageListPage = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // פונקציית עזר למניעת קריסה (כמו שעשינו בקבצים האחרים)
+  const getSafeName = (nameObj) => {
+    if (!nameObj) return 'ללא שם';
+    if (typeof nameObj === 'string') return nameObj;
+    // מחזיר את השם בעברית, או באנגלית, או מחרוזת ריקה - לעולם לא אובייקט!
+    return nameObj?.he || nameObj?.en || '';
+  };
+
   useEffect(() => {
     fetchPackages();
   }, []);
@@ -43,6 +51,7 @@ const AdminPackageListPage = () => {
         <h1 className="text-3xl font-bold">ניהול חבילות</h1>
         <Button asChild><Link to="/admin/packages/new">הוסף חבילה חדשה</Link></Button>
       </div>
+
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -56,11 +65,13 @@ const AdminPackageListPage = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {packages.map((pkg) => (
               <tr key={pkg._id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{pkg.name}</td>
+                {/* כאן היה ה-BUG: החלפנו את pkg.name ב-getSafeName(pkg.name) */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {getSafeName(pkg.name)}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₪{pkg.price}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">{pkg.isActive ? 'כן' : 'לא'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                  {/* --- תיקון הכפתור --- */}
                   <Link to={`/admin/packages/${pkg._id}/edit`} className="text-blue-600 hover:text-blue-900 ml-4">ערוך</Link>
                   <button onClick={() => handleDelete(pkg._id)} className="text-red-600 hover:text-red-900">מחק</button>
                 </td>
