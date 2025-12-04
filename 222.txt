@@ -255,6 +255,7 @@
       📁 he/
         📄 translation.json
     📄 logo.png
+    📁 uploads/
     📄 vite.svg
   📁 src/
     📄 App.css
@@ -402,9 +403,11 @@
       import axios from 'axios';
       import { useAuthStore } from './stores/authStore';
       
-      // תיקון "כוח גס": אם המשתנה לא נקלט, השתמש בכתובת השרת הישירה
-      const baseURL = 'https://passover1.onrender.com';
-      console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לראות בקונסול
+      // --- התיקון: שימוש במשתנה סביבה במקום כתובת קבועה ---
+      // אם מוגדר VITE_API_BASE_URL (בקובץ .env) נשתמש בו, אחרת ברירת מחדל ל-Localhost
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      
+      console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לוודא בקונסול שזה עובד
       
       const api = axios.create({
           baseURL: baseURL,
@@ -433,11 +436,11 @@
               if (error.response?.status === 401 && !originalRequest._retry) {
                   originalRequest._retry = true;
                   try {
-                      // שימוש ב-baseURL המפורש
+                      // שימוש ב-baseURL המפורש לרענון הטוקן
                       const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
                       useAuthStore.getState().login(refreshedUserData);
       
-                      // עדכון ה-baseURL לבקשה החוזרת
+                      // עדכון ה-baseURL לבקשה החוזרת כדי למנוע שימוש בכתובת שגויה
                       originalRequest.baseURL = baseURL;
                       return api(originalRequest);
                   } catch (refreshError) {
@@ -717,8 +720,8 @@
         import { useScroll } from '@/hooks/useScroll';
         import LanguageSwitcher from './LanguageSwitcher';
         
-        // עדכון צבעי הלינקים לרקע כהה
-        const navLinkBase = "relative inline-flex items-center px-1 py-2 text-slate-300 transition-colors duration-200 " + "hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 " + "after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 " + "after:bg-amber-400 after:transition-all after:duration-300";
+        // הגדרת סגנונות הלינקים
+        const navLinkBase = "relative inline-flex items-center px-1 py-2 text-slate-300 transition-colors duration-200 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-amber-400 after:transition-all after:duration-300";
         const navLinkActive = "text-white font-semibold after:w-full";
         
         function getInitials(name) {
@@ -767,8 +770,7 @@
               if (e.key === 'Escape') {
                 e.preventDefault();
                 closeUserMenu();
-                if (userMenuButtonRef.current)
-                  userMenuButtonRef.current.focus();
+                if (userMenuButtonRef.current) userMenuButtonRef.current.focus();
               }
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -781,12 +783,12 @@
           }, [isUserMenuOpen, closeUserMenu]);
         
           return (
-            // שינוי הרקע לשחור/כהה מאוד עם גבול עדין
-            <header className={["sticky top-0 z-50 transition-all duration-300 border-b border-white/10", isScrolled ? "backdrop-blur-md bg-black/90 shadow-md" : "bg-black/80 backdrop-blur-sm"].join(' ')}>
+            // תיקון: רקע שחור מלא (bg-black) ללא שקיפות וללא Blur כדי לקבל צבע חזק
+            <header className={`sticky top-0 z-50 transition-all duration-300 border-b border-white/10 bg-black shadow-md`}>
               <nav className="container mx-auto px-4">
                 <div className="flex items-center justify-between py-3">
+        
                   <Link to="/" className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 rounded-lg group">
-                    {/* הוספת פילטר ללוגו כדי שיראה טוב על שחור במידה והוא לא שקוף */}
                     <img src="/logo.png" alt="לוגו ציפורי - בית האוכל היהודי" className="h-14 sm:h-16 select-none transition-transform group-hover:scale-105" draggable={false} />
                     <div className="hidden sm:flex flex-col leading-tight">
                       <span className="text-xl font-semibold text-white tracking-wide">צפורי</span>
@@ -809,7 +811,6 @@
                   </div>
         
                   <div className="flex items-center gap-2 sm:gap-4 h-full">
-                    {/* התאמת כפתור שפה: ללא רקע, ללא החלפת צבעים, מודגש מאוד */}
                     <div className="text-slate-300 font-bold select-none">
                         <LanguageSwitcher />
                     </div>
@@ -826,7 +827,6 @@
         
                     {isAuthenticated ? (
                       <div className="relative" ref={userMenuRef}>
-                        {/* כפתור פרופיל מינימליסטי - ללא רקע צבעוני */}
                         <button ref={userMenuButtonRef} onClick={() => setIsUserMenuOpen(v => !v)} className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-transparent border border-slate-600 text-slate-200 hover:text-white hover:border-white hover:bg-white/10 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50" aria-haspopup="menu" aria-expanded={isUserMenuOpen} aria-label={t('userMenu.label')} title={t('userMenu.profile')}>
                           <span className="text-sm font-medium">
                             {getInitials(user?.name)}
@@ -862,9 +862,8 @@
                       </div>
                     )}
         
-                    {/* בד"ץ: המיקום הוזז לסוף (ימין), ונוספו הגדרות גובה מלא וביטול שוליים */}
                     <div className="flex items-center h-20 -my-4 ml-2 border-l border-white/10 pl-4">
-                       <img src="/bdz.svg" alt="סמל כשרות בד&quot;ץ" className="h-full w-auto select-none object-contain" draggable={false} />
+                      <img src="/bdz.svg" alt="סמל כשרות בד&quot;ץ" className="h-full w-auto select-none object-contain" draggable={false} />
                     </div>
         
                   </div>
@@ -993,10 +992,11 @@
         import TextAlign from '@tiptap/extension-text-align';
         import { Color } from '@tiptap/extension-color';
         import { TextStyle } from '@tiptap/extension-text-style';
+        import FontFamily from '@tiptap/extension-font-family'; // ייבוא התוסף החדש
         import { Bold, Italic, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
-        
-        // הרחבה מותאמת אישית המאפשרת שימוש ב-setFontSize
         import { Extension } from '@tiptap/core';
+        
+        // הרחבה מותאמת אישית המאפשרת שימוש ב-setFontSize (נשמר מהקוד הקודם)
         const FontSizeExtension = Extension.create({
             name: 'fontSize',
             addOptions() { return { types: ['textStyle'] }; },
@@ -1014,7 +1014,18 @@
             },
         });
         
-        const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px', '48px', '60px', '72px'];
+        const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px', '48px', '60px', '72px', '96px'];
+        
+        // רשימת גופנים פופולריים בעברית
+        const FONT_FAMILIES = [
+            { name: 'ברירת מחדל', value: '' },
+            { name: 'אריאל (Arial)', value: 'Arial, sans-serif' },
+            { name: 'רוביק (Rubik)', value: "'Rubik', sans-serif" },
+            { name: 'היבו (Heebo)', value: "'Heebo', sans-serif" },
+            { name: 'פרנק ריהל (Frank Ruhl)', value: "'Frank Ruhl Libre', serif" },
+            { name: 'קוריער (Courier)', value: "'Courier New', Courier, monospace" },
+            { name: 'ורדנה (Verdana)', value: 'Verdana, sans-serif' },
+        ];
         
         const Toolbar = ({ editor }) => {
           if (!editor) return null;
@@ -1026,9 +1037,29 @@
           );
         
           const currentFontSize = editor.getAttributes('textStyle').fontSize || '';
+          const currentFontFamily = editor.getAttributes('textStyle').fontFamily || '';
         
           return (
             <div className="flex flex-wrap items-center gap-2 border border-gray-300 bg-gray-50 p-2 rounded-t-md">
+        
+                {/* בחירת גופן */}
+                <select
+                    value={currentFontFamily}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        if (value) {
+                            editor.chain().focus().setFontFamily(value).run();
+                        } else {
+                            editor.chain().focus().unsetFontFamily().run();
+                        }
+                    }}
+                    className="p-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 max-w-[120px]"
+                >
+                    <option value="" disabled>גופן</option>
+                    {FONT_FAMILIES.map(font => <option key={font.name} value={font.value}>{font.name}</option>)}
+                </select>
+        
+                {/* בחירת גודל */}
                 <select
                     value={currentFontSize}
                     onChange={(e) => {
@@ -1041,17 +1072,23 @@
                     }}
                     className="p-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                 >
-                    <option value="">גודל טקסט</option>
+                    <option value="">גודל</option>
                     {FONT_SIZES.map(size => <option key={size} value={size}>{size.replace('px', '')}</option>)}
                 </select>
         
                 <div className="w-[1px] h-6 bg-gray-300 mx-1" />
+        
                 <ToggleButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold className="h-4 w-4" /></ToggleButton>
                 <ToggleButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic className="h-4 w-4" /></ToggleButton>
+        
                 <div className="w-[1px] h-6 bg-gray-300 mx-1" />
+        
                 <ToggleButton onClick={() => editor.chain().focus().setTextAlign('left').run()} isActive={editor.isActive({ textAlign: 'left' })}><AlignLeft className="h-4 w-4" /></ToggleButton>
                 <ToggleButton onClick={() => editor.chain().focus().setTextAlign('center').run()} isActive={editor.isActive({ textAlign: 'center' })}><AlignCenter className="h-4 w-4" /></ToggleButton>
                 <ToggleButton onClick={() => editor.chain().focus().setTextAlign('right').run()} isActive={editor.isActive({ textAlign: 'right' })}><AlignRight className="h-4 w-4" /></ToggleButton>
+        
+                <div className="w-[1px] h-6 bg-gray-300 mx-1" />
+        
                 <input type="color" onInput={event => editor.chain().focus().setColor(event.target.value).run()} value={editor.getAttributes('textStyle').color || '#000000'} className="w-8 h-8 p-0 border-none cursor-pointer bg-transparent"/>
             </div>
           );
@@ -1060,23 +1097,24 @@
         const RichTextEditor = ({ content, onChange }) => {
           const editor = useEditor({
             extensions: [
-              StarterKit.configure({ heading: false }), // מסירים את הגדרות ברירת המחדל של הכותרות
+              StarterKit.configure({ heading: false }),
               TextAlign.configure({ types: ['paragraph'] }),
               TextStyle,
+              FontFamily, // הוספת התוסף לעורך
               Color,
-              FontSizeExtension, // הוספת ההרחבה החדשה
+              FontSizeExtension,
             ],
             content: content,
             onUpdate: ({ editor }) => { onChange(editor.getHTML()); },
             editorProps: {
-                attributes: { class: 'prose prose-sm sm:prose-base max-w-none m-5 focus:outline-none' },
+                attributes: { class: 'prose prose-sm sm:prose-base max-w-none m-5 focus:outline-none min-h-[100px]' },
             }
           });
         
           return (
-            <div className="border border-gray-300 rounded-md">
+            <div className="border border-gray-300 rounded-md bg-white">
               <Toolbar editor={editor} />
-              <EditorContent editor={editor} className="min-h-[150px]" />
+              <EditorContent editor={editor} />
             </div>
           );
         };
@@ -2868,7 +2906,6 @@
         import { LoaderCircle } from 'lucide-react';
         import DOMPurify from 'dompurify';
         import { useTranslation } from 'react-i18next';
-        // --- תיקון: ייבוא פונקציית העזר לתמונות ---
         import { toAbsoluteUrl } from '@/utils/url';
         
         const HeroSection = ({ content }) => {
@@ -2884,7 +2921,6 @@
           }, [content]);
         
           const currentSlide = content.slides?.[currentIndex] || {};
-          // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
           const heroUrl = toAbsoluteUrl(currentSlide.image);
           const heroHeight = content.height || 75;
         
@@ -2895,11 +2931,14 @@
                   backgroundColor: '#333',
                   minHeight: `${heroHeight}vh`
             }}>
-              <div className="absolute inset-0 bg-black/50" />
-              <div className="relative z-10 max-w-4xl mx-auto px-6">
-                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
-                <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.subheadline) }} />
-                <Button asChild size="lg" className="mt-8"><Link to="/menu">לתפריט המלא</Link></Button>
+              {/* השינוי: bg-black/20 במקום bg-black/50
+                 זה הופך את התמונה לבהירה וברורה הרבה יותר
+              */}
+              <div className="absolute inset-0 bg-black/20" />
+        
+              <div className="relative z-10 max-w-4xl mx-auto px-6 w-full">
+                {/* הצגת תיבת הטקסט היחידה (Headline) שמכילה עכשיו הכל */}
+                <div className="hero-content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentSlide.headline) }} />
               </div>
             </div>
           );
@@ -2913,9 +2952,7 @@
         );
         
         const ImageWithTextSection = ({ content }) => {
-            // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הרקע ---
             const imageUrl = toAbsoluteUrl(content.image);
-        
             return (
                 <div className="relative bg-cover bg-center text-white flex items-center justify-center w-full"
                      style={{ backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none', minHeight: `${content.height || 500}px` }}>
@@ -2924,10 +2961,10 @@
                          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.title) }} />
                          <div className="mt-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.text) }} />
                           {content.buttonText && content.buttonLink && (
-                            <Button asChild size="lg" className="mt-8">
+                             <Button asChild size="lg" className="mt-8">
                                 <Link to={content.buttonLink}>{content.buttonLink.startsWith('http') ? '_blank' : '_self'}{content.buttonText}</Link>
                             </Button>
-                         )}
+                          )}
                     </div>
                 </div>
             );
@@ -2953,7 +2990,6 @@
                     <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                         {categories.map(cat => {
                             const displayName = cat.name?.[currentLang] || cat.name?.he;
-                            // --- תיקון: שימוש ב-toAbsoluteUrl לתמונת הקטגוריה ---
                             const imageSrc = toAbsoluteUrl(cat.image);
         
                             return (
@@ -3774,9 +3810,12 @@
         import { useState, useEffect } from 'react';
         import { useParams, useNavigate } from 'react-router-dom';
         import api from '@/api';
-        import { LoaderCircle } from 'lucide-react';
+        import { LoaderCircle, Check } from 'lucide-react';
         import { Button } from '@/components/ui/Button';
         import { useCartStore } from '@/stores/cartStore';
+        import { useTranslation } from 'react-i18next';
+        import { CATEGORY_DETAILS } from '@/config/constants';
+        import { toAbsoluteUrl } from '@/utils/url';
         
         const PackageBuilderPage = () => {
             const { id: packageId } = useParams();
@@ -3787,59 +3826,70 @@
             const [selections, setSelections] = useState({});
             const addPackageToCart = useCartStore((state) => state.addPackageToCart);
         
+            const { t, i18n } = useTranslation();
+            const currentLang = i18n.language;
+        
+            // --- פונקציית עזר למניעת קריסות (התיקון!) ---
+            const getSafeText = (field) => {
+                if (!field) return '';
+                if (typeof field === 'string') return field;
+                return field[currentLang] || field.he || '';
+            };
+        
             useEffect(() => {
                 const fetchPackage = async () => {
                     try {
-                        // שימוש בנתיב ה-API הציבורי החדש
                         const { data } = await api.get(`/api/packages/${packageId}`);
                         setPackage(data);
-                        // אתחול אובייקט הבחירות
                         const initialSelections = {};
                         data.choiceRules.forEach((_, index) => {
                             initialSelections[index] = [];
                         });
                         setSelections(initialSelections);
                     } catch (err) {
-                        setError('לא ניתן היה לטעון את פרטי החבילה.');
+                        setError(t('common.errorLoading') || 'שגיאה בטעינת הנתונים');
                     } finally {
                         setLoading(false);
                     }
                 };
                 fetchPackage();
-            }, [packageId]);
+            }, [packageId, t]);
         
             const handleSelectionChange = (ruleIndex, optionId, quantityToChoose) => {
+                const limit = Number(quantityToChoose);
                 setSelections(prev => {
                     const currentSelections = [...(prev[ruleIndex] || [])];
                     const isSelected = currentSelections.includes(optionId);
         
-                    if (quantityToChoose === 1) {
+                    if (limit === 1) {
                         return { ...prev, [ruleIndex]: [optionId] };
                     }
         
                     if (isSelected) {
                         return { ...prev, [ruleIndex]: currentSelections.filter(id => id !== optionId) };
-                    } else if (currentSelections.length < quantityToChoose) {
+                    } else if (currentSelections.length < limit) {
                         return { ...prev, [ruleIndex]: [...currentSelections, optionId] };
                     }
-                    return prev; // אם הגענו למכסה, אל תשנה כלום
+        
+                    return prev;
                 });
             };
         
             const handleAddToCart = () => {
-                // ולידציה - בדיקה אם כל הבחירות בוצעו
                 for (const rule of pkg.choiceRules) {
                     const ruleIndex = pkg.choiceRules.indexOf(rule);
-                    if (selections[ruleIndex].length !== rule.quantityToChoose) {
-                        alert(`אנא בצע ${rule.quantityToChoose} בחירות עבור קטגוריית "${rule.category}"`);
+                    const currentCount = selections[ruleIndex]?.length || 0;
+                    const requiredCount = Number(rule.quantityToChoose);
+                    if (currentCount !== requiredCount) {
+                        alert(t('packageBuilder.alertSelectionMissing', { count: requiredCount, category: rule.category }));
                         return;
                     }
                 }
         
-                // בניית אובייקט החבילה המלא להוספה לעגלה
                 const userChoices = Object.entries(selections).map(([ruleIndex, optionIds]) => {
                     const rule = pkg.choiceRules[ruleIndex];
-                    const options = rule.options.filter(opt => optionIds.includes(opt._id));
+                    const options = rule.options.filter(opt => optionIds.includes(opt._id.toString()));
+        
                     return {
                         category: rule.category,
                         selectedOptions: options,
@@ -3855,65 +3905,160 @@
                 };
         
                 addPackageToCart(packageForCart);
-                navigate('/menu'); // או לעגלה /checkout
+                navigate('/menu');
+            };
+        
+            const getGroupedOptions = (options) => {
+                const grouped = options.reduce((acc, opt) => {
+                    const cat = opt.category || 'other';
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(opt);
+                    return acc;
+                }, {});
+        
+                const sortedKeys = Object.keys(grouped).sort((a, b) => {
+                    const orderA = CATEGORY_DETAILS[a]?.order ?? 999;
+                    const orderB = CATEGORY_DETAILS[b]?.order ?? 999;
+                    return orderA - orderB;
+                });
+        
+                return { grouped, sortedKeys };
             };
         
             if (loading) return <div className="flex justify-center items-center h-64"><LoaderCircle className="animate-spin h-12 w-12 text-blue-600" /></div>;
-            if (error) return <p className="text-center text-red-500">{error}</p>;
-            if (!pkg) return <p className="text-center">החבילה לא נמצאה.</p>;
+            if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
+            if (!pkg) return <p className="text-center mt-10">החבילה לא נמצאה.</p>;
+        
+            // שימוש בפונקציה הבטוחה
+            const pkgName = getSafeText(pkg.name);
+            const pkgDesc = getSafeText(pkg.description);
+            const pkgImage = toAbsoluteUrl(pkg.image);
         
             return (
-                <div>
-                    <h1 className="text-4xl font-bold mb-2">{pkg.name}</h1>
-                    <p className="text-xl text-gray-600 mb-6">{pkg.description}</p>
-        
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="md:col-span-2 space-y-8">
-                            <div>
-                                <h2 className="text-2xl font-semibold border-b pb-2 mb-4">פריטים קבועים בחבילה</h2>
-                                <ul className="list-disc list-inside space-y-2">
-                                    {pkg.fixedItems.map(item => (
-                                        <li key={item.product._id}>{item.quantity} x {item.product.name}</li>
-                                    ))}
-                                </ul>
+                <div className="container mx-auto px-4 py-8">
+                    <div className="mb-8">
+                        {pkgImage && (
+                            <div className="w-full h-64 md:h-80 rounded-xl overflow-hidden mb-6 shadow-md">
+                                <img src={pkgImage} alt={pkgName} className="w-full h-full object-cover" />
                             </div>
+                        )}
+                        <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">{pkgName}</h1>
+                        <p className="text-lg text-gray-600">{pkgDesc}</p>
+                    </div>
         
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+        
+                            {/* פריטים קבועים */}
+                            {pkg.fixedItems && pkg.fixedItems.length > 0 && (
+                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                    <h2 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">{t('packageBuilder.fixedItemsTitle')}</h2>
+                                    <ul className="space-y-3">
+                                        {pkg.fixedItems.map(item => {
+                                            // תיקון קריטי: שימוש ב-getSafeText
+                                            const prodName = getSafeText(item.product?.name) || 'מוצר לא נמצא';
+        
+                                            return (
+                                                <li key={item._id} className="flex items-center text-gray-700">
+                                                    <span className="bg-green-100 text-green-700 p-1 rounded-full ml-3 rtl:ml-3 ltr:mr-3">
+                                                        <Check size={14} />
+                                                    </span>
+                                                    <span className="font-medium mx-2">{item.quantity} x</span>
+                                                    {prodName}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
+        
+                            {/* בחירות המשתמש */}
                             <div>
-                                <h2 className="text-2xl font-semibold border-b pb-2 mb-4">הבחירות שלך</h2>
+                                <h2 className="text-2xl font-bold pb-2 mb-4 text-gray-800">{t('packageBuilder.composeTitle')}</h2>
                                 {pkg.choiceRules.map((rule, index) => {
                                     const selectedCount = selections[index]?.length || 0;
-                                    const isMaxed = selectedCount >= rule.quantityToChoose;
+                                    const limit = Number(rule.quantityToChoose);
+                                    const isFulfilled = selectedCount === limit;
+                                    const { grouped, sortedKeys } = getGroupedOptions(rule.options);
+        
                                     return (
-                                    <div key={index} className="bg-gray-50 p-4 rounded-lg mb-6">
-                                        <h3 className="text-lg font-medium">יש לבחור {rule.quantityToChoose} מתוך {rule.options.length} ({selectedCount}/{rule.quantityToChoose} נבחרו)</h3>
-                                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {rule.options.map(option => {
-                                                const isSelected = selections[index]?.includes(option._id);
-                                                const isDisabled = !isSelected && isMaxed;
-                                                return (
-                                                    <label key={option._id} className={`flex items-center p-3 border rounded-md cursor-pointer transition-all ${isSelected ? 'bg-blue-100 border-blue-500' : 'bg-white'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-400'}`}>
-                                                        <input
-                                                            type={rule.quantityToChoose === 1 ? 'radio' : 'checkbox'}
-                                                            name={`rule-${index}`}
-                                                            checked={isSelected}
-                                                            disabled={isDisabled}
-                                                            onChange={() => handleSelectionChange(index, option._id, rule.quantityToChoose)}
-                                                            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                                                        />
-                                                        <span className="mr-3 text-sm font-medium text-gray-900">{option.name}</span>
-                                                    </label>
-                                                );
-                                            })}
+                                        <div key={index} className={`mb-6 p-5 rounded-xl border-2 transition-all ${isFulfilled ? 'border-green-200 bg-green-50/30' : 'border-blue-100 bg-white'}`}>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h3 className="text-lg font-bold text-gray-800">{rule.category}</h3>
+                                                <span className={`text-sm font-semibold px-3 py-1 rounded-full ${isFulfilled ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    {t('packageBuilder.selectedCount', { count: selectedCount, limit: limit })}
+                                                </span>
+                                            </div>
+        
+                                            <div className="space-y-6">
+                                                {sortedKeys.map(catKey => (
+                                                    <div key={catKey}>
+                                                        {sortedKeys.length > 0 && (
+                                                            <h4 className="text-sm font-semibold text-gray-500 mb-3 border-b border-gray-200 pb-1">
+                                                                {t(`categories.${catKey}`)}
+                                                            </h4>
+                                                        )}
+        
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            {grouped[catKey].map(option => {
+                                                                const optionId = option._id.toString();
+                                                                const isSelected = selections[index]?.includes(optionId);
+                                                                const isMaxed = selectedCount >= limit;
+                                                                const isDisabled = !isSelected && isMaxed && limit > 1;
+                                                                // תיקון קריטי: שימוש ב-getSafeText
+                                                                const optName = getSafeText(option.name);
+        
+                                                                return (
+                                                                    <label
+                                                                        key={optionId}
+                                                                        className={`
+                                                                            relative flex items-center p-3 border rounded-lg cursor-pointer transition-all select-none
+                                                                            ${isSelected
+                                                                                ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                                                                                : 'bg-white border-gray-200 hover:border-blue-300 text-gray-700 hover:bg-gray-50'}
+                                                                            ${isDisabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}
+                                                                        `}
+                                                                    >
+                                                                        <input
+                                                                            type={limit === 1 ? 'radio' : 'checkbox'}
+                                                                            name={`rule-${index}`}
+                                                                            checked={isSelected}
+                                                                            disabled={isDisabled}
+                                                                            onChange={() => handleSelectionChange(index, optionId, limit)}
+                                                                            className="sr-only"
+                                                                        />
+        
+                                                                        <div className={`w-5 h-5 border-2 rounded mx-3 flex items-center justify-center transition-colors ${limit === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'}`}>
+                                                                            {isSelected && <div className={`bg-white ${limit === 1 ? 'rounded-full w-2.5 h-2.5' : 'w-3 h-3 rounded-sm'}`} />}
+                                                                        </div>
+                                                                        <span className="font-medium">{optName}</span>
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )})}
+                                    );
+                                })}
                             </div>
                         </div>
         
-                        <div className="bg-white p-6 rounded-lg shadow h-fit top-24 sticky">
-                             <h2 className="text-2xl font-bold mb-4">מחיר החבילה</h2>
-                             <p className="text-4xl font-bold text-gray-800 mb-6">₪{pkg.price.toFixed(2)}</p>
-                             <Button className="w-full" onClick={handleAddToCart}>הוסף חבילה לעגלה</Button>
+                        <div className="lg:col-span-1">
+                            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 sticky top-24">
+                                <h2 className="text-2xl font-bold mb-4 text-gray-900 border-b pb-4">{t('packageBuilder.summaryTitle')}</h2>
+                                <div className="flex justify-between items-center mb-6">
+                                    <span className="text-gray-600 font-medium">{t('packageBuilder.totalPrice')}</span>
+                                    <span className="text-4xl font-extrabold text-blue-600">₪{pkg.price.toFixed(2)}</span>
+                                </div>
+                                <Button className="w-full h-12 text-lg shadow-blue-200 shadow-lg hover:shadow-blue-300 transition-all" onClick={handleAddToCart}>
+                                    {t('packageBuilder.addToCart')}
+                                </Button>
+                                <p className="text-xs text-center text-gray-400 mt-4">
+                                    {t('packageBuilder.warningSelectAll')}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5323,318 +5468,950 @@
           
           export default AdminOrderListPage;
         📄 AdminPackageCreatePage.jsx
-          import { useState, useEffect } from 'react';
+          // client/src/pages/admin/AdminPackageCreatePage.jsx
+          
+          import { useState, useEffect, useMemo } from 'react';
           import { useNavigate, Link } from 'react-router-dom';
           import api from '@/api';
           import { Button } from '@/components/ui/Button';
-          import { LoaderCircle, ArrowRight, PlusCircle, XCircle } from 'lucide-react';
+          import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X, Upload, ImageIcon } from 'lucide-react';
+          import Modal from '@/components/ui/Modal';
+          
+          const CATEGORY_LABELS = {
+              'salad': 'סלטים',
+              'fish': 'דגים',
+              'appetizer': 'מנות ביניים',
+              'soup': 'מרקים',
+              'main_course': 'מנות עיקריות',
+              'side_dish': 'תוספות',
+              'dairy': 'חלבי',
+              'dessert': 'קינוחים',
+              'drink': 'שתייה',
+              'seder_plate': 'קערת ליל הסדר'
+          };
           
           const AdminPackageCreatePage = () => {
-              const [name, setName] = useState('');
+              const [name, setName] = useState({ he: '', en: '' });
+              const [description, setDescription] = useState({ he: '', en: '' });
               const [price, setPrice] = useState('');
-              const [description, setDescription] = useState('');
+              const [image, setImage] = useState('');
               const [isActive, setIsActive] = useState(true);
               const [fixedItems, setFixedItems] = useState([]);
               const [choiceRules, setChoiceRules] = useState([]);
-          
               const [allProducts, setAllProducts] = useState([]);
-              const [productCategories, setProductCategories] = useState([]);
               const [loading, setLoading] = useState(false);
+              const [activeLang, setActiveLang] = useState('he');
+          
+              const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+              const [productSearch, setProductSearch] = useState('');
               const navigate = useNavigate();
+          
+              // פונקציית עזר למניעת קריסות - מטפלת באובייקטי שמות
+              const getProductName = (product) => {
+                  if (!product || !product.name) return 'שם לא זמין';
+                  if (typeof product.name === 'string') return product.name;
+                  // מחזיר את השפה הפעילה, או עברית, או מחרוזת ריקה (אבל לעולם לא אובייקט!)
+                  return product.name[activeLang] || product.name.he || '';
+              };
           
               useEffect(() => {
                   const fetchProducts = async () => {
-                      const { data } = await api.get('/api/admin/products', { withCredentials: true });
-                      setAllProducts(data);
-                      // חילוץ דינמי של הקטגוריות הקיימות
-                      const categories = [...new Set(data.map(p => p.category))];
-                      setProductCategories(categories);
+                      try {
+                          const { data } = await api.get('/api/admin/products', { withCredentials: true });
+                          setAllProducts(data);
+                      } catch (err) {
+                          console.error("Failed to load products", err);
+                      }
                   };
                   fetchProducts();
               }, []);
-              // --- לוגיקה לניהול פריטים קבועים ---
-              const addFixedItem = () => setFixedItems([...fixedItems, { product: '', quantity: 1 }]);
+          
+              const productsByCategory = useMemo(() => {
+                  const groups = {};
+                  allProducts.forEach(p => {
+                      const cat = p.category || 'other';
+                      if (!groups[cat]) groups[cat] = [];
+                      groups[cat].push(p);
+                  });
+                  return groups;
+              }, [allProducts]);
+          
+              const categoriesList = useMemo(() => {
+                  return Object.keys(productsByCategory).sort((a, b) => {
+                      return (CATEGORY_LABELS[a] || a).localeCompare(CATEGORY_LABELS[b] || b, 'he');
+                  });
+              }, [productsByCategory]);
+          
+              const handleImageUpload = async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const uploadFormData = new FormData();
+                  uploadFormData.append('images', file);
+                  try {
+                      const { data } = await api.post('/api/upload', uploadFormData, {
+                          headers: { 'Content-Type': 'multipart/form-data' },
+                          withCredentials: true
+                      });
+                      setImage(data.images[0]);
+                  } catch (error) {
+                      alert('העלאת התמונה נכשלה');
+                  }
+              };
+          
+              const handleAddFixedItem = (product) => {
+                  const exists = fixedItems.find(item => item.product === product._id);
+                  if (exists) {
+                      setFixedItems(prev => prev.map(item => item.product === product._id ? { ...item, quantity: item.quantity + 1 } : item));
+                  } else {
+                      setFixedItems([...fixedItems, { product: product._id, quantity: 1, _productDetails: product }]);
+                  }
+                  setIsProductModalOpen(false);
+              };
+          
               const removeFixedItem = (index) => setFixedItems(fixedItems.filter((_, i) => i !== index));
-              const handleFixedItemChange = (index, field, value) => {
+              const updateFixedItemQty = (index, newQty) => {
                   const updated = [...fixedItems];
-                  updated[index][field] = value;
+                  updated[index].quantity = Number(newQty);
                   setFixedItems(updated);
               };
           
-              // --- לוגיקה משודרגת לניהול חוקי בחירה ---
-              const addChoiceRule = () => setChoiceRules([...choiceRules, { category: '', quantityToChoose: 1, options: [] }]);
+              const addChoiceRule = () => {
+                  setChoiceRules([...choiceRules, {
+                      category: 'בחירה חדשה',
+                      quantityToChoose: 1,
+                      options: []
+                  }]);
+              };
+          
               const removeChoiceRule = (index) => setChoiceRules(choiceRules.filter((_, i) => i !== index));
-              const handleChoiceRuleChange = (index, field, value) => {
+              const updateChoiceRule = (index, field, value) => {
                   const updated = [...choiceRules];
                   updated[index][field] = value;
                   setChoiceRules(updated);
               };
           
-              const handleOptionToggle = (ruleIndex, optionId) => {
+              const toggleProductInRule = (ruleIndex, productId) => {
                   const updatedRules = [...choiceRules];
-                  const currentOptions = new Set(updatedRules[ruleIndex].options);
-                  if (currentOptions.has(optionId)) {
-                      currentOptions.delete(optionId);
+                  const currentOptions = updatedRules[ruleIndex].options;
+          
+                  if (currentOptions.includes(productId)) {
+                      updatedRules[ruleIndex].options = currentOptions.filter(id => id !== productId);
                   } else {
-                      currentOptions.add(optionId);
+                      updatedRules[ruleIndex].options = [...currentOptions, productId];
                   }
-                  updatedRules[ruleIndex].options = Array.from(currentOptions);
                   setChoiceRules(updatedRules);
               };
           
-              const handleSelectCategory = (ruleIndex, category) => {
-                  const productIdsInCategory = allProducts.filter(p => p.category === category).map(p => p._id);
+              const toggleCategoryInRule = (ruleIndex, categoryKey) => {
+                  const productsInCat = productsByCategory[categoryKey] || [];
+                  const idsInCat = productsInCat.map(p => p._id);
+          
                   const updatedRules = [...choiceRules];
-                  const currentOptions = new Set(updatedRules[ruleIndex].options);
-                  productIdsInCategory.forEach(id => currentOptions.add(id));
-                  // הוספה, לא החלפה
-                  updatedRules[ruleIndex].options = Array.from(currentOptions);
+                  const currentOptions = updatedRules[ruleIndex].options;
+                  const allSelected = idsInCat.every(id => currentOptions.includes(id));
+          
+                  if (allSelected) {
+                      updatedRules[ruleIndex].options = currentOptions.filter(id => !idsInCat.includes(id));
+                  } else {
+                      const newOptions = new Set([...currentOptions, ...idsInCat]);
+                      updatedRules[ruleIndex].options = Array.from(newOptions);
+                  }
                   setChoiceRules(updatedRules);
               };
-          
           
               const handleSubmit = async (e) => {
                   e.preventDefault();
                   setLoading(true);
                   try {
-                      const validFixedItems = fixedItems.filter(item => item.product);
-                      await api.post('/api/admin/packages', { name, price, description, isActive, fixedItems: validFixedItems, choiceRules }, { withCredentials: true });
+                      const packageData = {
+                          name,
+                          description,
+                          price: Number(price),
+                          image,
+                          isActive,
+                          fixedItems: fixedItems.map(i => ({ product: i.product, quantity: i.quantity })),
+                          choiceRules: choiceRules.map(r => ({ ...r, quantityToChoose: Number(r.quantityToChoose) }))
+                      };
+                      await api.post('/api/admin/packages', packageData, { withCredentials: true });
                       navigate('/admin/packages');
                   } catch (error) {
-                      alert(error.response?.data?.message || "Failed to create package");
-                      console.error("Failed to create package", error);
+                      alert(error.response?.data?.message || "שגיאה ביצירת החבילה");
                   } finally {
                       setLoading(false);
                   }
               };
+          
+              const handleNameChange = (val) => setName(prev => ({ ...prev, [activeLang]: val }));
+              const handleDescChange = (val) => setDescription(prev => ({ ...prev, [activeLang]: val }));
+          
               return (
-                  <div>
-                      <div className="flex items-center mb-6"><Link to="/admin/packages"><ArrowRight/></Link><h1 className="text-3xl font-bold mr-4">הוספת חבילה חדשה</h1></div>
+                  <div className="max-w-5xl mx-auto pb-20">
+                      <div className="flex items-center mb-6 gap-4">
+                          <Link to="/admin/packages" className="p-2 rounded-full hover:bg-gray-100 transition"><ArrowRight className="h-6 w-6 text-gray-600"/></Link>
+                          <h1 className="text-3xl font-bold text-gray-800">יצירת חבילה חדשה</h1>
+                      </div>
+          
+                      <div className="flex gap-2 mb-6 border-b border-gray-200">
+                          <button type="button" onClick={() => setActiveLang('he')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'he' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>עברית</button>
+                          <button type="button" onClick={() => setActiveLang('en')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'en' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>English</button>
+                      </div>
+          
                       <form onSubmit={handleSubmit} className="space-y-8">
+                          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                              <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                                  <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+                                  פרטי החבילה
+                              </h2>
           
-          
-                          <div className="bg-white p-6 rounded-lg shadow">
-                              <h2 className="text-xl font-semibold mb-4">פרטים בסיסיים</h2>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-                                  <div>
-                                      <label>שם החבילה</label>
-                                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full mt-1 p-2 border border-gray-300 rounded-md" />
-                                  </div>
-                                  <div>
-                                      <label>מחיר (₪)</label>
-                                      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full mt-1 p-2 border border-gray-300 rounded-md" />
-                                  </div>
-                              </div>
-                          </div>
-          
-                          <div className="bg-white p-6 rounded-lg shadow">
-                              <div className="flex justify-between items-center mb-4">
-                                  <h2 className="text-xl font-semibold">פריטים קבועים</h2>
-                                  <Button type="button" variant="ghost" onClick={addFixedItem}><PlusCircle className="mr-2"/>הוסף פריט קבוע</Button>
-                              </div>
-                              <div className="space-y-4">
-                                  {fixedItems.map((item, index) => (
-                                      <div key={index} className="flex items-center gap-4">
-                                          <select value={item.product} onChange={(e) => handleFixedItemChange(index, 'product', e.target.value)} className="flex-grow p-2 border rounded-md">
-                                              <option value="">בחר מוצר...</option>
-                                              {allProducts.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-                                          </select>
-                                          <input type="number" value={item.quantity} onChange={(e) => handleFixedItemChange(index, 'quantity', e.target.value)} min="1" className="w-20 p-2 border rounded-md" />
-                                          <Button type="button" variant="destructive" size="sm" onClick={() => removeFixedItem(index)}><XCircle/></Button>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-          
-          
-                          <div className="bg-white p-6 rounded-lg shadow">
-                              <div className="flex justify-between items-center mb-4">
-                                  <h2 className="text-xl font-semibold">חוקי בחירה</h2>
-                                  <Button type="button" variant="ghost" onClick={addChoiceRule}><PlusCircle className="mr-2"/>הוסף חוק בחירה</Button>
-                              </div>
-                              <div className="space-y-6">
-                                  {choiceRules.map((rule, index) => (
-                                      <div key={index} className="border p-4 rounded-lg bg-gray-50">
-                                          <div className="flex justify-end mb-2">
-                                              <Button type="button" variant="destructive" size="sm" onClick={() => removeChoiceRule(index)}>הסר חוק</Button>
-                                          </div>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                              <input type="text" placeholder="שם הקטגוריה (לדוג': מנה עיקרית)" value={rule.category} onChange={(e) => handleChoiceRuleChange(index, 'category', e.target.value)} className="p-2 border rounded-md" />
-                                              <input type="number" placeholder="כמות לבחירה" value={rule.quantityToChoose} onChange={(e) => handleChoiceRuleChange(index, 'quantityToChoose', e.target.value)} min="1" className="p-2 border rounded-md" />
-                                          </div>
-                                          <div>
-                                              <label className="block text-sm font-medium text-gray-700 mb-2">מוצרים אפשריים לבחירה:</label>
-          
-                                              {/* --- שיפור: כפתורים לבחירה מהירה --- */}
-                                              <div className="flex flex-wrap gap-2 mb-2">
-                                                  {productCategories.map(cat => (
-                                                      <Button type="button" variant="outline" size="sm" key={cat} onClick={() => handleSelectCategory(index, cat)}>
-                                                          הוסף הכל מ"{cat}"
-                                                      </Button>
-                                                  ))}
+                              <div className="flex flex-col md:flex-row gap-6 mb-6">
+                                  <div className="w-full md:w-1/3">
+                                      <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
+                                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-center h-48 bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
+                                          {image ? (
+                                              <img src={image} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                                          ) : (
+                                              <div className="text-gray-400 flex flex-col items-center">
+                                                  <ImageIcon className="h-10 w-10 mb-2" />
+                                                  <span className="text-xs">לחץ להעלאה</span>
                                               </div>
+                                          )}
+                                          <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                      </div>
+                                      {image && <Button type="button" variant="ghost" size="sm" onClick={() => setImage('')} className="w-full mt-2 text-red-500">הסר תמונה</Button>}
+                                  </div>
           
-                                              {/* --- שיפור: רשימת Checkboxes --- */}
-                                              <div className="w-full h-48 p-2 border rounded-md overflow-y-auto bg-white">
-                                                  {allProducts.map(p => (
-                                                      <label key={p._id} className="flex items-center p-1 hover:bg-gray-100 rounded">
+                                  <div className="w-full md:w-2/3 grid grid-cols-1 gap-6">
+                                      <div>
+                                          <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                                          <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                      </div>
+          
+                                      <div>
+                                          <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                                          <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} />
+                                      </div>
+          
+                                      <div>
+                                          <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
+                                          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                      </div>
+          
+                                      <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                          <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                                          <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה</label>
+                                      </div>
+                                  </div>
+                              </div>
+                          </section>
+          
+                          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                              <div className="flex justify-between items-center mb-6">
+                                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                      <span className="w-1 h-6 bg-green-500 rounded-full"></span>
+                                      פריטים קבועים
+                                  </h2>
+                                  <Button type="button" onClick={() => setIsProductModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white gap-2 rounded-full px-6">
+                                      <Plus size={18} /> הוסף מוצר
+                                  </Button>
+                              </div>
+          
+                              {fixedItems.length === 0 ? (
+                                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 text-gray-400">
+                                      לא נבחרו פריטים קבועים עדיין.
+                                  </div>
+                              ) : (
+                                  <div className="grid gap-3">
+                                      {fixedItems.map((item, index) => {
+                                          const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
+                                          const prodName = getProductName(productDetails); // שימוש בפונקציה הבטוחה
+          
+                                          return (
+                                              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
+                                                  <div className="flex items-center gap-4">
+                                                      <div className="bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>
+                                                      <span className="font-medium text-gray-800">{prodName}</span>
+                                                  </div>
+          
+                                                  <div className="flex items-center gap-4">
+                                                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
+                                                          <span className="text-xs text-gray-500">כמות:</span>
                                                           <input
-                                                              type="checkbox"
-                                                              checked={rule.options.includes(p._id)}
-                                                              onChange={() => handleOptionToggle(index, p._id)}
-                                                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                              type="number"
+                                                              min="1"
+                                                              value={item.quantity}
+                                                              onChange={(e) => updateFixedItemQty(index, e.target.value)}
+                                                              className="w-12 text-center outline-none font-bold"
                                                           />
-                                                          <span className="mr-2 text-sm">{p.name}</span>
-                                                      </label>
-                                                  ))}
+                                                      </div>
+                                                      <button type="button" onClick={() => removeFixedItem(index)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition">
+                                                          <Trash2 size={18} />
+                                                      </button>
+                                                  </div>
+                                              </div>
+                                          );
+                                      })}
+                                  </div>
+                              )}
+                          </section>
+          
+                          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                              <div className="flex justify-between items-center mb-6">
+                                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                      <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                                      חוקי בחירה
+                                  </h2>
+                                  <Button type="button" onClick={addChoiceRule} className="bg-purple-600 hover:bg-purple-700 text-white gap-2 rounded-full px-6">
+                                      <Plus size={18} /> הוסף קטגוריית בחירה
+                                  </Button>
+                              </div>
+          
+                              <div className="space-y-6">
+                                  {choiceRules.map((rule, ruleIndex) => (
+                                      <div key={ruleIndex} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                          <div className="bg-gray-50 p-4 border-b border-gray-200 flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
+                                              <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                                  <div>
+                                                      <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה</label>
+                                                      <input
+                                                          type="text"
+                                                          value={rule.category}
+                                                          onChange={(e) => updateChoiceRule(ruleIndex, 'category', e.target.value)}
+                                                          className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none"
+                                                      />
+                                                  </div>
+          
+                                                  <div>
+                                                      <label className="block text-xs font-bold text-gray-500 mb-1">כמות לבחירה</label>
+                                                      <input
+                                                          type="number"
+                                                          min="1"
+                                                          value={rule.quantityToChoose}
+                                                          onChange={(e) => updateChoiceRule(ruleIndex, 'quantityToChoose', e.target.value)}
+                                                          className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none"
+                                                      />
+                                                  </div>
+                                              </div>
+                                              <button type="button" onClick={() => removeChoiceRule(ruleIndex)} className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition flex items-center gap-1 text-sm font-medium">
+                                                  <Trash2 size={16} /> הסר חוק
+                                              </button>
+                                          </div>
+          
+                                          <div className="p-4 bg-white">
+                                              <p className="text-sm font-medium text-gray-700 mb-3">סמן את המוצרים שהלקוח יכול לבחור בקטגוריה זו:</p>
+          
+                                              <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                                  {categoriesList.map(catKey => {
+                                                      const productsInThisCat = productsByCategory[catKey];
+                                                      if (!productsInThisCat) return null;
+          
+                                                      const allSelected = productsInThisCat.every(p => rule.options.includes(p._id));
+          
+                                                      return (
+                                                          <div key={catKey} className="border border-gray-100 rounded-lg p-3">
+                                                              <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
+                                                                  <h4 className="font-bold text-gray-700">{CATEGORY_LABELS[catKey] || catKey}</h4>
+                                                                  <button
+                                                                      type="button"
+                                                                      onClick={() => toggleCategoryInRule(ruleIndex, catKey)}
+                                                                      className={`text-xs font-medium px-2 py-1 rounded transition-colors ${allSelected ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                                                                  >
+                                                                      {allSelected ? 'הסר הכל' : 'בחר הכל בקטגוריה'}
+                                                                  </button>
+                                                              </div>
+          
+                                                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                                  {productsInThisCat.map(product => {
+                                                                      const isSelected = rule.options.includes(product._id);
+                                                                      // --- התיקון קורה כאן: שימוש ב-getProductName במקום גישה ישירה ---
+                                                                      const prodName = getProductName(product);
+          
+                                                                      return (
+                                                                          <label
+                                                                              key={product._id}
+                                                                              className={`flex items-center p-2 rounded cursor-pointer transition-all border ${isSelected ? 'bg-purple-50 border-purple-200 text-purple-900' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
+                                                                          >
+                                                                              <div className={`w-4 h-4 rounded border flex items-center justify-center mr-2 transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'}`}>
+                                                                                  {isSelected && <Check size={10} className="text-white" />}
+                                                                              </div>
+                                                                              <input
+                                                                                  type="checkbox"
+                                                                                  className="hidden"
+                                                                                  checked={isSelected}
+                                                                                  onChange={() => toggleProductInRule(ruleIndex, product._id)}
+                                                                              />
+                                                                              {/* וכאן היה הבאג - החלפנו את הגישה הישירה במשתנה הבטוח */}
+                                                                              <span className="text-sm truncate select-none" title={prodName}>
+                                                                                  {prodName}
+                                                                              </span>
+                                                                          </label>
+                                                                      );
+                                                                  })}
+                                                              </div>
+                                                          </div>
+                                                      );
+                                                  })}
                                               </div>
                                           </div>
                                       </div>
                                   ))}
                               </div>
-                          </div>
           
-                          <div className="flex justify-end gap-4">
+                          </section>
+          
+                          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
                               <Button type="button" variant="outline" onClick={() => navigate('/admin/packages')}>ביטול</Button>
-                              <Button type="submit" disabled={loading}>{loading ?
-                                  'שומר...' : 'שמור חבילה'}</Button>
+                              <Button type="submit" disabled={loading} className="px-8 text-lg">
+                                  {loading ? <LoaderCircle className="animate-spin" /> : 'צור חבילה'}
+                              </Button>
                           </div>
                       </form>
+          
+                      <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="בחר מוצר להוספה">
+                          <div className="mb-4 relative">
+                              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                              <input
+                                  type="text"
+                                  placeholder="חפש מוצר..."
+                                  value={productSearch}
+                                  onChange={(e) => setProductSearch(e.target.value)}
+                                  className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              />
+                          </div>
+                          <div className="max-h-[60vh] overflow-y-auto space-y-6">
+                              {categoriesList.map(catKey => {
+                                  const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
+                                      // --- שימוש ב-getProductName גם בחיפוש ---
+                                      const name = getProductName(p);
+                                      return name.toLowerCase().includes(productSearch.toLowerCase());
+                                  });
+          
+                                  if (filteredProducts.length === 0) return null;
+          
+                                  return (
+                                      <div key={catKey}>
+                                          <h3 className="font-bold text-gray-800 bg-gray-100 p-2 rounded mb-2 sticky top-0">{CATEGORY_LABELS[catKey] || catKey}</h3>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                              {filteredProducts.map(product => (
+                                                  <button
+                                                      key={product._id}
+                                                      onClick={() => handleAddFixedItem(product)}
+                                                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
+                                                  >
+                                                      <span className="font-medium text-gray-700 group-hover:text-blue-600">{getProductName(product)}</span>
+                                                      <span className="text-sm text-gray-400">₪{product.price}</span>
+                                                  </button>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  );
+                              })}
+                          </div>
+                      </Modal>
                   </div>
               );
           };
           
           export default AdminPackageCreatePage;
         📄 AdminPackageEditPage.jsx
-          import { useState, useEffect } from 'react';
+          // client/src/pages/admin/AdminPackageEditPage.jsx
+          
+          import { useState, useEffect, useMemo } from 'react';
           import { useNavigate, useParams, Link } from 'react-router-dom';
           import api from '@/api';
           import { Button } from '@/components/ui/Button';
-          import { LoaderCircle, ArrowRight, PlusCircle, XCircle } from 'lucide-react';
+          import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X, Upload, ImageIcon } from 'lucide-react';
+          import Modal from '@/components/ui/Modal';
+          
+          // מילון קטגוריות לעברית
+          const CATEGORY_LABELS = {
+              'salad': 'סלטים',
+              'fish': 'דגים',
+              'appetizer': 'מנות ביניים',
+              'soup': 'מרקים',
+              'main_course': 'מנות עיקריות',
+              'side_dish': 'תוספות',
+              'dairy': 'חלבי',
+              'dessert': 'קינוחים',
+              'drink': 'שתייה',
+              'seder_plate': 'קערת ליל הסדר'
+          };
           
           const AdminPackageEditPage = () => {
               const { id: packageId } = useParams();
               const navigate = useNavigate();
           
-              const [name, setName] = useState('');
+              // State
+              const [name, setName] = useState({ he: '', en: '' });
+              const [description, setDescription] = useState({ he: '', en: '' });
               const [price, setPrice] = useState('');
-              const [description, setDescription] = useState('');
+              const [image, setImage] = useState('');
               const [isActive, setIsActive] = useState(true);
               const [fixedItems, setFixedItems] = useState([]);
               const [choiceRules, setChoiceRules] = useState([]);
           
               const [allProducts, setAllProducts] = useState([]);
-              const [productCategories, setProductCategories] = useState([]);
               const [loading, setLoading] = useState(true);
               const [submitting, setSubmitting] = useState(false);
               const [error, setError] = useState('');
+              const [activeLang, setActiveLang] = useState('he');
           
+              // Modal State
+              const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+              const [productSearch, setProductSearch] = useState('');
+          
+              // --- תיקון: פונקציית עזר להצגת שם מוצר בטוחה (מונעת את השגיאה) ---
+              const getProductName = (product) => {
+                  if (!product || !product.name) return 'שם לא זמין';
+                  if (typeof product.name === 'string') return product.name;
+                  // מנסה להחזיר את השפה הפעילה, אחרת עברית, אחרת מחרוזת ריקה (אבל לא אובייקט!)
+                  return product.name[activeLang] || product.name.he || '';
+              };
+          
+              // Fetch Data
               useEffect(() => {
-                  const fetchPackageAndProducts = async () => {
+                  const fetchData = async () => {
                       try {
-                          const productsPromise = api.get('/api/admin/products', { withCredentials: true });
-                          const packagePromise = api.get(`/api/admin/packages/${packageId}`, { withCredentials: true });
-                          const [productsRes, packageRes] = await Promise.all([productsPromise, packagePromise]);
+                          const [productsRes, packageRes] = await Promise.all([
+                              api.get('/api/admin/products', { withCredentials: true }),
+                              api.get(`/api/admin/packages/${packageId}`, { withCredentials: true })
+                          ]);
           
                           setAllProducts(productsRes.data);
-                          const categories = [...new Set(productsRes.data.map(p => p.category))];
-                          setProductCategories(categories);
-          
                           const pkg = packageRes.data;
-                          setName(pkg.name);
+          
+                          // נרמול נתונים
+                          setName(pkg.name && typeof pkg.name === 'object' ? pkg.name : { he: pkg.name, en: '' });
+                          setDescription(pkg.description && typeof pkg.description === 'object' ? pkg.description : { he: pkg.description || '', en: '' });
                           setPrice(pkg.price);
-                          setDescription(pkg.description || '');
                           setIsActive(pkg.isActive);
-                          setFixedItems(pkg.fixedItems.map(item => ({ product: item.product._id, quantity: item.quantity })));
-                          setChoiceRules(pkg.choiceRules.map(rule => ({ ...rule, options: rule.options.map(opt => opt._id) })));
+                          setImage(pkg.image || '');
+          
+                          setFixedItems(pkg.fixedItems.map(item => ({
+                              product: item.product._id || item.product,
+                              quantity: item.quantity,
+                              _productDetails: item.product
+                          })));
+          
+                          setChoiceRules(pkg.choiceRules.map(rule => ({
+                              ...rule,
+                              options: rule.options.map(opt => opt._id || opt)
+                          })));
+          
                       } catch (err) {
-                          setError('Could not load package data.');
+                          setError('לא ניתן לטעון את נתוני החבילה');
+                          console.error(err);
                       } finally {
                           setLoading(false);
                       }
                   };
-                  fetchPackageAndProducts();
+                  fetchData();
               }, [packageId]);
           
-              const addFixedItem = () => setFixedItems([...fixedItems, { product: '', quantity: 1 }]);
+              // --- Helpers for Grouping ---
+              const productsByCategory = useMemo(() => {
+                  const groups = {};
+                  allProducts.forEach(p => {
+                      const cat = p.category || 'other';
+                      if (!groups[cat]) groups[cat] = [];
+                      groups[cat].push(p);
+                  });
+                  return groups;
+              }, [allProducts]);
+          
+              const categoriesList = useMemo(() => {
+                  return Object.keys(productsByCategory).sort((a, b) => {
+                      return (CATEGORY_LABELS[a] || a).localeCompare(CATEGORY_LABELS[b] || b, 'he');
+                  });
+              }, [productsByCategory]);
+          
+              // --- Image Upload ---
+              const handleImageUpload = async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const uploadFormData = new FormData();
+                  uploadFormData.append('images', file);
+                  try {
+                      const { data } = await api.post('/api/upload', uploadFormData, {
+                          headers: { 'Content-Type': 'multipart/form-data' },
+                          withCredentials: true
+                      });
+                      setImage(data.images[0]);
+                  } catch (error) {
+                      alert('העלאת התמונה נכשלה');
+                  }
+              };
+          
+              // --- Fixed Items Logic ---
+              const handleAddFixedItem = (product) => {
+                  const exists = fixedItems.find(item => item.product === product._id);
+                  if (exists) {
+                      setFixedItems(prev => prev.map(item => item.product === product._id ? { ...item, quantity: item.quantity + 1 } : item));
+                  } else {
+                      setFixedItems([...fixedItems, { product: product._id, quantity: 1, _productDetails: product }]);
+                  }
+                  setIsProductModalOpen(false);
+              };
+          
               const removeFixedItem = (index) => setFixedItems(fixedItems.filter((_, i) => i !== index));
-              const handleFixedItemChange = (index, field, value) => {
+          
+              const updateFixedItemQty = (index, newQty) => {
                   const updated = [...fixedItems];
-                  updated[index][field] = value;
+                  updated[index].quantity = Number(newQty);
                   setFixedItems(updated);
               };
-              const addChoiceRule = () => setChoiceRules([...choiceRules, { category: '', quantityToChoose: 1, options: [] }]);
+          
+              // --- Choice Rules Logic ---
+              const addChoiceRule = () => setChoiceRules([...choiceRules, { category: 'קטגוריה חדשה', quantityToChoose: 1, options: [] }]);
+          
               const removeChoiceRule = (index) => setChoiceRules(choiceRules.filter((_, i) => i !== index));
-              const handleChoiceRuleChange = (index, field, value) => {
+          
+              const updateChoiceRule = (index, field, value) => {
                   const updated = [...choiceRules];
                   updated[index][field] = value;
                   setChoiceRules(updated);
               };
-              const handleOptionToggle = (ruleIndex, optionId) => {
+          
+              const toggleProductInRule = (ruleIndex, productId) => {
                   const updatedRules = [...choiceRules];
-                  const currentOptions = new Set(updatedRules[ruleIndex].options);
-                  if (currentOptions.has(optionId)) {
-                      currentOptions.delete(optionId);
+                  const currentOptions = updatedRules[ruleIndex].options;
+                  if (currentOptions.includes(productId)) {
+                      updatedRules[ruleIndex].options = currentOptions.filter(id => id !== productId);
                   } else {
-                      currentOptions.add(optionId);
+                      updatedRules[ruleIndex].options = [...currentOptions, productId];
                   }
-                  updatedRules[ruleIndex].options = Array.from(currentOptions);
-                  setChoiceRules(updatedRules);
-              };
-              const handleSelectCategory = (ruleIndex, category) => {
-                  const productIdsInCategory = allProducts.filter(p => p.category === category).map(p => p._id);
-                  const updatedRules = [...choiceRules];
-                  const currentOptions = new Set(updatedRules[ruleIndex].options);
-                  productIdsInCategory.forEach(id => currentOptions.add(id));
-                  updatedRules[ruleIndex].options = Array.from(currentOptions);
                   setChoiceRules(updatedRules);
               };
           
+              const toggleCategoryInRule = (ruleIndex, categoryKey) => {
+                  const productsInCat = productsByCategory[categoryKey] || [];
+                  const idsInCat = productsInCat.map(p => p._id);
+                  const updatedRules = [...choiceRules];
+                  const currentOptions = updatedRules[ruleIndex].options;
+                  const allSelected = idsInCat.every(id => currentOptions.includes(id));
+          
+                  if (allSelected) {
+                      updatedRules[ruleIndex].options = currentOptions.filter(id => !idsInCat.includes(id));
+                  } else {
+                      const newOptions = new Set([...currentOptions, ...idsInCat]);
+                      updatedRules[ruleIndex].options = Array.from(newOptions);
+                  }
+                  setChoiceRules(updatedRules);
+              };
+          
+              // --- Submit ---
               const handleSubmit = async (e) => {
                   e.preventDefault();
                   setSubmitting(true);
-                  setError('');
                   try {
                       const validFixedItems = fixedItems.filter(item => item.product);
-                      const packageData = { name, price, description, isActive, fixedItems: validFixedItems, choiceRules };
+                      const sanitizedRules = choiceRules.map(rule => ({
+                          ...rule,
+                          quantityToChoose: Number(rule.quantityToChoose)
+                      }));
+          
+                      const packageData = {
+                          name,
+                          price: Number(price),
+                          description,
+                          image,
+                          isActive,
+                          fixedItems: validFixedItems,
+                          choiceRules: sanitizedRules
+                      };
+          
                       await api.put(`/api/admin/packages/${packageId}`, packageData, { withCredentials: true });
                       navigate('/admin/packages');
                   } catch (err) {
-                      const errorMessage = err.response?.data?.message || "Failed to update package.";
-                      setError(errorMessage);
+                      setError(err.response?.data?.message || "עדכון החבילה נכשל");
                   } finally {
                       setSubmitting(false);
                   }
               };
           
-              if (loading) return <div className="flex justify-center"><LoaderCircle className="animate-spin h-12 w-12" /></div>;
+              const handleNameChange = (val) => setName(prev => ({ ...prev, [activeLang]: val }));
+              const handleDescChange = (val) => setDescription(prev => ({ ...prev, [activeLang]: val }));
+          
+              if (loading) return <div className="flex justify-center items-center h-64"><LoaderCircle className="animate-spin text-blue-600 h-12 w-12" /></div>;
+              if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
           
               return (
-                  <div>
-                      <div className="flex items-center mb-6"><Link to="/admin/packages"><ArrowRight/></Link><h1 className="text-3xl font-bold mr-4">עריכת חבילה: {name}</h1></div>
+                  <div className="max-w-5xl mx-auto pb-20">
+                      {/* Header */}
+                      <div className="flex items-center mb-6 gap-4">
+                          <Link to="/admin/packages" className="p-2 rounded-full hover:bg-gray-100 transition"><ArrowRight className="h-6 w-6 text-gray-600"/></Link>
+                          <h1 className="text-3xl font-bold text-gray-800">עריכת חבילה</h1>
+                      </div>
+          
+                      {/* Language Tabs */}
+                      <div className="flex gap-2 mb-6 border-b border-gray-200">
+                          <button type="button" onClick={() => setActiveLang('he')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'he' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>עברית</button>
+                          <button type="button" onClick={() => setActiveLang('en')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'en' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>English</button>
+                      </div>
+          
                       <form onSubmit={handleSubmit} className="space-y-8">
-                          <div className="bg-white p-6 rounded-lg shadow">
-                              <h2 className="text-xl font-semibold mb-4">פרטים בסיסיים</h2>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div><label>שם החבילה</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full mt-1 p-2 border rounded-md" /></div>
-                                  <div><label>מחיר (₪)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required className="w-full mt-1 p-2 border rounded-md" /></div>
+          
+                          {/* 1. Basic Info & Image */}
+                          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                              <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                                  <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+                                  פרטי החבילה
+                              </h2>
+          
+                              <div className="flex flex-col md:flex-row gap-6 mb-6">
+                                  <div className="w-full md:w-1/3">
+                                      <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
+                                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-center h-48 bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
+                                          {image ? (
+                                              <img src={image} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                                          ) : (
+                                              <div className="text-gray-400 flex flex-col items-center">
+                                                  <ImageIcon className="h-10 w-10 mb-2" />
+                                                  <span className="text-xs">לחץ להעלאה</span>
+                                              </div>
+                                          )}
+                                          <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                      </div>
+                                      {image && <Button type="button" variant="ghost" size="sm" onClick={() => setImage('')} className="w-full mt-2 text-red-500">הסר תמונה</Button>}
+                                  </div>
+          
+                                  <div className="w-full md:w-2/3 grid grid-cols-1 gap-6">
+                                      <div>
+                                          <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                                          <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                      </div>
+          
+                                      <div>
+                                          <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
+                                          <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} />
+                                      </div>
+          
+                                      <div>
+                                          <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
+                                          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                      </div>
+          
+                                      <div className="flex items-center gap-3">
+                                          <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                                          <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה</label>
+                                      </div>
+                                  </div>
                               </div>
+                          </section>
+          
+                          {/* 2. Fixed Items */}
+                          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                              <div className="flex justify-between items-center mb-6">
+                                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                      <span className="w-1 h-6 bg-green-500 rounded-full"></span>
+                                      פריטים קבועים
+                                  </h2>
+                                  <Button type="button" onClick={() => setIsProductModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white gap-2 rounded-full px-6">
+                                      <Plus size={18} /> הוסף מוצר
+                                  </Button>
+                              </div>
+          
+                              {fixedItems.length === 0 ? (
+                                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 text-gray-400">
+                                      לא נבחרו פריטים קבועים עדיין.
+                                  </div>
+                              ) : (
+                                  <div className="grid gap-3">
+                                      {fixedItems.map((item, index) => {
+                                          // --- תיקון: שימוש ב-getProductName ---
+                                          let prodName = 'טוען...';
+                                          if (item._productDetails) {
+                                              prodName = getProductName(item._productDetails);
+                                          } else {
+                                              const p = allProducts.find(p => p._id === item.product);
+                                              if (p) prodName = getProductName(p);
+                                          }
+          
+                                          return (
+                                              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
+                                                  <div className="flex items-center gap-4">
+                                                      <div className="bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>
+                                                      <span className="font-medium text-gray-800">{prodName}</span>
+                                                  </div>
+          
+                                                  <div className="flex items-center gap-4">
+                                                      <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
+                                                          <span className="text-xs text-gray-500">כמות:</span>
+                                                          <input
+                                                              type="number"
+                                                              min="1"
+                                                              value={item.quantity}
+                                                              onChange={(e) => updateFixedItemQty(index, e.target.value)}
+                                                              className="w-12 text-center outline-none font-bold"
+                                                          />
+                                                      </div>
+                                                      <button type="button" onClick={() => removeFixedItem(index)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition">
+                                                          <Trash2 size={18} />
+                                                      </button>
+                                                  </div>
+                                              </div>
+                                          );
+                                      })}
+                                  </div>
+                              )}
+                          </section>
+          
+                          {/* 3. Choice Rules */}
+                          <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                              <div className="flex justify-between items-center mb-6">
+                                  <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                      <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                                      חוקי בחירה
+                                  </h2>
+                                  <Button type="button" onClick={addChoiceRule} className="bg-purple-600 hover:bg-purple-700 text-white gap-2 rounded-full px-6">
+                                      <Plus size={18} /> הוסף קטגוריית בחירה
+                                  </Button>
+                              </div>
+          
+                              <div className="space-y-6">
+                                  {choiceRules.map((rule, ruleIndex) => (
+                                      <div key={ruleIndex} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                          {/* Rule Header */}
+                                          <div className="bg-gray-50 p-4 border-b border-gray-200 flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
+                                              <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                                                  <div>
+                                                      <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה</label>
+                                                      <input
+                                                          type="text"
+                                                          value={rule.category}
+                                                          onChange={(e) => updateChoiceRule(ruleIndex, 'category', e.target.value)}
+                                                          className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none"
+                                                      />
+                                                  </div>
+          
+                                                  <div>
+                                                      <label className="block text-xs font-bold text-gray-500 mb-1">כמות לבחירה</label>
+                                                      <input
+                                                          type="number"
+                                                          min="1"
+                                                          value={rule.quantityToChoose}
+                                                          onChange={(e) => updateChoiceRule(ruleIndex, 'quantityToChoose', e.target.value)}
+                                                          className="w-full p-2 border border-gray-300 rounded bg-white focus:border-purple-500 outline-none"
+                                                      />
+                                                  </div>
+                                              </div>
+                                              <button type="button" onClick={() => removeChoiceRule(ruleIndex)} className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition flex items-center gap-1 text-sm font-medium">
+                                                  <Trash2 size={16} /> הסר חוק
+                                              </button>
+                                          </div>
+          
+                                          {/* Product Selection Area */}
+                                          <div className="p-4 bg-white">
+                                              <p className="text-sm font-medium text-gray-700 mb-3">סמן את המוצרים שהלקוח יכול לבחור בקטגוריה זו:</p>
+          
+                                              <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                                  {categoriesList.map(catKey => {
+                                                      const productsInThisCat = productsByCategory[catKey];
+                                                      if (!productsInThisCat) return null;
+          
+                                                      const allSelected = productsInThisCat.every(p => rule.options.includes(p._id));
+          
+                                                      return (
+                                                          <div key={catKey} className="border border-gray-100 rounded-lg p-3">
+                                                              <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
+                                                                  <h4 className="font-bold text-gray-700">{CATEGORY_LABELS[catKey] || catKey}</h4>
+                                                                  <button
+                                                                      type="button"
+                                                                      onClick={() => toggleCategoryInRule(ruleIndex, catKey)}
+                                                                      className={`text-xs font-medium px-2 py-1 rounded transition-colors ${allSelected ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+                                                                  >
+                                                                      {allSelected ? 'הסר הכל' : 'בחר הכל בקטגוריה'}
+                                                                  </button>
+                                                              </div>
+          
+                                                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                                  {productsInThisCat.map(product => {
+                                                                      const isSelected = rule.options.includes(product._id);
+                                                                      // --- תיקון: שימוש ב-getProductName ---
+                                                                      const prodName = getProductName(product);
+          
+                                                                      return (
+                                                                          <label
+                                                                              key={product._id}
+                                                                              className={`flex items-center p-2 rounded cursor-pointer transition-all border ${isSelected ? 'bg-purple-50 border-purple-200 text-purple-900' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
+                                                                          >
+                                                                              <div className={`w-4 h-4 rounded border flex items-center justify-center mr-2 transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300 bg-white'}`}>
+                                                                                  {isSelected && <Check size={10} className="text-white" />}
+                                                                              </div>
+                                                                              <input
+                                                                                  type="checkbox"
+                                                                                  className="hidden"
+                                                                                  checked={isSelected}
+                                                                                  onChange={() => toggleProductInRule(ruleIndex, product._id)}
+                                                                              />
+                                                                              <span className="text-sm truncate select-none" title={prodName}>
+                                                                                  {prodName}
+                                                                              </span>
+                                                                          </label>
+                                                                      );
+                                                                  })}
+                                                              </div>
+                                                          </div>
+                                                      );
+                                                  })}
+                                              </div>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+          
+                          </section>
+          
+                          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+                              <Button type="button" variant="outline" onClick={() => navigate('/admin/packages')}>ביטול</Button>
+                              <Button type="submit" disabled={submitting} className="px-8 text-lg">{submitting ? <LoaderCircle className="animate-spin" /> : 'שמור שינויים'}</Button>
                           </div>
-                          <div className="bg-white p-6 rounded-lg shadow">
-                              <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold">פריטים קבועים</h2><Button type="button" variant="ghost" onClick={addFixedItem}><PlusCircle className="mr-2"/>הוסף פריט קבוע</Button></div>
-                              <div className="space-y-4">{fixedItems.map((item, index) => (<div key={index} className="flex items-center gap-4"><select value={item.product} onChange={(e) => handleFixedItemChange(index, 'product', e.target.value)} className="flex-grow p-2 border rounded-md"><option value="">בחר מוצר...</option>{allProducts.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}</select><input type="number" value={item.quantity} onChange={(e) => handleFixedItemChange(index, 'quantity', e.target.value)} min="1" className="w-20 p-2 border rounded-md" /><Button type="button" variant="destructive" size="sm" onClick={() => removeFixedItem(index)}><XCircle/></Button></div>))}</div>
-                          </div>
-                          <div className="bg-white p-6 rounded-lg shadow">
-                              <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-semibold">חוקי בחירה</h2><Button type="button" variant="ghost" onClick={addChoiceRule}><PlusCircle className="mr-2"/>הוסף חוק בחירה</Button></div>
-                              <div className="space-y-6">{choiceRules.map((rule, index) => (<div key={index} className="border p-4 rounded-lg bg-gray-50"><div className="flex justify-end mb-2"><Button type="button" variant="destructive" size="sm" onClick={() => removeChoiceRule(index)}>הסר חוק</Button></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><input type="text" placeholder="שם הקטגוריה" value={rule.category} onChange={(e) => handleChoiceRuleChange(index, 'category', e.target.value)} required className="p-2 border rounded-md" /><input type="number" placeholder="כמות לבחירה" value={rule.quantityToChoose} onChange={(e) => handleChoiceRuleChange(index, 'quantityToChoose', e.target.value)} min="1" required className="p-2 border rounded-md" /></div><div><label className="block text-sm font-medium mb-2">מוצרים אפשריים לבחירה:</label><div className="flex flex-wrap gap-2 mb-2">{productCategories.map(cat => (<Button type="button" variant="outline" size="sm" key={cat} onClick={() => handleSelectCategory(index, cat)}>הוסף הכל מ"{cat}"</Button>))}</div><div className="w-full h-48 p-2 border rounded-md overflow-y-auto bg-white">{allProducts.map(p => (<label key={p._id} className="flex items-center p-1 hover:bg-gray-100 rounded"><input type="checkbox" checked={rule.options.includes(p._id)} onChange={() => handleOptionToggle(index, p._id)} className="h-4 w-4 rounded border-gray-300 text-blue-600"/><span className="mr-2 text-sm">{p.name}</span></label>))}</div></div></div>))}</div>
-                          </div>
-                          {error && <div className="text-red-600 bg-red-50 p-3 rounded-md text-center">{error}</div>}
-                          <div className="flex justify-end gap-4"><Button type="button" variant="outline" onClick={() => navigate('/admin/packages')}>ביטול</Button><Button type="submit" disabled={submitting}>{submitting ? 'מעדכן...' : 'שמור שינויים'}</Button></div>
                       </form>
+          
+                      {/* --- Modal for Selecting Fixed Items --- */}
+                      <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="בחר מוצר להוספה">
+                          <div className="mb-4 relative">
+                              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                              <input
+                                  type="text"
+                                  placeholder="חפש מוצר..."
+                                  value={productSearch}
+                                  onChange={(e) => setProductSearch(e.target.value)}
+                                  className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              />
+                          </div>
+                          <div className="max-h-[60vh] overflow-y-auto space-y-6">
+                              {categoriesList.map(catKey => {
+                                  const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
+                                      const name = getProductName(p);
+                                      return name.toLowerCase().includes(productSearch.toLowerCase());
+                                  });
+          
+                                  if (filteredProducts.length === 0) return null;
+          
+                                  return (
+                                      <div key={catKey}>
+                                          <h3 className="font-bold text-gray-800 bg-gray-100 p-2 rounded mb-2 sticky top-0">{CATEGORY_LABELS[catKey] || catKey}</h3>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                              {filteredProducts.map(product => (
+                                                  <button
+                                                      key={product._id}
+                                                      onClick={() => handleAddFixedItem(product)}
+                                                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
+                                                  >
+                                                      <span className="font-medium text-gray-700 group-hover:text-blue-600">{getProductName(product)}</span>
+                                                      <span className="text-sm text-gray-400">₪{product.price}</span>
+                                                  </button>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  );
+                              })}
+                          </div>
+                      </Modal>
                   </div>
               );
           };
+          
           export default AdminPackageEditPage;
         📄 AdminPackageListPage.jsx
           import { useState, useEffect } from 'react';
@@ -7061,25 +7838,31 @@
                 const [formData, setFormData] = useState({ ...content, slides: content.slides || [] });
             
                 const handleSimpleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+            
                 const handleSlideChange = (index, field, value) => {
                     const updatedSlides = [...formData.slides];
                     updatedSlides[index][field] = value;
                     setFormData(prev => ({ ...prev, slides: updatedSlides }));
                 };
+            
                 const addSlide = () => {
-                    const newSlide = { id: uuidv4(), image: '', headline: '<p>כותרת חדשה</p>', subheadline: '<p>תיאור חדש</p>' };
+                    // יצירת שקופית חדשה עם תיבת טקסט אחת בלבד
+                    const newSlide = { id: uuidv4(), image: '', headline: '<p style="text-align: center"><span style="font-size: 48px">כותרת ראשית</span></p><p style="text-align: center"><span style="font-size: 24px">טקסט משנה</span></p>' };
                     setFormData(prev => ({...prev, slides: [...prev.slides, newSlide]}));
                 };
+            
                 const removeSlide = (index) => {
                     if (window.confirm('האם למחוק שקופית זו?')) {
                         setFormData(prev => ({ ...prev, slides: prev.slides.filter((_, i) => i !== index) }));
                     }
                 };
+            
                 const handleImageUpload = async (e, index) => {
                     const file = e.target.files[0];
                     if (!file) return;
                     const uploadFormData = new FormData();
                     uploadFormData.append('images', file);
+            
                     try {
                         const { data } = await api.post('/api/upload', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true });
                         handleSlideChange(index, 'image', data.images[0]);
@@ -7116,6 +7899,7 @@
                                             <h4 className="font-semibold">שקופית {index + 1}</h4>
                                             <Button type="button" variant="destructive" size="sm" onClick={() => removeSlide(index)}><Trash2 size={16} /></Button>
                                         </div>
+            
                                         <div>
                                             <label className="block text-sm font-medium">תמונת רקע</label>
                                             <div className="mt-1 flex items-center gap-4">
@@ -7126,13 +7910,11 @@
                                                 </label>
                                             </div>
                                         </div>
+            
                                         <div>
-                                            <label className="block text-sm font-medium">כותרת</label>
+                                            <label className="block text-sm font-medium mb-1">תוכן השקופית</label>
+                                            {/* כאן משתמשים רק ב-Headline עבור כל התוכן */}
                                             <RichTextEditor content={slide.headline} onChange={(html) => handleSlideChange(index, 'headline', html)} />
-                                        </div>
-                                         <div>
-                                            <label className="block text-sm font-medium">כותרת משנה / טקסט</label>
-                                            <RichTextEditor content={slide.subheadline} onChange={(html) => handleSlideChange(index, 'subheadline', html)} />
                                         </div>
                                     </div>
                                 ))}
@@ -7146,6 +7928,7 @@
                     </div>
                 );
             };
+            
             export default HeroEditForm;
           📄 ImageWithTextEditForm.jsx
             import React, { useState } from 'react';
@@ -7158,12 +7941,15 @@
                 const [formData, setFormData] = useState(content);
             
                 const handleContentChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+            
                 const handleSimpleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+            
                 const handleImageUpload = async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
                     const uploadFormData = new FormData();
                     uploadFormData.append('images', file);
+            
                     try {
                         const { data } = await api.post('/api/upload', uploadFormData, { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true });
                         setFormData(prev => ({ ...prev, image: data.images[0] }));
@@ -7188,19 +7974,16 @@
                                 <div>
                                     <label className="block text-sm font-medium mb-2">תמונת רקע</label>
                                     <div className="flex items-center gap-4">
-                                       {formData.image ? <img src={formData.image} alt="" className="w-32 h-20 object-cover rounded-md my-2"/> : <div className="w-32 h-20 rounded-md bg-gray-200 flex items-center justify-center"><ImageIcon className="text-gray-400" /></div>}
+                                        {formData.image ? <img src={formData.image} alt="" className="w-32 h-20 object-cover rounded-md my-2"/> : <div className="w-32 h-20 rounded-md bg-gray-200 flex items-center justify-center"><ImageIcon className="text-gray-400" /></div>}
                                        <label className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 bg-white border border-gray-300 hover:bg-gray-100 cursor-pointer">
                                             <Upload className="h-4 w-4 mr-2" /> העלה/החלף תמונה
                                             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                                        </label>
                                     </div>
                                 </div>
+            
                                 <div>
-                                    <label className="block text-sm font-medium mt-2">כותרת</label>
-                                    <RichTextEditor content={formData.title} onChange={(html) => handleContentChange('title', html)} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mt-2">טקסט</label>
+                                    <label className="block text-sm font-medium mt-2">תוכן (כותרת וטקסט)</label>
                                     <RichTextEditor content={formData.text} onChange={(html) => handleContentChange('text', html)} />
                                 </div>
                             </div>
@@ -7208,7 +7991,7 @@
             
                         <div>
                             <h3 className="text-lg font-medium border-b pb-2 mb-4">כפתור (אופציונלי)</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md bg-white">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md bg-white">
                                 <div>
                                     <label className="block text-sm font-medium">טקסט הכפתור</label>
                                     <input name="buttonText" value={formData.buttonText || ''} onChange={handleSimpleChange} className="w-full mt-1 p-2 border rounded-md" />
@@ -7227,10 +8010,9 @@
                     </div>
                 );
             };
+            
             export default ImageWithTextEditForm;
           📄 RichTextEditForm.jsx
-            // client/src/pages/admin/page-builder-forms/RichTextEditForm.jsx
-            
             import React, { useState } from 'react';
             import { Button } from '@/components/ui/Button';
             import RichTextEditor from '@/components/RichTextEditor';
@@ -7238,14 +8020,12 @@
             const RichTextEditForm = ({ content, onSave, onCancel }) => {
                 const [formData, setFormData] = useState(content);
             
-                // פונקציה חדשה לטיפול בשינוי גובה (ושדות רגילים אחרים)
                 const handleSimpleChange = (e) => {
                     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
                 };
             
                 return (
                     <div className="space-y-6">
-                        {/* --- הוספתי את החלק הזה להגדרת הגובה --- */}
                         <div>
                             <h3 className="text-lg font-medium border-b pb-2 mb-4">הגדרות הבלוק</h3>
                             <div className="p-4 border rounded-md bg-gray-50">
@@ -7253,7 +8033,7 @@
                                 <input
                                     type="number"
                                     name="height"
-                                    value={formData.height || ''} // מאפשר להשאיר ריק
+                                    value={formData.height || ''}
                                     onChange={handleSimpleChange}
                                     placeholder="השאר ריק כדי שהגובה יקבע לפי הטקסט (מומלץ)"
                                     className="w-full mt-1 p-2 border rounded-md"
@@ -7264,20 +8044,11 @@
                             </div>
                         </div>
             
-                        {/* --- עורכי הטקסט הקיימים --- */}
                         <div>
                             <h3 className="text-lg font-medium border-b pb-2 mb-4">תוכן</h3>
-            
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">כותרת</label>
-                                    <RichTextEditor
-                                        content={formData.title || ''}
-                                        onChange={(html) => setFormData(prev => ({ ...prev, title: html }))}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">תוכן טקסט</label>
+                                    <label className="block text-sm font-medium mb-2">תוכן הבלוק (כולל כותרות וטקסט)</label>
                                     <RichTextEditor
                                         content={formData.text || ''}
                                         onChange={(html) => setFormData(prev => ({ ...prev, text: html }))}
@@ -7451,24 +8222,25 @@
             return raw;
           }
         
-          // 2. נרמול הנתיב (החלפת סלאשים הפוכים לרגילים והסרת רווחים)
+          // 2. נרמול הנתיב
           let path = String(raw).replace(/\\/g, '/').trim();
-        
-          // וודא שיש סלאש בהתחלה
           if (!path.startsWith('/')) {
               path = '/' + path;
           }
         
+          // --- מחק או שים בהערה את החלק הזה ---
+          // if (path.startsWith('/uploads')) {
+          //     return path;
+          // }
+          // ------------------------------------
+        
           // 3. חישוב שורש השרת
-          // לוקחים את כתובת ה-API המוגדרת (למשל https://passover1.onrender.com/api)
           const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
         
-          // מסירים את הסיומת "/api" (אם קיימת) כדי לקבל את כתובת השורש של השרת
-          // לדוגמה: הופך את https://site.com/api ל- https://site.com
+          // מסירים את הסיומת "/api" (אם קיימת)
           const serverRoot = apiBase.replace(/\/api\/?$/, '');
         
-          // 4. החזרת הכתובת המלאה
-          // התוצאה תהיה: https://passover1.onrender.com/uploads/filename.jpg
+          // 4. כעת הכתובת תמיד תכלול את השרת, גם עבור uploads
           return `${serverRoot}${path}`;
         }
   📄 vite.config.js
@@ -7515,6 +8287,7 @@
         },
       };
     });
+📄 directory_structure.txt
 📄 folder_copier_gui.py
   #!/usr/bin/env python3
   # -*- coding: utf-8 -*-
@@ -7865,6 +8638,7 @@
   if __name__ == "__main__":
       main()
 📁 server/
+  📄 .env
   📄 app.js
     import express from 'express';
     import cors from 'cors';
@@ -7888,7 +8662,6 @@
     import homepageSettingsRoutes from './routes/homepageSettingsRoutes.js';
     import couponRoutes from './routes/couponRoutes.js';
     import uploadRoutes from './routes/uploadRoutes.js';
-    
     import getLanguage from './middleware/languageMiddleware.js';
     import { errorHandler } from './middleware/errorHandler.js';
     
@@ -7922,9 +8695,9 @@
     app.use(mongoSanitize());
     app.use(getLanguage);
     
-    // --- התיקון הקריטי: חשיפת תיקיית ההעלאות ---
-    // זה מאפשר לגשת לקבצים דרך http://your-server.com/uploads/filename.jpg
-    const uploadsPath = path.join(__dirname, 'uploads');
+    // --- תיקון: הפניית נתיב ה-Static למיקום החדש ב-Client ---
+    // זה מאפשר גישה לקבצים גם דרך השרת אם צריך, למרות שהם יושבים בקליינט
+    const uploadsPath = path.join(__dirname, '../client/public/uploads');
     app.use('/uploads', express.static(uploadsPath));
     
     // Routes
@@ -7984,9 +8757,9 @@
       import MealPackage from '../models/mealPackageModel.js';
       import DeliveryCenter from '../models/deliveryCenterModel.js';
       import Category from '../models/categoryModel.js';
-      import Coupon from '../models/couponModel.js'; // <-- הוספת ייבוא
-      import DeliveryDate from '../models/deliveryDateModel.js'; // <-- ייבוא חדש
-      import GeneralSettings from '../models/generalSettingsModel.js'; // <-- ייבוא חדש
+      import Coupon from '../models/couponModel.js';
+      import DeliveryDate from '../models/deliveryDateModel.js';
+      import GeneralSettings from '../models/generalSettingsModel.js';
       
       // --- General Stats ---
       export const getDashboardStats = async (req, res) => {
@@ -7997,6 +8770,7 @@
               res.json({ users: userCount, products: productCount, orders: orderCount });
           } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
+      
       // --- Product Management ---
       export const getProducts = async (req, res) => {
           try {
@@ -8005,18 +8779,16 @@
           } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
       
-      // server/controllers/adminController.js
-      
       export const createProduct = async (req, res) => {
           try {
               const { name, description, ...otherFields } = req.body;
       
               // בנייה מחדש ואחראית של אובייקט המוצר
               const productData = {
-                  ...otherFields, // כל השדות הרגילים (מחיר, מק"ט וכו')
+                  ...otherFields,
                   name: {
-                      he: name?.he || '', // ודא ששדה 'he' קיים, גם אם הוא ריק
-                      en: name?.en || '', // ודא ששדה 'en' קיים, גם אם הוא ריק
+                      he: name?.he || '',
+                      en: name?.en || '',
                   },
                   description: {
                       he: description?.he || '',
@@ -8042,12 +8814,9 @@
       export const getProductById = async (req, res) => {
           try {
               const product = await Product.findById(req.params.id);
-              if (product) { res.json(product); } else { res.status(404).json({ message: 'Product not found' });
-              }
-          } catch (error) { res.status(500).json({ message: 'Server Error' });
-          }
+              if (product) { res.json(product); } else { res.status(404).json({ message: 'Product not found' }); }
+          } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
-      // server/controllers/adminController.js
       
       export const updateProduct = async (req, res) => {
           try {
@@ -8055,10 +8824,7 @@
               const product = await Product.findById(req.params.id);
       
               if (product) {
-                  // עדכון השדות הרגילים
                   Object.assign(product, otherFields);
-      
-                  // עדכון אחראי של השדות הדו-לשוניים
                   product.name = {
                       he: name?.he !== undefined ? name.he : product.name.he,
                       en: name?.en !== undefined ? name.en : product.name.en,
@@ -8067,7 +8833,6 @@
                       he: description?.he !== undefined ? description.he : product.description.he,
                       en: description?.en !== undefined ? description.en : product.description.en,
                   };
-      
                   const updatedProduct = await product.save();
                   res.json(updatedProduct);
               } else {
@@ -8091,10 +8856,8 @@
               if (product) {
                   await Product.deleteOne({ _id: product._id });
                   res.json({ message: 'Product removed' });
-              } else { res.status(404).json({ message: 'Product not found' });
-              }
-          } catch (error) { res.status(500).json({ message: 'Server Error' });
-          }
+              } else { res.status(404).json({ message: 'Product not found' }); }
+          } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
       
       // --- User Management ---
@@ -8104,18 +8867,16 @@
               res.json(users);
           } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
+      
       export const deleteUser = async (req, res) => {
           try {
-              if (req.user.id === req.params.id) { return res.status(400).json({ message: 'Admin cannot delete their own account' });
-              }
+              if (req.user.id === req.params.id) { return res.status(400).json({ message: 'Admin cannot delete their own account' }); }
               const user = await User.findById(req.params.id);
               if (user) {
                   await User.deleteOne({ _id: user._id });
                   res.json({ message: 'User removed' });
-              } else { return res.status(404).json({ message: 'User not found' });
-              }
-          } catch (error) { res.status(500).json({ message: 'Server Error' });
-          }
+              } else { return res.status(404).json({ message: 'User not found' }); }
+          } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
       
       // --- Order Management ---
@@ -8125,6 +8886,7 @@
               res.json(orders);
           } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
+      
       // --- Meal Package Management ---
       export const getMealPackages = async (req, res) => {
           try {
@@ -8135,10 +8897,73 @@
       
       export const createMealPackage = async (req, res) => {
           try {
-              const newPackage = new MealPackage(req.body);
+              // ולידציה בסיסית לפני הניסיון לשמור
+              const { name, description, ...rest } = req.body;
+      
+              const packageData = {
+                  ...rest,
+                  name: {
+                      he: name?.he || '',
+                      en: name?.en || ''
+                  },
+                  description: {
+                      he: description?.he || '',
+                      en: description?.en || ''
+                  }
+              };
+      
+              const newPackage = new MealPackage(packageData);
               const savedPackage = await newPackage.save();
               res.status(201).json(savedPackage);
           } catch (error) {
+              console.error("Create Package Error:", error); // לוג לשרת
+              if (error.name === 'ValidationError') {
+                  const messages = Object.values(error.errors).map(val => val.message).join(', ');
+                  return res.status(400).json({ message: messages });
+              }
+              res.status(500).json({ message: 'Server Error: ' + error.message });
+          }
+      };
+      
+      export const getMealPackageById = async (req, res) => {
+          try {
+              const mealPackage = await MealPackage.findById(req.params.id).populate('fixedItems.product').populate('choiceRules.options');
+              if (mealPackage) { res.json(mealPackage); } else { res.status(404).json({ message: 'Package not found' }); }
+          } catch (error) { res.status(500).json({ message: 'Server Error' }); }
+      };
+      
+      export const updateMealPackage = async (req, res) => {
+          try {
+              const { name, description, ...rest } = req.body;
+      
+              // הכנת אובייקט עדכון בטוח
+              const updateData = { ...rest };
+      
+              // עדכון שדות טקסט רק אם סופקו
+              if (name) {
+                  updateData.name = {
+                      he: name.he || '',
+                      en: name.en || ''
+                  };
+              }
+      
+              if (description) {
+                  updateData.description = {
+                      he: description.he || '',
+                      en: description.en || ''
+                  };
+              }
+      
+              const updatedPackage = await MealPackage.findByIdAndUpdate(
+                  req.params.id,
+                  updateData,
+                  { new: true, runValidators: true }
+              );
+      
+              if (updatedPackage) { res.json(updatedPackage); }
+              else { res.status(404).json({ message: 'Package not found' }); }
+          } catch (error) {
+              console.error("Update Package Error:", error);
               if (error.name === 'ValidationError') {
                   const messages = Object.values(error.errors).map(val => val.message).join(', ');
                   return res.status(400).json({ message: messages });
@@ -8147,40 +8972,21 @@
           }
       };
       
-      export const getMealPackageById = async (req, res) => {
-          try {
-              const mealPackage = await MealPackage.findById(req.params.id).populate('fixedItems.product').populate('choiceRules.options');
-              if (mealPackage) { res.json(mealPackage); } else { res.status(404).json({ message: 'Package not found' });
-              }
-          } catch (error) { res.status(500).json({ message: 'Server Error' });
-          }
-      };
-      export const updateMealPackage = async (req, res) => {
-          try {
-              const updatedPackage = await MealPackage.findByIdAndUpdate(req.params.id, req.body, { new: true });
-              if (updatedPackage) { res.json(updatedPackage); } else { res.status(404).json({ message: 'Package not found' });
-              }
-          } catch (error) { res.status(500).json({ message: 'Server Error' });
-          }
-      };
       export const deleteMealPackage = async (req, res) => {
           try {
               const mealPackage = await MealPackage.findById(req.params.id);
               if (mealPackage) {
                   await MealPackage.deleteOne({ _id: mealPackage._id });
                   res.json({ message: 'Package removed' });
-              } else { res.status(404).json({ message: 'Package not found' });
-              }
-          } catch (error) { res.status(500).json({ message: 'Server Error' });
-          }
+              } else { res.status(404).json({ message: 'Package not found' }); }
+          } catch (error) { res.status(500).json({ message: 'Server Error' }); }
       };
       
-      // --- פונקציה חדשה ---
       export const getOrderByIdForAdmin = async (req, res) => {
           try {
               const order = await Order.findById(req.params.id)
-                  .populate('user', 'name email') // מביא את פרטי המשתמש
-                  .populate('orderItems.item'); // מנסה להביא את פרטי המוצרים/חבילות
+                  .populate('user', 'name email')
+                  .populate('orderItems.item');
       
               if (order) {
                   res.json(order);
@@ -8192,7 +8998,6 @@
           }
       };
       
-      // --- פונקציה חדשה ---
       export const updateOrderStatus = async (req, res) => {
           try {
               const { status } = req.body;
@@ -8209,32 +9014,28 @@
               res.status(500).json({ message: 'Server Error' });
           }
       };
-      // --- דוחות ---
+      
+      // --- Reports ---
       export const getPreparationReport = async (req, res) => {
-          const { deliveryDate } = req.query; // קבלת התאריך מה-URL Query
+          const { deliveryDate } = req.query;
           if (!deliveryDate) {
               return res.status(400).json({ message: 'A delivery date is required' });
           }
       
           try {
               const orders = await Order.find({ deliveryDate });
-      
               const preparationSummary = {};
       
               orders.forEach(order => {
                   order.orderItems.forEach(item => {
-                      // טיפול במוצרים רגילים
                       if (item.itemType === 'Product') {
                           const productName = item.name;
                           preparationSummary[productName] = (preparationSummary[productName] || 0) + item.quantity;
                       }
-                      // טיפול בחבילות
                       else if (item.itemType === 'MealPackage') {
-                          // הוספת החבילה עצמה (למשל, "סעודת חג זוגית")
                           const packageName = `${item.name} (חבילה)`;
                           preparationSummary[packageName] = (preparationSummary[packageName] || 0) + 1;
       
-                          // הוספת הפריטים שהלקוח בחר בחבילה
                           item.packageSelections.forEach(selection => {
                               selection.selectedOptions.forEach(option => {
                                   const optionName = option.name;
@@ -8245,18 +9046,17 @@
                   });
               });
       
-              // המרה למערך ממוין כדי שיהיה קל להציג ב-Frontend
               const sortedReport = Object.entries(preparationSummary).map(([name, quantity]) => ({
                   name,
                   quantity
               })).sort((a, b) => a.name.localeCompare(b.name, 'he'));
-      
               res.json(sortedReport);
       
           } catch (error) {
               res.status(500).json({ message: 'Server Error: ' + error.message });
           }
       };
+      
       export const getDeliveryReport = async (req, res) => {
           const { deliveryDate } = req.query;
           if (!deliveryDate) {
@@ -8265,12 +9065,7 @@
       
           try {
               const orders = await Order.find({ deliveryDate }).populate('user', 'name');
-      
-              const finalReport = {
-                  pickups: [],
-                  deliveries: {}
-              };
-      
+              const finalReport = { pickups: [], deliveries: {} };
               orders.forEach(order => {
                   if (order.fulfillmentType === 'Pickup') {
                       finalReport.pickups.push({
@@ -8281,7 +9076,7 @@
                           totalPrice: order.totalPrice,
                           fulfillmentDetails: order.fulfillmentDetails
                       });
-                  } else { // fulfillmentType === 'Delivery'
+                  } else {
                       const city = order.shippingDetails.city;
                       if (!finalReport.deliveries[city]) {
                           finalReport.deliveries[city] = [];
@@ -8290,7 +9085,6 @@
                           orderId: order._id.toString().substring(18).toUpperCase(),
                           customerName: order.shippingDetails.customerName,
                           phone: order.shippingDetails.phone,
-                          // --- פיצול הכתובת לשדות נפרדים ---
                           streetAddress: order.shippingDetails.streetAddress,
                           city: order.shippingDetails.city,
                           floor: order.shippingDetails.floor || '-',
@@ -8301,7 +9095,6 @@
               });
       
               finalReport.pickups.sort((a, b) => a.customerName.localeCompare(b.customerName, 'he'));
-      
               res.json(finalReport);
       
           } catch (error) {
@@ -8309,13 +9102,6 @@
           }
       };
       
-      // @desc    Create a new delivery center
-      // @route   POST /api/admin/delivery-centers
-      // @access  Admin
-      
-      // @desc    Get delivery center by ID
-      // @route   GET /api/admin/delivery-centers/:id
-      // @access  Admin
       export const getDeliveryCenterById = async (req, res) => {
         try {
           const center = await DeliveryCenter.findById(req.params.id);
@@ -8329,16 +9115,7 @@
         }
       };
       
-      // @desc    Update a delivery center
-      // @route   PUT /api/admin/delivery-centers/:id
-      // @access  Admin
-      
-      // @desc    Delete a delivery center
-      // @route   DELETE /api/admin/delivery-centers/:id
-      // @access  Admin
-      
       // --- Category Management ---
-      
       export const getCategories = async (req, res) => {
         try {
           const categories = await Category.find({}).sort({ displayOrder: 1 });
@@ -8389,10 +9166,6 @@
         }
       };
       
-      // --- NEW FUNCTION ---
-      // @desc    Get all existing product category keys from the schema
-      // @route   GET /api/admin/product-categories
-      // @access  Admin
       export const getProductCategoryKeys = async (req, res) => {
         try {
           const categoryKeys = Product.schema.path('category').enumValues;
@@ -8402,7 +9175,7 @@
         }
       };
       
-      
+      // --- Coupon Management ---
       export const getCoupons = async (req, res) => {
           try {
               const coupons = await Coupon.find({}).sort({ createdAt: -1 });
@@ -8469,7 +9242,9 @@
           } catch (error) {
               res.status(500).json({ message: 'Server Error' });
           }
-      };export const getGeneralSettings = async (req, res) => {
+      };
+      
+      export const getGeneralSettings = async (req, res) => {
           try {
               let settings = await GeneralSettings.findOne({ identifier: 'main' });
               if (!settings) {
@@ -8495,8 +9270,7 @@
           }
       };
       
-      
-      // --- Global Delivery Dates Management (NEW) ---
+      // --- Global Delivery Dates Management ---
       export const getDeliveryDates = async (req, res) => {
         try {
           const dates = await DeliveryDate.find({}).sort({ date: 1 });
@@ -8534,8 +9308,6 @@
         }
       };
       
-      
-      
       const ensureBaseDeliveryZones = async () => {
           const requiredZones = ['צפון', 'מרכז', 'דרום', 'אזורים נבחרים'];
           for (const zoneName of requiredZones) {
@@ -8552,7 +9324,6 @@
           }
       };
       
-      // --- Delivery Centers (Zones & Pickups) Management (UPDATED LOGIC) ---
       export const getDeliveryCenters = async (req, res) => {
         try {
           await ensureBaseDeliveryZones();
@@ -8590,14 +9361,13 @@
               if (center.type === 'DeliveryZone') {
                   if (price !== undefined) center.price = price;
                   if (cities !== undefined) center.cities = cities;
-              } else { // Pickup
+              } else {
                   if (name !== undefined) center.name = name;
                   if (address !== undefined) center.address = address;
                   if (availableDates !== undefined) center.availableDates = availableDates;
               }
       
               if (isActive !== undefined) center.isActive = isActive;
-      
               const updatedCenter = await center.save();
               res.json(updatedCenter);
       
@@ -9214,19 +9984,18 @@
       // server/controllers/packageController.js
       
       import MealPackage from '../models/mealPackageModel.js';
-      import { localizeFields } from '../utils/localize.js'; // <-- 1. מייבאים את "המתרגם"
       
       // @desc    Fetch all active meal packages for public view
       // @route   GET /api/packages
       // @access  Public
       export const getPublicPackages = async (req, res) => {
           try {
+              // שולפים את החבילות הפעילות
               const packages = await MealPackage.find({ isActive: true });
       
-              // 2. מתרגמים את החבילות לשפה הנכונה
-              const localizedPackages = packages.map(p => localizeFields(p, req.language));
-      
-              res.json(localizedPackages);
+              // --- תיקון: שליחת הנתונים הגולמיים (Raw) ---
+              // אנחנו שולחים את האובייקט המלא (עם he ו-en) כדי שהקליינט יחליט מה להציג
+              res.json(packages);
           } catch (error) {
               res.status(500).json({ message: 'Server Error' });
           }
@@ -9238,26 +10007,23 @@
       export const getPackageById = async (req, res) => {
           try {
               const mealPackage = await MealPackage.findById(req.params.id)
-                  .populate('fixedItems.product', 'name price')
-                  .populate('choiceRules.options', 'name price');
+                  // שליפת המידע המלא על המוצרים הקשורים
+                  .populate('fixedItems.product')
+                  .populate('choiceRules.options');
       
               if (mealPackage) {
-                  // 3. מתרגמים גם את החבילה הבודדת וגם את המוצרים שבתוכה
-                  const localizedPackage = localizeFields(mealPackage, req.language);
-                  localizedPackage.fixedItems = localizedPackage.fixedItems.map(item => ({
-                      ...item,
-                      product: localizeFields(item.product, req.language)
-                  }));
-                  localizedPackage.choiceRules = localizedPackage.choiceRules.map(rule => ({
-                      ...rule,
-                      options: rule.options.map(opt => localizeFields(opt, req.language))
-                  }));
+                  // --- תיקון: ביטול הלוקליזציה בשרת ---
+                  // במקום להשתמש ב-localizeFields ולכפות שפה,
+                  // אנחנו מחזירים את האובייקט המקורי.
+                  // הקליינט (PackageBuilderPage) כבר מכיל לוגיקה שיודעת לקחת את השפה הנכונה:
+                  // pkg.name?.[currentLang] || pkg.name?.he
       
-                  res.json(localizedPackage);
+                  res.json(mealPackage);
               } else {
                   res.status(404).json({ message: 'Package not found' });
               }
           } catch (error) {
+              console.error(error);
               res.status(500).json({ message: 'Server Error' });
           }
       };
@@ -9840,13 +10606,13 @@
     📄 mealPackageModel.js
       import mongoose from 'mongoose';
       
-      // יצרנו תבנית קטנה עבור שדה טקסט שצריך להיות דו-לשוני
+      // הגדרת סכמה גמישה יותר לטקסט - אנגלית לא חובה
       const localizedStringSchema = {
         he: { type: String, required: true, trim: true },
-        en: { type: String, required: true, trim: true },
+        en: { type: String, default: '' } // <-- השינוי: לא חובה, ברירת מחדל ריקה
       };
       
-      const choiceRuleSchema = new mongoose.Schema({ // <-- שם התבנית הוא choiceRuleSchema
+      const choiceRuleSchema = new mongoose.Schema({
         category: { type: String, required: true },
         quantityToChoose: { type: Number, required: true },
         options: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
@@ -9864,9 +10630,7 @@
         image: { type: String, required: false },
         isActive: { type: Boolean, default: true },
         fixedItems: [fixedItemSchema],
-      
-        // -- התיקון נמצא כאן --
-        choiceRules: [choiceRuleSchema], // השתמשנו בשם הנכון של התבנית
+        choiceRules: [choiceRuleSchema],
       
       }, { timestamps: true });
       
@@ -9875,7 +10639,12 @@
     📄 orderModel.js
       import mongoose from 'mongoose';
       
-      // ... (orderItemSchema and shippingDetailsSchema remain the same) ...
+      // סכמה לטקסט רב-לשוני
+      const localizedStringSchema = {
+          he: { type: String, default: '' },
+          en: { type: String, default: '' }
+      };
+      
       const shippingDetailsSchema = new mongoose.Schema({
           customerName: { type: String, required: true },
           phone: { type: String, required: true },
@@ -9886,46 +10655,47 @@
       }, { _id: false });
       
       const orderItemSchema = new mongoose.Schema({
-          name: { type: String, required: true },
+          // --- השינוי: השם נשמר כאובייקט שפות ---
+          name: localizedStringSchema,
           price: { type: Number, required: true },
           itemType: { type: String, required: true, enum: ['Product', 'MealPackage'] },
           item: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: 'orderItems.itemType' },
           quantity: { type: Number },
           packageSelections: [{
               category: String,
-              selectedOptions: [{ _id: mongoose.Schema.Types.ObjectId, name: String }]
+              selectedOptions: [{
+                  _id: mongoose.Schema.Types.ObjectId,
+                  // --- השינוי: גם כאן ---
+                  name: localizedStringSchema
+              }]
           }]
       });
-      
       
       const orderSchema = new mongoose.Schema({
           user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
           orderItems: [orderItemSchema],
-      
-          // --- שדות חדשים/מעודכנים ---
-          itemsPrice: { type: Number, required: true }, // מחיר הפריטים לפני הנחות ומשלוח
+          itemsPrice: { type: Number, required: true },
           shippingPrice: { type: Number, required: true, default: 0 },
-          discountAmount: { type: Number, default: 0 }, // סכום ההנחה
-          couponCode: { type: String }, // קוד הקופון שמומש
+          discountAmount: { type: Number, default: 0 },
+          couponCode: { type: String },
           totalPrice: { type: Number, required: true, default: 0.0 },
-      
           status: {
-          type: String,
-          required: true,
-          enum: ['התקבלה', 'בטיפול המטבח', 'מוכנה למשלוח', 'בדרך ללקוח', 'נמסרה', 'בוטלה'],
-          default: 'התקבלה' },
+              type: String,
+              required: true,
+              enum: ['התקבלה', 'בטיפול המטבח', 'מוכנה למשלוח', 'בדרך ללקוח', 'נמסרה', 'בוטלה'],
+              default: 'התקבלה'
+          },
           shippingDetails: { type: shippingDetailsSchema, required: true },
           deliveryDate: { type: String, required: true },
           notes: { type: String },
           fulfillmentType: {
-            type: String,
-            required: true,
-            enum: ['Delivery', 'Pickup'],
+              type: String,
+              required: true,
+              enum: ['Delivery', 'Pickup'],
           },
           fulfillmentDetails: {
-            type: String,
-            required: true,
-            description: "שם אזור המשלוח או נקודת האיסוף",
+              type: String,
+              required: true,
           },
       }, { timestamps: true });
       
@@ -9994,7 +10764,7 @@
     📄 userModel.js
       import mongoose from 'mongoose';
       
-      // ... (schemas for cartItem and shippingDetails remain the same) ...
+      // סכמה פנימית לפרטי משלוח
       const shippingDetailsSchema = new mongoose.Schema({
           customerName: { type: String },
           phone: { type: String },
@@ -10004,16 +10774,23 @@
           floor: { type: String },
       }, { _id: false });
       
+      // סכמה פנימית לפריט בעגלה
       const cartItemSchema = new mongoose.Schema({
           itemType: { type: String, required: true, enum: ['Product', 'MealPackage'] },
           item: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: 'cart.itemType' },
           quantity: { type: Number, min: 1 },
           packageSelections: [{
               category: String,
-              selectedOptions: [{ _id: mongoose.Schema.Types.ObjectId, name: String }]
+              selectedOptions: [{
+                  _id: mongoose.Schema.Types.ObjectId,
+                  // --- השינוי: תמיכה בשם רב-לשוני גם בתוך העגלה ---
+                  name: {
+                      he: { type: String, default: '' },
+                      en: { type: String, default: '' }
+                  }
+              }]
           }]
       }, { _id: false });
-      
       
       const userSchema = new mongoose.Schema({
           name: { type: String, required: true, trim: true },
@@ -10022,26 +10799,21 @@
           role: { type: String, enum: ['user', 'admin'], default: 'user' },
           cart: [cartItemSchema],
           shippingDetails: { type: shippingDetailsSchema },
-      
-          // --- שדה חדש ---
-          redeemedCoupons: [{
-              type: String // We will store the coupon CODE here for easy checking
-          }],
-      
+          redeemedCoupons: [{ type: String }],
           failedLoginAttempts: { type: Number, default: 0 },
           lockUntil: { type: Date, default: null },
           tokenVersion: { type: Number, default: 0 },
           passwordResetToken: { type: String },
           passwordResetExpires: { type: Date },
-          mfaSecret: { type: String, select: false },  // <-- שינוי חדש: לשמירת secret מ-speakeasy
-          mfaEnabled: { type: Boolean, default: false },  // <-- שינוי חדש
+          mfaSecret: { type: String, select: false },
+          mfaEnabled: { type: Boolean, default: false },
       }, { timestamps: true });
       
-      
-      // ... (virtuals and methods remain the same) ...
+      // וירטואלים ומתודות (ללא שינוי)
       userSchema.virtual('isLocked').get(function () {
           return !!(this.lockUntil && this.lockUntil > Date.now());
       });
+      
       userSchema.methods.incrementLoginAttempts = function () {
           const MAX_FAILED_LOGIN_ATTEMPTS = 5;
           const LOCK_TIME = 15 * 60 * 1000;
@@ -10052,6 +10824,7 @@
           }
           return this.updateOne(updates);
       };
+      
       userSchema.methods.resetLoginAttempts = function () {
           if (this.failedLoginAttempts > 0 || this.lockUntil) {
               return this.updateOne({ $set: { failedLoginAttempts: 0, lockUntil: null } });
@@ -10345,16 +11118,21 @@
       
       const router = express.Router();
       
+      // נתיב להעלאת תמונות - מוגן למנהלים בלבד
       router.post('/', requireAuth, requireAdmin, upload.array('images', 5), (req, res) => {
+        // בדיקה אם הועלו קבצים
         if (!req.files || req.files.length === 0) {
           return res.status(400).send({ message: 'Please upload at least one file.' });
         }
       
-        const filePaths = req.files.map(file => `/uploads/${file.filename}`);
+        // Cloudinary שומר את הכתובת המלאה (URL) בתוך file.path
+        // אנחנו ממפים את המערך כדי להחזיר רק את הכתובות
+        const filePaths = req.files.map(file => file.path);
       
+        // החזרת תשובה ללקוח עם הקישורים
         res.status(201).send({
           message: 'Images uploaded successfully',
-          images: filePaths, // זה מה שנשמר ב-DB בסופו של דבר
+          images: filePaths,
         });
       });
       
@@ -10745,49 +11523,45 @@
           });
       };
     📄 upload.js
+      import { v2 as cloudinary } from 'cloudinary';
+      import { CloudinaryStorage } from 'multer-storage-cloudinary';
       import multer from 'multer';
-      import path from 'path';
-      import fs from 'fs';
+      import dotenv from 'dotenv';
       
-      // יצירת התיקייה אם היא לא קיימת
-      const uploadDir = 'uploads/';
-      if (!fs.existsSync(uploadDir)){
-          fs.mkdirSync(uploadDir);
-      }
+      // טעינת משתני סביבה כדי לגשת למפתחות
+      dotenv.config();
       
-      // הגדרת האחסון בדיסק
-      const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-          cb(null, 'uploads/'); // שמירה לתיקיית uploads
-        },
-        filename: function (req, file, cb) {
-          // יצירת שם ייחודי ונקי
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          // ניקוי שם הקובץ מתווים בעייתיים או עברית שעלולה לשבור קישורים
-          const cleanName = file.originalname.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.\-_]/g, '');
-          cb(null, uniqueSuffix + '-' + cleanName);
-        },
+      // הגדרת החיבור ל-Cloudinary
+      cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET
       });
       
-      // בדיקת סוג קובץ
-      function checkFileType(file, cb) {
-        const filetypes = /jpeg|jpg|png|gif|webp/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
+      // הגדרת האחסון - העלאה ישירה לתיקייה בענן
+      const storage = new CloudinaryStorage({
+          cloudinary: cloudinary,
+          params: {
+              folder: 'passover-catering', // השם של התיקייה שתיווצר בתוך Cloudinary
+              allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+          },
+      });
       
-        if (extname && mimetype) {
-          return cb(null, true);
-        } else {
-          cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'));
-        }
-      }
+      // מסנן קבצים - מוודא שמעלים רק תמונות
+      const fileFilter = (req, file, cb) => {
+          // בדיקה שהקובץ הוא תמונה
+          if (file.mimetype.startsWith('image/')) {
+              cb(null, true);
+          } else {
+              cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'), false);
+          }
+      };
       
+      // הגדרת ה-Multer עם ההגדרות של Cloudinary
       const upload = multer({
-        storage: storage,
-        fileFilter: function (req, file, cb) {
-          checkFileType(file, cb);
-        },
-        limits: { fileSize: 5 * 1024 * 1024 } // הגבלה ל-5MB
+          storage: storage,
+          fileFilter: fileFilter,
+          limits: { fileSize: 5 * 1024 * 1024 } // מגבלה של 5 מגה לקובץ
       });
       
       export default upload;

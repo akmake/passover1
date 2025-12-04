@@ -21,6 +21,7 @@ const CATEGORY_LABELS = {
 };
 
 const AdminPackageCreatePage = () => {
+    // --- State ---
     const [name, setName] = useState({ he: '', en: '' });
     const [description, setDescription] = useState({ he: '', en: '' });
     const [price, setPrice] = useState('');
@@ -29,33 +30,47 @@ const AdminPackageCreatePage = () => {
     const [fixedItems, setFixedItems] = useState([]);
     const [choiceRules, setChoiceRules] = useState([]);
     const [allProducts, setAllProducts] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // התחל ב-false כדי לא להיתקע אם ה-useEffect נכשל
     const [activeLang, setActiveLang] = useState('he');
 
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
     const navigate = useNavigate();
 
-    // פונקציית עזר למניעת קריסות - מטפלת באובייקטי שמות
+    // --- Helper: Get Product Name Safely ---
+    // זו הפונקציה הקריטית שמונעת את השגיאה #31
     const getProductName = (product) => {
-        if (!product || !product.name) return 'שם לא זמין';
+        if (!product) return 'מוצר לא נמצא';
+        
+        // אם השם הוא מחרוזת רגילה
         if (typeof product.name === 'string') return product.name;
-        // מחזיר את השפה הפעילה, או עברית, או מחרוזת ריקה (אבל לעולם לא אובייקט!)
-        return product.name[activeLang] || product.name.he || '';
+        
+        // אם השם הוא אובייקט (תרגום)
+        if (product.name && typeof product.name === 'object') {
+            const translated = product.name[activeLang] || product.name.he || '';
+            // הגנה נוספת: וודא שמה שחוזר הוא אכן מחרוזת
+            return String(translated);
+        }
+        
+        return 'שם לא תקין';
     };
 
+    // --- Load Products ---
     useEffect(() => {
         const fetchProducts = async () => {
             try {
+                // אופציונלי: אפשר להפעיל ספינר מקומי אם רוצים, אבל כרגע זה לא חוסם
                 const { data } = await api.get('/api/admin/products', { withCredentials: true });
-                setAllProducts(data);
+                setAllProducts(data || []);
             } catch (err) {
                 console.error("Failed to load products", err);
+                alert("שגיאה בטעינת רשימת המוצרים");
             }
         };
         fetchProducts();
     }, []);
 
+    // --- Derived Data ---
     const productsByCategory = useMemo(() => {
         const groups = {};
         allProducts.forEach(p => {
@@ -72,6 +87,7 @@ const AdminPackageCreatePage = () => {
         });
     }, [productsByCategory]);
 
+    // --- Handlers ---
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -181,12 +197,15 @@ const AdminPackageCreatePage = () => {
                 <h1 className="text-3xl font-bold text-gray-800">יצירת חבילה חדשה</h1>
             </div>
 
+            {/* Language Switcher */}
             <div className="flex gap-2 mb-6 border-b border-gray-200">
                 <button type="button" onClick={() => setActiveLang('he')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'he' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>עברית</button>
                 <button type="button" onClick={() => setActiveLang('en')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'en' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>English</button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+                
+                {/* 1. Basic Info */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
                         <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
@@ -194,6 +213,7 @@ const AdminPackageCreatePage = () => {
                     </h2>
 
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
+                        {/* Image Upload */}
                         <div className="w-full md:w-1/3">
                             <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-center h-48 bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
@@ -210,6 +230,7 @@ const AdminPackageCreatePage = () => {
                             {image && <Button type="button" variant="ghost" size="sm" onClick={() => setImage('')} className="w-full mt-2 text-red-500">הסר תמונה</Button>}
                         </div>
 
+                        {/* Fields */}
                         <div className="w-full md:w-2/3 grid grid-cols-1 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
@@ -234,6 +255,7 @@ const AdminPackageCreatePage = () => {
                     </div>
                 </section>
 
+                {/* 2. Fixed Items */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -253,7 +275,7 @@ const AdminPackageCreatePage = () => {
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
                                 const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
-                                const prodName = getProductName(productDetails); // שימוש בפונקציה הבטוחה
+                                const prodName = getProductName(productDetails); // SAFE NAME
 
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
@@ -284,6 +306,7 @@ const AdminPackageCreatePage = () => {
                     )}
                 </section>
 
+                {/* 3. Choice Rules */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -352,8 +375,7 @@ const AdminPackageCreatePage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
-                                                            // --- התיקון קורה כאן: שימוש ב-getProductName במקום גישה ישירה ---
-                                                            const prodName = getProductName(product); 
+                                                            const prodName = getProductName(product); // SAFE NAME
 
                                                             return (
                                                                 <label
@@ -369,9 +391,9 @@ const AdminPackageCreatePage = () => {
                                                                         checked={isSelected}
                                                                         onChange={() => toggleProductInRule(ruleIndex, product._id)}
                                                                     />
-                                                                    {/* וכאן היה הבאג - החלפנו את הגישה הישירה במשתנה הבטוח */}
-                                                                    <span className="text-sm truncate select-none" title={prodName}>
-                                                                        {prodName}
+                                                                    {/* This was the issue - Ensure string rendering */}
+                                                                    <span className="text-sm truncate select-none" title={String(prodName)}>
+                                                                        {String(prodName)}
                                                                     </span>
                                                                 </label>
                                                             );
@@ -385,7 +407,6 @@ const AdminPackageCreatePage = () => {
                             </div>
                         ))}
                     </div>
-
                 </section>
 
                 <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
@@ -410,8 +431,7 @@ const AdminPackageCreatePage = () => {
                 <div className="max-h-[60vh] overflow-y-auto space-y-6">
                     {categoriesList.map(catKey => {
                         const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
-                            // --- שימוש ב-getProductName גם בחיפוש ---
-                            const name = getProductName(p); 
+                            const name = getProductName(p);
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
 
