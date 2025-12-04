@@ -1,3 +1,5 @@
+// client/src/pages/admin/AdminPackageCreatePage.jsx
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
@@ -22,7 +24,7 @@ const AdminPackageCreatePage = () => {
     const [name, setName] = useState({ he: '', en: '' });
     const [description, setDescription] = useState({ he: '', en: '' });
     const [price, setPrice] = useState('');
-    const [image, setImage] = useState(''); 
+    const [image, setImage] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [fixedItems, setFixedItems] = useState([]);
     const [choiceRules, setChoiceRules] = useState([]);
@@ -32,13 +34,14 @@ const AdminPackageCreatePage = () => {
 
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
-
     const navigate = useNavigate();
 
-    // פונקציית עזר להצגת שם מוצר בטוחה
+    // --- תיקון קריטי: פונקציית עזר להצגת שם מוצר בטוחה ---
+    // פונקציה זו מונעת את השגיאה Object with keys {he, en, _id}
     const getProductName = (product) => {
         if (!product || !product.name) return 'שם לא זמין';
         if (typeof product.name === 'string') return product.name;
+        // מחזיר את השם בשפה הפעילה, או עברית כברירת מחדל, או מחרוזת ריקה
         return product.name[activeLang] || product.name.he || '';
     };
 
@@ -190,7 +193,7 @@ const AdminPackageCreatePage = () => {
                         <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
                         פרטי החבילה
                     </h2>
-                    
+
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
                         <div className="w-full md:w-1/3">
                             <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
@@ -213,14 +216,17 @@ const AdminPackageCreatePage = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
                                 <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
                                 <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} />
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
                                 <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
+
                             <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
                                 <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
                                 <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה</label>
@@ -248,7 +254,8 @@ const AdminPackageCreatePage = () => {
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
                                 const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
-                                const prodName = getProductName(productDetails); // שימוש בפונקציה הבטוחה
+                                // --- תיקון: שימוש בפונקציה הבטוחה ---
+                                const prodName = getProductName(productDetails); 
 
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
@@ -256,6 +263,7 @@ const AdminPackageCreatePage = () => {
                                             <div className="bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>
                                             <span className="font-medium text-gray-800">{prodName}</span>
                                         </div>
+
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
                                                 <span className="text-xs text-gray-500">כמות:</span>
@@ -277,6 +285,7 @@ const AdminPackageCreatePage = () => {
                         </div>
                     )}
                 </section>
+
 
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
@@ -346,7 +355,8 @@ const AdminPackageCreatePage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
-                                                            const prodName = getProductName(product); // שימוש בפונקציה הבטוחה
+                                                            // --- תיקון: שימוש בפונקציה הבטוחה ---
+                                                            const prodName = getProductName(product); 
 
                                                             return (
                                                                 <label
@@ -377,6 +387,7 @@ const AdminPackageCreatePage = () => {
                             </div>
                         ))}
                     </div>
+
                 </section>
 
                 <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
@@ -401,9 +412,10 @@ const AdminPackageCreatePage = () => {
                 <div className="max-h-[60vh] overflow-y-auto space-y-6">
                     {categoriesList.map(catKey => {
                         const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
-                            const name = getProductName(p);
+                            const name = getProductName(p); // --- תיקון בתוך הפילטר ---
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
+
                         if (filteredProducts.length === 0) return null;
 
                         return (
@@ -416,6 +428,7 @@ const AdminPackageCreatePage = () => {
                                             onClick={() => handleAddFixedItem(product)}
                                             className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
                                         >
+                                            {/* --- תיקון: שימוש בפונקציה הבטוחה --- */}
                                             <span className="font-medium text-gray-700 group-hover:text-blue-600">{getProductName(product)}</span>
                                             <span className="text-sm text-gray-400">₪{product.price}</span>
                                         </button>
