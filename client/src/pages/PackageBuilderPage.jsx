@@ -1,12 +1,14 @@
 // client/src/pages/PackageBuilderPage.jsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '@/api';
 import { LoaderCircle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCartStore } from '@/stores/cartStore';
 import { useTranslation } from 'react-i18next';
+// ייבוא סדר הקטגוריות כדי למיין את הקבוצות בצורה הגיונית
+import { CATEGORY_DETAILS } from '@/config/constants';
 
 const PackageBuilderPage = () => {
     const { id: packageId } = useParams();
@@ -18,7 +20,7 @@ const PackageBuilderPage = () => {
     const addPackageToCart = useCartStore((state) => state.addPackageToCart);
     
     // תרגום
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const currentLang = i18n.language;
 
     useEffect(() => {
@@ -42,9 +44,7 @@ const PackageBuilderPage = () => {
     }, [packageId]);
 
     const handleSelectionChange = (ruleIndex, optionId, quantityToChoose) => {
-        // המרה למספר כדי למנוע באגים של טיפוסים
         const limit = Number(quantityToChoose);
-        
         setSelections(prev => {
             const currentSelections = [...(prev[ruleIndex] || [])];
             const isSelected = currentSelections.includes(optionId);
@@ -56,38 +56,32 @@ const PackageBuilderPage = () => {
 
             // אם זה צ'קבוקס (מרובה)
             if (isSelected) {
-                // הסרה אם כבר נבחר
                 return { ...prev, [ruleIndex]: currentSelections.filter(id => id !== optionId) };
             } else if (currentSelections.length < limit) {
-                // הוספה אם טרם הגענו למגבלה
                 return { ...prev, [ruleIndex]: [...currentSelections, optionId] };
             }
-            
-            // אם הגענו למכסה, לא עושים כלום
-            return prev; 
+
+            return prev;
         });
     };
 
     const handleAddToCart = () => {
-        // ולידציה - בדיקה אם כל הבחירות בוצעו
+        // ולידציה
         for (const rule of pkg.choiceRules) {
             const ruleIndex = pkg.choiceRules.indexOf(rule);
             const currentCount = selections[ruleIndex]?.length || 0;
             const requiredCount = Number(rule.quantityToChoose);
-
             if (currentCount !== requiredCount) {
                 alert(`אנא בחר בדיוק ${requiredCount} פריטים מקטגוריית "${rule.category}"`);
                 return;
             }
         }
 
-        // בניית אובייקט החבילה המלא להוספה לעגלה
+        // בניית אובייקט החבילה
         const userChoices = Object.entries(selections).map(([ruleIndex, optionIds]) => {
             const rule = pkg.choiceRules[ruleIndex];
-            
-            // תיקון קריטי: השוואה בטוחה בין מחרוזות (ID)
             const options = rule.options.filter(opt => optionIds.includes(opt._id.toString()));
-            
+
             return {
                 category: rule.category,
                 selectedOptions: options,
@@ -96,7 +90,7 @@ const PackageBuilderPage = () => {
 
         const packageForCart = {
             _id: pkg._id,
-            name: pkg.name, // מגיע כבר מתורגם מהשרת (מהתיקון בקונטרולר)
+            name: pkg.name, 
             price: pkg.price,
             fixedItems: pkg.fixedItems,
             userChoices: userChoices,
@@ -106,11 +100,31 @@ const PackageBuilderPage = () => {
         navigate('/menu');
     };
 
+    // פונקציית עזר לקיבוץ מוצרים לפי קטגוריה ומיון הקטגוריות
+    const getGroupedOptions = (options) => {
+        // 1. קיבוץ
+        const grouped = options.reduce((acc, opt) => {
+            const cat = opt.category || 'other';
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(opt);
+            return acc;
+        }, {});
+
+        // 2. מיון המפתחות (הקטגוריות) לפי הסדר המוגדר ב-constants
+        const sortedKeys = Object.keys(grouped).sort((a, b) => {
+            const orderA = CATEGORY_DETAILS[a]?.order ?? 999;
+            const orderB = CATEGORY_DETAILS[b]?.order ?? 999;
+            return orderA - orderB;
+        });
+
+        return { grouped, sortedKeys };
+    };
+
     if (loading) return <div className="flex justify-center items-center h-64"><LoaderCircle className="animate-spin h-12 w-12 text-blue-600" /></div>;
     if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
     if (!pkg) return <p className="text-center mt-10">החבילה לא נמצאה.</p>;
 
-    // שם ותיאור (במידה והם אובייקטים, בוחרים שפה, אחרת מציגים כטקסט)
+    // תרגום שמות החבילה
     const pkgName = pkg.name?.[currentLang] || pkg.name?.he || pkg.name;
     const pkgDesc = pkg.description?.[currentLang] || pkg.description?.he || pkg.description;
 
@@ -121,7 +135,7 @@ const PackageBuilderPage = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
-                    
+
                     {/* פריטים קבועים */}
                     {pkg.fixedItems && pkg.fixedItems.length > 0 && (
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -134,7 +148,7 @@ const PackageBuilderPage = () => {
                                             <span className="bg-green-100 text-green-700 p-1 rounded-full ml-3">
                                                 <Check size={14} />
                                             </span>
-                                            <span className="font-medium ml-2">{item.quantity} x</span> 
+                                            <span className="font-medium ml-2">{item.quantity} x</span>
                                             {prodName}
                                         </li>
                                     );
@@ -152,6 +166,9 @@ const PackageBuilderPage = () => {
                             const isMaxed = selectedCount >= limit;
                             const isFulfilled = selectedCount === limit;
 
+                            // כאן אנחנו מפעילים את המיון והקיבוץ
+                            const { grouped, sortedKeys } = getGroupedOptions(rule.options);
+
                             return (
                                 <div key={index} className={`mb-6 p-5 rounded-xl border-2 transition-all ${isFulfilled ? 'border-green-200 bg-green-50/30' : 'border-blue-100 bg-white'}`}>
                                     <div className="flex justify-between items-center mb-3">
@@ -160,41 +177,55 @@ const PackageBuilderPage = () => {
                                             נבחרו {selectedCount} מתוך {limit}
                                         </span>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {rule.options.map(option => {
-                                            const optionId = option._id.toString();
-                                            const isSelected = selections[index]?.includes(optionId);
-                                            // מבטל את האפשרות אם לא נבחרה וגם הגענו למקסימום
-                                            const isDisabled = !isSelected && isMaxed && limit > 1; 
-                                            const optName = option.name?.[currentLang] || option.name?.he || option.name;
 
-                                            return (
-                                                <label 
-                                                    key={optionId} 
-                                                    className={`
-                                                        relative flex items-center p-3 border rounded-lg cursor-pointer transition-all select-none
-                                                        ${isSelected 
-                                                            ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
-                                                            : 'bg-white border-gray-200 hover:border-blue-300 text-gray-700 hover:bg-gray-50'}
-                                                        ${isDisabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}
-                                                    `}
-                                                >
-                                                    <input
-                                                        type={limit === 1 ? 'radio' : 'checkbox'}
-                                                        name={`rule-${index}`}
-                                                        checked={isSelected}
-                                                        disabled={isDisabled}
-                                                        onChange={() => handleSelectionChange(index, optionId, limit)}
-                                                        className="sr-only" // הסתרת האינפוט המקורי לעיצוב נקי
-                                                    />
-                                                    <div className={`w-5 h-5 border-2 rounded mr-3 flex items-center justify-center transition-colors ${limit === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'}`}>
-                                                        {isSelected && <div className={`bg-white ${limit === 1 ? 'rounded-full w-2.5 h-2.5' : 'w-3 h-3 rounded-sm'}`} />}
-                                                    </div>
-                                                    <span className="font-medium mr-2">{optName}</span>
-                                                </label>
-                                            );
-                                        })}
+                                    {/* מעבר על הקטגוריות הממוינות בתוך החוק */}
+                                    <div className="space-y-4">
+                                        {sortedKeys.map(catKey => (
+                                            <div key={catKey}>
+                                                {/* כותרת קטגוריה - תוצג רק אם יש יותר מקטגוריה אחת בחוק, או ליופי */}
+                                                {sortedKeys.length > 0 && (
+                                                    <h4 className="text-sm font-semibold text-gray-500 mb-2 border-b border-gray-200 pb-1">
+                                                        {t(`categories.${catKey}`)}
+                                                    </h4>
+                                                )}
+                                                
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {grouped[catKey].map(option => {
+                                                        const optionId = option._id.toString();
+                                                        const isSelected = selections[index]?.includes(optionId);
+                                                        const isDisabled = !isSelected && isMaxed && limit > 1;
+                                                        const optName = option.name?.[currentLang] || option.name?.he || option.name;
+
+                                                        return (
+                                                            <label
+                                                                key={optionId}
+                                                                className={`
+                                                                    relative flex items-center p-3 border rounded-lg cursor-pointer transition-all select-none
+                                                                    ${isSelected
+                                                                        ? 'bg-blue-600 border-blue-600 text-white shadow-md'
+                                                                        : 'bg-white border-gray-200 hover:border-blue-300 text-gray-700 hover:bg-gray-50'}
+                                                                    ${isDisabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}
+                                                                `}
+                                                            >
+                                                                <input
+                                                                    type={limit === 1 ? 'radio' : 'checkbox'}
+                                                                    name={`rule-${index}`}
+                                                                    checked={isSelected}
+                                                                    disabled={isDisabled}
+                                                                    onChange={() => handleSelectionChange(index, optionId, limit)}
+                                                                    className="sr-only"
+                                                                />
+
+                                                                <div className={`w-5 h-5 border-2 rounded mr-3 flex items-center justify-center transition-colors ${limit === 1 ? 'rounded-full' : 'rounded'} ${isSelected ? 'border-white bg-white/20' : 'border-gray-300'}`}>
+                                                                    {isSelected && <div className={`bg-white ${limit === 1 ? 'rounded-full w-2.5 h-2.5' : 'w-3 h-3 rounded-sm'}`} />}
+                                                                </div>
+                                                                <span className="font-medium mr-2">{optName}</span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             );
@@ -202,7 +233,7 @@ const PackageBuilderPage = () => {
                     </div>
                 </div>
 
-                {/* סיכום צד (סטיקי) */}
+                {/* סיכום צד */}
                 <div className="lg:col-span-1">
                     <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 sticky top-24">
                         <h2 className="text-2xl font-bold mb-4 text-gray-900 border-b pb-4">סיכום חבילה</h2>
