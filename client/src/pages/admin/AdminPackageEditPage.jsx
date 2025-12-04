@@ -1,3 +1,5 @@
+// client/src/pages/admin/AdminPackageEditPage.jsx
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '@/api';
@@ -27,7 +29,7 @@ const AdminPackageEditPage = () => {
     const [name, setName] = useState({ he: '', en: '' });
     const [description, setDescription] = useState({ he: '', en: '' });
     const [price, setPrice] = useState('');
-    const [image, setImage] = useState(''); // --- הוספה ---
+    const [image, setImage] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [fixedItems, setFixedItems] = useState([]);
     const [choiceRules, setChoiceRules] = useState([]);
@@ -42,6 +44,14 @@ const AdminPackageEditPage = () => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
 
+    // --- תיקון: פונקציית עזר להצגת שם מוצר בטוחה (מונעת את השגיאה) ---
+    const getProductName = (product) => {
+        if (!product || !product.name) return 'שם לא זמין';
+        if (typeof product.name === 'string') return product.name;
+        // מנסה להחזיר את השפה הפעילה, אחרת עברית, אחרת מחרוזת ריקה (אבל לא אובייקט!)
+        return product.name[activeLang] || product.name.he || '';
+    };
+
     // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
@@ -50,7 +60,7 @@ const AdminPackageEditPage = () => {
                     api.get('/api/admin/products', { withCredentials: true }),
                     api.get(`/api/admin/packages/${packageId}`, { withCredentials: true })
                 ]);
-   
+
                 setAllProducts(productsRes.data);
                 const pkg = packageRes.data;
 
@@ -59,17 +69,19 @@ const AdminPackageEditPage = () => {
                 setDescription(pkg.description && typeof pkg.description === 'object' ? pkg.description : { he: pkg.description || '', en: '' });
                 setPrice(pkg.price);
                 setIsActive(pkg.isActive);
-                setImage(pkg.image || ''); // --- טעינת התמונה ---
+                setImage(pkg.image || '');
 
                 setFixedItems(pkg.fixedItems.map(item => ({
                     product: item.product._id || item.product,
                     quantity: item.quantity,
-                    _productDetails: item.product 
+                    _productDetails: item.product
                 })));
+
                 setChoiceRules(pkg.choiceRules.map(rule => ({
                     ...rule,
                     options: rule.options.map(opt => opt._id || opt)
                 })));
+
             } catch (err) {
                 setError('לא ניתן לטעון את נתוני החבילה');
                 console.error(err);
@@ -126,6 +138,7 @@ const AdminPackageEditPage = () => {
     };
 
     const removeFixedItem = (index) => setFixedItems(fixedItems.filter((_, i) => i !== index));
+
     const updateFixedItemQty = (index, newQty) => {
         const updated = [...fixedItems];
         updated[index].quantity = Number(newQty);
@@ -134,7 +147,9 @@ const AdminPackageEditPage = () => {
 
     // --- Choice Rules Logic ---
     const addChoiceRule = () => setChoiceRules([...choiceRules, { category: 'קטגוריה חדשה', quantityToChoose: 1, options: [] }]);
+    
     const removeChoiceRule = (index) => setChoiceRules(choiceRules.filter((_, i) => i !== index));
+    
     const updateChoiceRule = (index, field, value) => {
         const updated = [...choiceRules];
         updated[index][field] = value;
@@ -178,7 +193,17 @@ const AdminPackageEditPage = () => {
                 ...rule,
                 quantityToChoose: Number(rule.quantityToChoose)
             }));
-            const packageData = { name, price: Number(price), description, image, isActive, fixedItems: validFixedItems, choiceRules: sanitizedRules };
+
+            const packageData = { 
+                name, 
+                price: Number(price), 
+                description, 
+                image, 
+                isActive, 
+                fixedItems: validFixedItems, 
+                choiceRules: sanitizedRules 
+            };
+            
             await api.put(`/api/admin/packages/${packageId}`, packageData, { withCredentials: true });
             navigate('/admin/packages');
         } catch (err) {
@@ -216,7 +241,7 @@ const AdminPackageEditPage = () => {
                         <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
                         פרטי החבילה
                     </h2>
-                    
+
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
                         <div className="w-full md:w-1/3">
                             <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
@@ -239,14 +264,17 @@ const AdminPackageEditPage = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
                                 <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
                                 <textarea value={description[activeLang]} onChange={(e) => handleDescChange(e.target.value)} className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows={3} />
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
                                 <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
+
                             <div className="flex items-center gap-3">
                                 <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
                                 <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה</label>
@@ -274,19 +302,22 @@ const AdminPackageEditPage = () => {
                     ) : (
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
+                                // --- תיקון: שימוש ב-getProductName ---
                                 let prodName = 'טוען...';
                                 if (item._productDetails) {
-                                    prodName = item._productDetails.name?.he || item._productDetails.name;
+                                    prodName = getProductName(item._productDetails);
                                 } else {
                                     const p = allProducts.find(p => p._id === item.product);
-                                    if (p) prodName = p.name?.he || p.name;
+                                    if (p) prodName = getProductName(p);
                                 }
+                                
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="bg-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-gray-500 border border-gray-200">{index + 1}</div>
                                             <span className="font-medium text-gray-800">{prodName}</span>
                                         </div>
+
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-gray-200">
                                                 <span className="text-xs text-gray-500">כמות:</span>
@@ -380,6 +411,9 @@ const AdminPackageEditPage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
+                                                            // --- תיקון: שימוש ב-getProductName ---
+                                                            const prodName = getProductName(product);
+
                                                             return (
                                                                 <label
                                                                     key={product._id}
@@ -394,8 +428,8 @@ const AdminPackageEditPage = () => {
                                                                         checked={isSelected}
                                                                         onChange={() => toggleProductInRule(ruleIndex, product._id)}
                                                                     />
-                                                                    <span className="text-sm truncate select-none" title={product.name?.he || product.name}>
-                                                                        {product.name?.he || product.name}
+                                                                    <span className="text-sm truncate select-none" title={prodName}>
+                                                                        {prodName}
                                                                     </span>
                                                                 </label>
                                                             );
@@ -409,6 +443,7 @@ const AdminPackageEditPage = () => {
                             </div>
                         ))}
                     </div>
+
                 </section>
 
                 <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
@@ -432,9 +467,10 @@ const AdminPackageEditPage = () => {
                 <div className="max-h-[60vh] overflow-y-auto space-y-6">
                     {categoriesList.map(catKey => {
                         const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
-                            const name = p.name?.he || p.name || '';
+                            const name = getProductName(p);
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
+
                         if (filteredProducts.length === 0) return null;
 
                         return (
@@ -447,7 +483,7 @@ const AdminPackageEditPage = () => {
                                             onClick={() => handleAddFixedItem(product)}
                                             className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
                                         >
-                                            <span className="font-medium text-gray-700 group-hover:text-blue-600">{product.name?.he || product.name}</span>
+                                            <span className="font-medium text-gray-700 group-hover:text-blue-600">{getProductName(product)}</span>
                                             <span className="text-sm text-gray-400">₪{product.price}</span>
                                         </button>
                                     ))}
