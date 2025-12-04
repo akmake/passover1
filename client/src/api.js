@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
-// תיקון "כוח גס": אם המשתנה לא נקלט, השתמש בכתובת השרת הישירה
-const baseURL = 'https://passover1.onrender.com';
-console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לראות בקונסול
+// --- התיקון: שימוש במשתנה סביבה במקום כתובת קבועה ---
+// אם מוגדר VITE_API_BASE_URL (בקובץ .env) נשתמש בו, אחרת ברירת מחדל ל-Localhost
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לוודא בקונסול שזה עובד
 
 const api = axios.create({
     baseURL: baseURL,
@@ -32,11 +34,11 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                // שימוש ב-baseURL המפורש
+                // שימוש ב-baseURL המפורש לרענון הטוקן
                 const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
                 useAuthStore.getState().login(refreshedUserData);
-                
-                // עדכון ה-baseURL לבקשה החוזרת
+
+                // עדכון ה-baseURL לבקשה החוזרת כדי למנוע שימוש בכתובת שגויה
                 originalRequest.baseURL = baseURL;
                 return api(originalRequest);
             } catch (refreshError) {
