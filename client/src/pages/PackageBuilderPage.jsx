@@ -5,7 +5,6 @@ import { LoaderCircle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCartStore } from '@/stores/cartStore';
 import { useTranslation } from 'react-i18next';
-// ייבוא קריטי למיון קטגוריות
 import { CATEGORY_DETAILS } from '@/config/constants';
 import { toAbsoluteUrl } from '@/utils/url';
 
@@ -18,9 +17,15 @@ const PackageBuilderPage = () => {
     const [selections, setSelections] = useState({});
     const addPackageToCart = useCartStore((state) => state.addPackageToCart);
     
-    // תרגום
     const { t, i18n } = useTranslation();
     const currentLang = i18n.language;
+
+    // --- פונקציית עזר למניעת קריסות (התיקון!) ---
+    const getSafeText = (field) => {
+        if (!field) return '';
+        if (typeof field === 'string') return field;
+        return field[currentLang] || field.he || '';
+    };
 
     useEffect(() => {
         const fetchPackage = async () => {
@@ -94,9 +99,7 @@ const PackageBuilderPage = () => {
         navigate('/menu');
     };
 
-    // --- הפונקציה שממיינת ומקבצת לקטגוריות ---
     const getGroupedOptions = (options) => {
-        // 1. קיבוץ
         const grouped = options.reduce((acc, opt) => {
             const cat = opt.category || 'other';
             if (!acc[cat]) acc[cat] = [];
@@ -104,7 +107,6 @@ const PackageBuilderPage = () => {
             return acc;
         }, {});
 
-        // 2. מיון המפתחות לפי הסדר הקבוע במערכת
         const sortedKeys = Object.keys(grouped).sort((a, b) => {
             const orderA = CATEGORY_DETAILS[a]?.order ?? 999;
             const orderB = CATEGORY_DETAILS[b]?.order ?? 999;
@@ -118,13 +120,13 @@ const PackageBuilderPage = () => {
     if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
     if (!pkg) return <p className="text-center mt-10">החבילה לא נמצאה.</p>;
 
-    const pkgName = pkg.name?.[currentLang] || pkg.name?.he || pkg.name;
-    const pkgDesc = pkg.description?.[currentLang] || pkg.description?.he || pkg.description;
+    // שימוש בפונקציה הבטוחה
+    const pkgName = getSafeText(pkg.name);
+    const pkgDesc = getSafeText(pkg.description);
     const pkgImage = toAbsoluteUrl(pkg.image);
 
     return (
         <div className="container mx-auto px-4 py-8">
-            {/* Header Area with Image */}
             <div className="mb-8">
                 {pkgImage && (
                     <div className="w-full h-64 md:h-80 rounded-xl overflow-hidden mb-6 shadow-md">
@@ -144,7 +146,9 @@ const PackageBuilderPage = () => {
                             <h2 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">{t('packageBuilder.fixedItemsTitle')}</h2>
                             <ul className="space-y-3">
                                 {pkg.fixedItems.map(item => {
-                                    const prodName = item.product?.name?.[currentLang] || item.product?.name?.he || item.product?.name;
+                                    // תיקון קריטי: שימוש ב-getSafeText
+                                    const prodName = getSafeText(item.product?.name) || 'מוצר לא נמצא';
+                                    
                                     return (
                                         <li key={item._id} className="flex items-center text-gray-700">
                                             <span className="bg-green-100 text-green-700 p-1 rounded-full ml-3 rtl:ml-3 ltr:mr-3">
@@ -192,7 +196,8 @@ const PackageBuilderPage = () => {
                                                         const isSelected = selections[index]?.includes(optionId);
                                                         const isMaxed = selectedCount >= limit;
                                                         const isDisabled = !isSelected && isMaxed && limit > 1;
-                                                        const optName = option.name?.[currentLang] || option.name?.he || option.name;
+                                                        // תיקון קריטי: שימוש ב-getSafeText
+                                                        const optName = getSafeText(option.name);
 
                                                         return (
                                                             <label
@@ -231,7 +236,6 @@ const PackageBuilderPage = () => {
                     </div>
                 </div>
 
-                {/* סיכום צד */}
                 <div className="lg:col-span-1">
                     <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 sticky top-24">
                         <h2 className="text-2xl font-bold mb-4 text-gray-900 border-b pb-4">{t('packageBuilder.summaryTitle')}</h2>

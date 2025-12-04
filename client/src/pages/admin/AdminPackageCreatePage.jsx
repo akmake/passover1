@@ -2,10 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '@/api';
 import { Button } from '@/components/ui/Button';
-import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X, Upload, ImageIcon } from 'lucide-react'; // הוספתי אייקונים לתמונה
+import { LoaderCircle, ArrowRight, Plus, Trash2, Search, Check, X, Upload, ImageIcon } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 
-// מילון קטגוריות לעברית (נשמר מהקוד המקורי)
 const CATEGORY_LABELS = {
     'salad': 'סלטים',
     'fish': 'דגים',
@@ -20,11 +19,10 @@ const CATEGORY_LABELS = {
 };
 
 const AdminPackageCreatePage = () => {
-    // State
     const [name, setName] = useState({ he: '', en: '' });
     const [description, setDescription] = useState({ he: '', en: '' });
     const [price, setPrice] = useState('');
-    const [image, setImage] = useState(''); // --- הוספה: שדה תמונה ---
+    const [image, setImage] = useState(''); 
     const [isActive, setIsActive] = useState(true);
     const [fixedItems, setFixedItems] = useState([]);
     const [choiceRules, setChoiceRules] = useState([]);
@@ -32,13 +30,18 @@ const AdminPackageCreatePage = () => {
     const [loading, setLoading] = useState(false);
     const [activeLang, setActiveLang] = useState('he');
 
-    // Modal State for Fixed Items
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
 
     const navigate = useNavigate();
 
-    // Fetch Products
+    // פונקציית עזר להצגת שם מוצר בטוחה
+    const getProductName = (product) => {
+        if (!product || !product.name) return 'שם לא זמין';
+        if (typeof product.name === 'string') return product.name;
+        return product.name[activeLang] || product.name.he || '';
+    };
+
     useEffect(() => {
         const fetchProducts = async () => {
             try {
@@ -51,7 +54,6 @@ const AdminPackageCreatePage = () => {
         fetchProducts();
     }, []);
 
-    // --- Helpers for Grouping ---
     const productsByCategory = useMemo(() => {
         const groups = {};
         allProducts.forEach(p => {
@@ -68,7 +70,6 @@ const AdminPackageCreatePage = () => {
         });
     }, [productsByCategory]);
 
-    // --- הוספה: פונקציה להעלאת תמונה ---
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -81,11 +82,10 @@ const AdminPackageCreatePage = () => {
             });
             setImage(data.images[0]);
         } catch (error) {
-            alert('העלאת התמונה נכשלה: ' + (error.response?.data?.message || 'שגיאה לא ידועה'));
+            alert('העלאת התמונה נכשלה');
         }
     };
 
-    // --- Fixed Items Logic ---
     const handleAddFixedItem = (product) => {
         const exists = fixedItems.find(item => item.product === product._id);
         if (exists) {
@@ -103,7 +103,6 @@ const AdminPackageCreatePage = () => {
         setFixedItems(updated);
     };
 
-    // --- Choice Rules Logic ---
     const addChoiceRule = () => {
         setChoiceRules([...choiceRules, {
             category: 'בחירה חדשה',
@@ -148,7 +147,6 @@ const AdminPackageCreatePage = () => {
         setChoiceRules(updatedRules);
     };
 
-    // --- Submit ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -157,7 +155,7 @@ const AdminPackageCreatePage = () => {
                 name,
                 description,
                 price: Number(price),
-                image, // --- הוספה: שליחת התמונה ---
+                image,
                 isActive,
                 fixedItems: fixedItems.map(i => ({ product: i.product, quantity: i.quantity })),
                 choiceRules: choiceRules.map(r => ({ ...r, quantityToChoose: Number(r.quantityToChoose) }))
@@ -176,21 +174,17 @@ const AdminPackageCreatePage = () => {
 
     return (
         <div className="max-w-5xl mx-auto pb-20">
-            {/* Header */}
             <div className="flex items-center mb-6 gap-4">
                 <Link to="/admin/packages" className="p-2 rounded-full hover:bg-gray-100 transition"><ArrowRight className="h-6 w-6 text-gray-600"/></Link>
                 <h1 className="text-3xl font-bold text-gray-800">יצירת חבילה חדשה</h1>
             </div>
 
-            {/* Language Tabs */}
             <div className="flex gap-2 mb-6 border-b border-gray-200">
                 <button type="button" onClick={() => setActiveLang('he')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'he' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>עברית</button>
                 <button type="button" onClick={() => setActiveLang('en')} className={`px-6 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeLang === 'en' ? 'bg-white border border-b-0 border-gray-200 text-blue-600 shadow-sm' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>English</button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-
-                {/* 1. Basic Info & Image (עודכן לכלול תמונה) */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
                         <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
@@ -198,7 +192,6 @@ const AdminPackageCreatePage = () => {
                     </h2>
                     
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
-                        {/* אזור העלאת תמונה */}
                         <div className="w-full md:w-1/3">
                             <label className="block text-sm font-medium text-gray-700 mb-2">תמונת חבילה</label>
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-center h-48 bg-gray-50 hover:bg-gray-100 transition relative overflow-hidden">
@@ -215,11 +208,10 @@ const AdminPackageCreatePage = () => {
                             {image && <Button type="button" variant="ghost" size="sm" onClick={() => setImage('')} className="w-full mt-2 text-red-500">הסר תמונה</Button>}
                         </div>
 
-                        {/* שדות טקסט */}
                         <div className="w-full md:w-2/3 grid grid-cols-1 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">שם החבילה ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
-                                <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder={activeLang === 'he' ? "לדוגמה: ארוחת חג" : "e.g. Holiday Meal"} />
+                                <input type="text" value={name[activeLang]} onChange={(e) => handleNameChange(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">תיאור ({activeLang === 'he' ? 'עברית' : 'אנגלית'})</label>
@@ -227,22 +219,21 @@ const AdminPackageCreatePage = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">מחיר כולל (₪)</label>
-                                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
+                                <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min="0" className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
                             <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
                                 <input type="checkbox" id="isActive" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
-                                <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה ומוצגת באתר</label>
+                                <label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">החבילה פעילה</label>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* 2. Fixed Items */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                             <span className="w-1 h-6 bg-green-500 rounded-full"></span>
-                            פריטים קבועים (מה הלקוח מקבל בטוח)
+                            פריטים קבועים
                         </h2>
                         <Button type="button" onClick={() => setIsProductModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white gap-2 rounded-full px-6">
                             <Plus size={18} /> הוסף מוצר
@@ -257,7 +248,7 @@ const AdminPackageCreatePage = () => {
                         <div className="grid gap-3">
                             {fixedItems.map((item, index) => {
                                 const productDetails = item._productDetails || allProducts.find(p => p._id === item.product);
-                                const prodName = productDetails?.name?.he || productDetails?.name || 'מוצר לא נמצא';
+                                const prodName = getProductName(productDetails); // שימוש בפונקציה הבטוחה
 
                                 return (
                                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg group hover:border-blue-300 transition-colors">
@@ -287,12 +278,11 @@ const AdminPackageCreatePage = () => {
                     )}
                 </section>
 
-                {/* 3. Choice Rules */}
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                             <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                            חוקי בחירה (מה הלקוח בוחר)
+                            חוקי בחירה
                         </h2>
                         <Button type="button" onClick={addChoiceRule} className="bg-purple-600 hover:bg-purple-700 text-white gap-2 rounded-full px-6">
                             <Plus size={18} /> הוסף קטגוריית בחירה
@@ -302,11 +292,10 @@ const AdminPackageCreatePage = () => {
                     <div className="space-y-6">
                         {choiceRules.map((rule, ruleIndex) => (
                             <div key={ruleIndex} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                                {/* Rule Header */}
                                 <div className="bg-gray-50 p-4 border-b border-gray-200 flex flex-col md:flex-row gap-4 items-start md:items-end justify-between">
                                     <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה (לדוג': בחירה למנה עיקרית)</label>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">כותרת הקטגוריה</label>
                                             <input
                                                 type="text"
                                                 value={rule.category}
@@ -331,7 +320,6 @@ const AdminPackageCreatePage = () => {
                                     </button>
                                 </div>
 
-                                {/* Product Selection Area */}
                                 <div className="p-4 bg-white">
                                     <p className="text-sm font-medium text-gray-700 mb-3">סמן את המוצרים שהלקוח יכול לבחור בקטגוריה זו:</p>
 
@@ -340,7 +328,6 @@ const AdminPackageCreatePage = () => {
                                             const productsInThisCat = productsByCategory[catKey];
                                             if (!productsInThisCat) return null;
 
-                                            // בדיקה אם כל המוצרים בקטגוריה זו נבחרו
                                             const allSelected = productsInThisCat.every(p => rule.options.includes(p._id));
 
                                             return (
@@ -359,6 +346,8 @@ const AdminPackageCreatePage = () => {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                         {productsInThisCat.map(product => {
                                                             const isSelected = rule.options.includes(product._id);
+                                                            const prodName = getProductName(product); // שימוש בפונקציה הבטוחה
+
                                                             return (
                                                                 <label
                                                                     key={product._id}
@@ -373,8 +362,8 @@ const AdminPackageCreatePage = () => {
                                                                         checked={isSelected}
                                                                         onChange={() => toggleProductInRule(ruleIndex, product._id)}
                                                                     />
-                                                                    <span className="text-sm truncate select-none" title={product.name?.he || product.name}>
-                                                                        {product.name?.he || product.name}
+                                                                    <span className="text-sm truncate select-none" title={prodName}>
+                                                                        {prodName}
                                                                     </span>
                                                                 </label>
                                                             );
@@ -387,24 +376,17 @@ const AdminPackageCreatePage = () => {
                                 </div>
                             </div>
                         ))}
-                        {choiceRules.length === 0 && (
-                            <div className="text-center py-10 text-gray-400">
-                                לחץ על "הוסף קטגוריית בחירה" כדי להתחיל.
-                            </div>
-                        )}
                     </div>
                 </section>
 
-                {/* Footer Buttons */}
                 <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
-                    <Button type="button" variant="outline" onClick={() => navigate('/admin/packages')} className="border-gray-300">ביטול</Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin/packages')}>ביטול</Button>
                     <Button type="submit" disabled={loading} className="px-8 text-lg">
                         {loading ? <LoaderCircle className="animate-spin" /> : 'צור חבילה'}
                     </Button>
                 </div>
             </form>
 
-            {/* --- Modal for Selecting Fixed Items --- */}
             <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="בחר מוצר להוספה">
                 <div className="mb-4 relative">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -418,9 +400,8 @@ const AdminPackageCreatePage = () => {
                 </div>
                 <div className="max-h-[60vh] overflow-y-auto space-y-6">
                     {categoriesList.map(catKey => {
-                        // סינון לפי חיפוש
                         const filteredProducts = (productsByCategory[catKey] || []).filter(p => {
-                            const name = p.name?.he || p.name || '';
+                            const name = getProductName(p);
                             return name.toLowerCase().includes(productSearch.toLowerCase());
                         });
                         if (filteredProducts.length === 0) return null;
@@ -435,7 +416,7 @@ const AdminPackageCreatePage = () => {
                                             onClick={() => handleAddFixedItem(product)}
                                             className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-md transition text-right group"
                                         >
-                                            <span className="font-medium text-gray-700 group-hover:text-blue-600">{product.name?.he || product.name}</span>
+                                            <span className="font-medium text-gray-700 group-hover:text-blue-600">{getProductName(product)}</span>
                                             <span className="text-sm text-gray-400">₪{product.price}</span>
                                         </button>
                                     ))}
