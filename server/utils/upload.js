@@ -1,54 +1,42 @@
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-// הגדרת נתיבים (חובה ב-ES Modules כדי להשתמש ב-dirname)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// טעינת משתני סביבה כדי לגשת למפתחות
+dotenv.config();
 
-// --- שינוי הנתיב: שמירה בתיקיית ה-Public של הקליינט ---
-// הולכים אחורה מ-utils (..) ומ-server (..) ואז נכנסים ל-client/public/uploads
-const uploadDir = path.join(__dirname, '../../client/public/uploads');
-
-// יצירת התיקייה אם היא לא קיימת (כולל תיקיות אב אם חסרות)
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// הגדרת האחסון בדיסק
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir); // שמירה לנתיב החדש ב-client
-  },
-  filename: function (req, file, cb) {
-    // יצירת שם ייחודי ונקי
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    // ניקוי שם הקובץ מתווים בעייתיים או עברית שעלולה לשבור קישורים
-    const cleanName = file.originalname.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.\-_]/g, '');
-    cb(null, uniqueSuffix + '-' + cleanName);
-  },
+// הגדרת החיבור ל-Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// בדיקת סוג קובץ
-function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png|gif|webp/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
+// הגדרת האחסון - העלאה ישירה לתיקייה בענן
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'passover-catering', // השם של התיקייה שתיווצר בתוך Cloudinary
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    },
+});
 
-  if (extname && mimetype) {
-    return cb(null, true);
-  } else {
-    cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'));
-  }
-}
+// מסנן קבצים - מוודא שמעלים רק תמונות
+const fileFilter = (req, file, cb) => {
+    // בדיקה שהקובץ הוא תמונה
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'), false);
+    }
+};
 
-const upload = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
-  limits: { fileSize: 5 * 1024 * 1024 } // הגבלה ל-5MB
+// הגדרת ה-Multer עם ההגדרות של Cloudinary
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // מגבלה של 5 מגה לקובץ
 });
 
 export default upload;
