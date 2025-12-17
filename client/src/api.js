@@ -1,22 +1,21 @@
 import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
-// --- התיקון: שימוש במשתנה סביבה במקום כתובת קבועה ---
-// אם מוגדר VITE_API_BASE_URL (בקובץ .env) נשתמש בו, אחרת ברירת מחדל ל-Localhost
+// קביעת כתובת הבסיס
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-console.log('🔌 API Base URL being used:', baseURL); // לוג כדי שתוכל לוודא בקונסול שזה עובד
+console.log('🔌 API Base URL being used:', baseURL);
 
 const api = axios.create({
     baseURL: baseURL,
     withCredentials: true,
 });
 
-// שליפת CSRF token לפני בקשות POST/PUT/DELETE
+// --- Interceptors (נשאר זהה) ---
+
+// שליפת CSRF token
 api.interceptors.request.use(async (config) => {
     if (['post', 'put', 'delete'].includes(config.method)) {
         try {
-            // שימוש ב-baseURL המפורש
             const response = await axios.get(`${baseURL}/api/auth/csrf-token`, { withCredentials: true });
             config.headers['X-CSRF-Token'] = response.data.csrfToken;
         } catch (error) {
@@ -26,7 +25,7 @@ api.interceptors.request.use(async (config) => {
     return config;
 });
 
-// טיפול ב-Token Refresh אוטומטי
+// רענון טוקן אוטומטי
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -34,15 +33,11 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                // שימוש ב-baseURL המפורש לרענון הטוקן
                 const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
                 useAuthStore.getState().login(refreshedUserData);
-
-                // עדכון ה-baseURL לבקשה החוזרת כדי למנוע שימוש בכתובת שגויה
                 originalRequest.baseURL = baseURL;
                 return api(originalRequest);
             } catch (refreshError) {
-                console.error("Session refresh failed. Logging out.");
                 useAuthStore.getState().logout();
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';
@@ -53,5 +48,17 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// --- פונקציות API (החלק החסר) ---
+
+export const getProducts = async () => {
+    const response = await api.get('/api/products');
+    return response.data;
+};
+
+export const getProductById = async (id) => {
+    const response = await api.get(`/api/products/${id}`);
+    return response.data;
+};
 
 export default api;
