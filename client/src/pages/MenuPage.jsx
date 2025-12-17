@@ -30,40 +30,27 @@ const MenuPage = () => {
     : products.filter(p => p.category === activeCategory);
 
   return (
-    <div className="min-h-screen bg-[#050505] pt-28 pb-20 text-white selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-[#050505] pt-32 pb-20 text-white selection:bg-[#d4af37] selection:text-black">
       
-      {/* HEADER SECTION */}
-      <div className="px-6 md:px-12 mb-16 flex flex-col md:flex-row justify-between items-end">
+      {/* כותרת מינימליסטית */}
+      <div className="px-8 md:px-16 mb-16 flex flex-col md:flex-row justify-between items-end border-b border-white/10 pb-8">
         <div>
-          <h1 className="text-6xl md:text-8xl font-serif text-white mb-2 leading-none tracking-tighter">
-            Object<span className="italic text-[#888]">s</span>
+          <h1 className="text-5xl md:text-8xl font-serif text-white mb-2 tracking-tight">
+            Shop
           </h1>
-          <p className="text-xs tracking-[0.3em] uppercase text-gray-400 ml-1">
-            Curated Home Collection
+          <p className="text-gray-500 text-xs tracking-[0.3em] uppercase">
+            {filteredProducts.length} Premium Objects
           </p>
         </div>
         
-        {/* CATEGORY FILTER - TEXT BASED */}
-        <div className="flex flex-wrap gap-x-8 gap-y-2 mt-8 md:mt-0 justify-end max-w-2xl">
-          <button
-            onClick={() => setActiveCategory('all')}
-            className={`text-xs uppercase tracking-widest transition-colors duration-300 ${
-              activeCategory === 'all' ? 'text-white border-b border-white' : 'text-gray-600 hover:text-white'
-            }`}
-          >
-            View All
-          </button>
+        {/* פילטרים טקסטואליים */}
+        <div className="flex flex-wrap gap-6 mt-8 md:mt-0">
+          <button onClick={() => setActiveCategory('all')} className={`text-xs uppercase tracking-widest transition-all ${activeCategory === 'all' ? 'text-white border-b border-white' : 'text-gray-600 hover:text-white'}`}>All</button>
           {Object.values(PRODUCT_CATEGORIES).map((catKey) => {
             const details = CATEGORY_DETAILS[catKey];
             if (!details) return null;
             return (
-              <button
-                key={catKey}
-                onClick={() => setActiveCategory(catKey)}
-                className={`text-xs uppercase tracking-widest transition-colors duration-300 ${
-                  activeCategory === catKey ? 'text-white border-b border-white' : 'text-gray-600 hover:text-white'
-                }`}
-              >
+              <button key={catKey} onClick={() => setActiveCategory(catKey)} className={`text-xs uppercase tracking-widest transition-all ${activeCategory === catKey ? 'text-white border-b border-white' : 'text-gray-600 hover:text-white'}`}>
                 {details.title}
               </button>
             );
@@ -71,35 +58,26 @@ const MenuPage = () => {
         </div>
       </div>
 
-      {/* MASONRY GALLERY LAYOUT */}
-      <div className="px-4 md:px-8">
+      {/* גריד MASONRY (כמו פינטרסט) */}
+      <div className="px-4 md:px-16">
         {loading ? (
-          <div className="flex justify-center h-40 items-center">
-             <span className="text-xs tracking-widest animate-pulse">LOADING COLLECTION...</span>
-          </div>
+          <div className="text-center py-20 tracking-widest text-xs animate-pulse">LOADING COLLECTION...</div>
         ) : (
-          /* שימוש ב-Columns ליצירת אפקט גלריה אמיתי */
-          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8">
             <AnimatePresence mode="wait">
               {filteredProducts.map((product, index) => (
                 <motion.div
                   key={product._id}
-                  initial={{ opacity: 0, y: 50 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                  className="break-inside-avoid mb-6"
+                  transition={{ duration: 0.6, delay: index * 0.05 }}
+                  className="break-inside-avoid mb-8"
                 >
                   <ProductCard product={product} />
                 </motion.div>
               ))}
             </AnimatePresence>
-          </div>
-        )}
-        
-        {!loading && filteredProducts.length === 0 && (
-          <div className="h-[50vh] flex items-center justify-center text-gray-500 font-serif italic text-xl">
-            No items found in this category.
           </div>
         )}
       </div>
