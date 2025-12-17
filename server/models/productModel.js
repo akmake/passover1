@@ -12,18 +12,17 @@ const productSchema = new mongoose.Schema(
       price: { type: Number, required: true, min: 0 },
       image: { type: String, required: false },
       
-      // עדכון ה-Enum לקטגוריות החדשות
+      // כאן התיקון! רשימת הקטגוריות המעודכנת
       category: { 
         type: String, 
         required: true, 
         enum: [
-          'furniture',
-          'lighting',
-          'textiles',
-          'decor',
-          'art',
-          'scents',
-          'kitchen'
+          'flowers',    // פרחים
+          'gifts',      // מתנות
+          'dinnerware', // כלי אוכל/בריליאנט
+          'chocolate',  // שוקולד
+          'decor',      // עיצוב
+          'packages'    // חבילות/מארזים
         ] 
       },
       
