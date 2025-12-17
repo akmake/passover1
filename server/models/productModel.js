@@ -12,25 +12,25 @@ const productSchema = new mongoose.Schema(
       price: { type: Number, required: true, min: 0 },
       image: { type: String, required: false },
       
-      // קטגוריות מעודכנות למוצרי יוקרה
+      // עדכון ה-Enum לקטגוריות החדשות
       category: { 
         type: String, 
         required: true, 
         enum: [
-          'watches',
-          'jewelry',
-          'perfumes',
-          'leather_goods',
-          'gift_sets',
-          'exclusive'
+          'furniture',
+          'lighting',
+          'textiles',
+          'decor',
+          'art',
+          'scents',
+          'kitchen'
         ] 
       },
       
-      // שדות טכניים
       sku: { type: String, trim: true, unique: true, sparse: true },
       isActive: { type: Boolean, default: true },
-      isPopular: { type: Boolean, default: false }, // הוספתי שדה לפריטים פופולריים
-      stock: { type: Number, default: 10 } // ניהול מלאי בסיסי
+      isPopular: { type: Boolean, default: false },
+      stock: { type: Number, default: 50 }
     },
     { timestamps: true }
 );

@@ -1,2 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Heebo:wght@300;400;500&display=swap');
 @import "tailwindcss";
+
+/* הוסף את זה כדי למנוע רקע לבן גלובלי */
+body, html {
+  background-color: #0a0a0a;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+#root {
+  background-color: #0a0a0a;
+  min-height: 100vh;
+}

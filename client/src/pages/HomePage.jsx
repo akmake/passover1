@@ -1,254 +1,127 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
+import React from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-// --- רכיבי עזר לאנימציות ---
-
-/** כפתור יוקרתי עם אפקט מילוי עדין */
-const LuxuryButton = ({ children, onClick, className = "" }) => (
-  <motion.button
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-    onClick={onClick}
-    className={`relative px-8 py-4 overflow-hidden group border border-white/30 bg-transparent text-white font-serif tracking-[0.2em] uppercase text-sm transition-all hover:border-white ${className}`}
-  >
-    <span className="relative z-10">{children}</span>
-    <div className="absolute inset-0 h-full w-full bg-white/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-  </motion.button>
+const Marquee = ({ text }) => (
+  <div className="overflow-hidden py-4 bg-white text-black border-y border-black">
+    <motion.div 
+      className="whitespace-nowrap flex gap-12"
+      animate={{ x: [0, -1000] }}
+      transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+    >
+      {[...Array(10)].map((_, i) => (
+        <span key={i} className="text-4xl md:text-6xl font-serif tracking-tight uppercase">
+          {text} — 
+        </span>
+      ))}
+    </motion.div>
+  </div>
 );
 
-/** כרטיס מוצר עם אפקט Tilt (תלת מימד) לפי עכבר */
-const TiltCard = ({ title, subtitle, image, link }) => {
-  const ref = useRef(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const handleMouseMove = (e) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = (e.clientX - rect.left) * 32.5;
-    const mouseY = (e.clientY - rect.top) * 32.5;
-    const rX = (mouseY / height - 32.5 / 2) * -1;
-    const rY = (mouseX / width - 32.5 / 2);
-    x.set(rX);
-    y.set(rY);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{ rotateX: x, rotateY: y, transformStyle: "preserve-3d" }}
-      className="relative h-[500px] w-full cursor-pointer group perspective-1000"
-    >
-      <Link to={link || '/menu'} className="block h-full w-full">
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors z-10 duration-500" />
-        <img src={image} alt={title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-        
-        <div className="absolute bottom-10 left-0 right-0 text-center z-20 translate-z-20">
-          <p className="text-white/80 text-xs tracking-[0.3em] uppercase mb-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
-            {subtitle}
-          </p>
-          <h3 className="text-3xl text-white font-serif tracking-widest">
-            {title}
-          </h3>
+const FeaturedSection = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+        <div className="bg-[#111] p-12 flex flex-col justify-center items-start">
+            <span className="text-[#888] text-xs tracking-[0.3em] uppercase mb-6">New Arrival</span>
+            <h2 className="text-5xl md:text-7xl font-serif text-white mb-8 leading-tight">
+                The Velvet <br /> Collection
+            </h2>
+            <p className="text-gray-400 text-lg max-w-md font-light mb-12">
+                רכות בלתי מתפשרת וצבעים עמוקים. הקולקציה החדשה שלנו מביאה את המלון לתוך הסלון.
+            </p>
+            <Link to="/menu?category=furniture" className="border-b border-white text-white pb-2 text-xs uppercase tracking-widest hover:text-gray-300 hover:border-gray-300 transition-all">
+                Shop The Look
+            </Link>
         </div>
-      </Link>
-    </motion.div>
-  );
-};
-
-// --- הדף הראשי ---
+        <div className="relative h-[50vh] md:h-auto overflow-hidden">
+            <img 
+                src="https://images.unsplash.com/photo-1550226891-ef816aed4a98?q=80&w=1200" 
+                alt="Velvet Sofa" 
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-[1.5s]"
+            />
+        </div>
+    </div>
+);
 
 const HomePage = () => {
-  // גלילת Parallax לרקע
   const { scrollYProgress } = useScroll();
-  const yRange = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const opacityRange = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const yHero = useTransform(scrollYProgress, [0, 1], [0, 300]);
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen text-white overflow-x-hidden selection:bg-[#d4af37] selection:text-black">
+    <div className="bg-[#050505] min-h-screen text-white selection:bg-white selection:text-black">
       
       {/* 1. HERO SECTION */}
-      <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
-        {/* רקע וידאו/תמונה עם Parallax */}
-        <motion.div style={{ y: yRange }} className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-black/40 z-10" /> {/* Overlay כהה */}
-          <img 
-            src="https://images.unsplash.com/photo-1549439602-43ebca2327af?q=80&w=2070&auto=format&fit=crop" 
-            alt="Luxury Background" 
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
-
-        {/* תוכן Hero */}
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-          >
-            <p className="text-[#d4af37] text-sm md:text-base tracking-[0.4em] uppercase mb-6 font-light">
-              Welcome to The Exclusive
-            </p>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            className="text-5xl md:text-8xl font-serif tracking-wider mb-8 text-white mix-blend-overlay"
-          >
-            TIMELESS <br /> ELEGANCE
-          </motion.h1>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.8 }}
-          >
-            <Link to="/menu">
-              <LuxuryButton>גלה את הקולקציה</LuxuryButton>
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* אינדיקטור גלילה */}
-        <motion.div 
-          style={{ opacity: opacityRange }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
-        >
-          <span className="text-[10px] tracking-[0.2em] uppercase text-white/50">Scroll</span>
-          <div className="w-[1px] h-16 bg-gradient-to-b from-white/50 to-transparent" />
-        </motion.div>
-      </section>
-
-      {/* 2. PHILOSOPHY SECTION (טקסט מינימליסטי) */}
-      <section className="py-24 px-6 md:px-20 bg-[#0f0f0f]">
-        <div className="max-w-3xl mx-auto text-center">
-          <motion.p 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-            className="text-xl md:text-3xl font-serif leading-relaxed text-neutral-300"
-          >
-            "יוקרה היא לא רק מחיר, היא חוויה. אנו אוצרים עבורכם את המתנות המרגשות ביותר, בעיצוב עוצר נשימה ובאיכות ללא פשרות."
-          </motion.p>
-          <div className="w-24 h-[1px] bg-[#d4af37] mx-auto mt-12" />
-        </div>
-      </section>
-
-      {/* 3. FEATURED COLLECTIONS (גריד עם אפקט) */}
-      <section className="py-20 px-4 md:px-12 bg-[#0a0a0a]">
-        <div className="flex justify-between items-end mb-16 max-w-7xl mx-auto">
-          <div>
-            <h2 className="text-3xl md:text-5xl font-serif text-white mb-2">קולקציות נבחרות</h2>
-            <p className="text-neutral-500 tracking-widest uppercase text-sm">Curated for perfection</p>
-          </div>
-          <Link to="/menu" className="hidden md:block text-[#d4af37] hover:text-white transition-colors tracking-widest text-sm uppercase border-b border-[#d4af37] pb-1">
-            צפה בהכל
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {/* כרטיס 1: שעונים */}
-          <TiltCard 
-            title="WATCHES" 
-            subtitle="Swiss Engineering"
-            image="https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1780&auto=format&fit=crop"
-            link="/menu?category=watches"
-          />
-          
-          {/* כרטיס 2: תכשיטים - מודגש */}
-          <div className="md:-mt-12"> {/* Shift layout for asymmetry */}
-            <TiltCard 
-              title="JEWELRY" 
-              subtitle="Rare Diamonds"
-              image="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=2070&auto=format&fit=crop"
-              link="/menu?category=jewelry"
-            />
-          </div>
-
-          {/* כרטיס 3: בשמים */}
-          <TiltCard 
-            title="PERFUME" 
-            subtitle="Signature Scents"
-            image="https://images.unsplash.com/photo-1594035910387-fea4779426e9?q=80&w=2080&auto=format&fit=crop"
-            link="/menu?category=perfumes"
-          />
-        </div>
-      </section>
-
-      {/* 4. SPLIT FEATURE SECTION */}
-      <section className="py-32 bg-[#0f0f0f]">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          
-          {/* תמונה עם אנימציית חשיפה */}
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-            className="relative h-[600px] w-full"
-          >
-            <div className="absolute inset-0 border border-[#d4af37]/30 translate-x-4 translate-y-4" /> {/* מסגרת דקורטיבית */}
+      <section className="relative h-screen w-full overflow-hidden flex flex-col justify-center items-center">
+        <motion.div style={{ y: yHero }} className="absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-black/40 z-10" />
             <img 
-              src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=2070&auto=format&fit=crop" 
-              alt="Exclusive Gift"
-              className="w-full h-full object-cover relative z-10 grayscale hover:grayscale-0 transition-all duration-700"
+                src="https://images.unsplash.com/photo-1616486338812-3dadae4b4f9d?q=80&w=2000" 
+                alt="Hero" 
+                className="w-full h-full object-cover"
             />
-          </motion.div>
+        </motion.div>
+        
+        <div className="relative z-20 text-center mix-blend-difference px-4">
+            <motion.h1 
+                initial={{ opacity: 0, y: 100 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                className="text-[15vw] leading-none font-serif tracking-tighter text-white"
+            >
+                MAISON
+            </motion.h1>
+            <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="text-lg md:text-xl font-light tracking-widest mt-4 uppercase"
+            >
+                Art of Living
+            </motion.p>
+        </div>
+        
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            className="absolute bottom-10 z-20 text-xs tracking-[0.3em] uppercase"
+        >
+            Scroll to Explore
+        </motion.div>
+      </section>
 
-          {/* טקסט */}
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1 }}
-            className="text-right md:text-left rtl:text-right" // תמיכה בעברית/אנגלית
-          >
-            <span className="text-[#d4af37] tracking-[0.3em] uppercase text-sm font-bold">New Arrival</span>
-            <h2 className="text-4xl md:text-6xl font-serif text-white mt-4 mb-6 leading-tight">
-              מארז הזהב <br /> המלכותי
-            </h2>
-            <p className="text-neutral-400 text-lg leading-relaxed mb-8 font-light">
-              שילוב נדיר של אומנות ועיצוב. המארז כולל שעון יוקרה, בקבוק וויסקי מיושן ושוקולד בלגי בעבודת יד. המתנה המושלמת למי שיש לו הכל.
-            </p>
-            <Link to="/package/golden-set">
-              <button className="text-white border-b border-white pb-2 hover:text-[#d4af37] hover:border-[#d4af37] transition-all tracking-widest uppercase text-sm">
-                הזמן עכשיו
-              </button>
+      <Marquee text="Timeless Design for Modern Living" />
+
+      {/* 2. CATEGORY HIGHLIGHTS */}
+      <section className="py-24 px-6 md:px-12">
+        <div className="flex justify-between items-end mb-16">
+            <h2 className="text-3xl font-serif">Curated Spaces</h2>
+            <Link to="/menu" className="text-xs uppercase tracking-widest border-b border-white pb-1">View All</Link>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[80vh]">
+            <Link to="/menu?category=furniture" className="relative group h-full overflow-hidden block">
+                <img src="https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                <span className="absolute bottom-8 left-8 text-2xl font-serif z-10">Furniture</span>
             </Link>
-          </motion.div>
+            <Link to="/menu?category=decor" className="relative group h-full overflow-hidden block md:mt-12">
+                <img src="https://images.unsplash.com/photo-1581783342308-f792ca11dfdd?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                <span className="absolute bottom-8 left-8 text-2xl font-serif z-10">Decor</span>
+            </Link>
+            <Link to="/menu?category=lighting" className="relative group h-full overflow-hidden block">
+                <img src="https://images.unsplash.com/photo-1513506003011-38f04415426a?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
+                <span className="absolute bottom-8 left-8 text-2xl font-serif z-10">Lighting</span>
+            </Link>
         </div>
       </section>
 
-      {/* 5. NEWSLETTER / FOOTER CTA */}
-      <section className="py-24 bg-[#0a0a0a] border-t border-white/5 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-        <div className="relative z-10 max-w-xl mx-auto text-center px-4">
-          <h3 className="text-3xl font-serif text-white mb-4">הצטרפו למועדון האקסקלוסיבי</h3>
-          <p className="text-neutral-500 mb-8">קבלו עדכונים על השקות מיוחדות ומכירות פרטיות.</p>
-          <div className="flex flex-col md:flex-row gap-4">
-            <input 
-              type="email" 
-              placeholder="כתובת האימייל שלך" 
-              className="flex-1 bg-transparent border border-white/20 px-4 py-3 text-white focus:outline-none focus:border-[#d4af37] transition-colors placeholder:text-neutral-700"
-            />
-            <button className="bg-white text-black px-8 py-3 uppercase tracking-widest text-sm hover:bg-[#d4af37] transition-colors font-medium">
-              הרשמה
-            </button>
-          </div>
-        </div>
+      <FeaturedSection />
+
+      {/* 3. QUOTE */}
+      <section className="py-40 px-8 text-center bg-white text-black">
+        <p className="text-3xl md:text-5xl font-serif max-w-4xl mx-auto leading-tight">
+          "Architecture is really about well-being. I think that people want to feel good in a space."
+        </p>
+        <span className="block mt-8 text-xs tracking-widest uppercase text-gray-500">— Zaha Hadid</span>
       </section>
 
     </div>
