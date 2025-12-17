@@ -2,64 +2,68 @@ import React from 'react';
 import { useCartStore } from '../stores/cartStore';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCartStore();
   const { i18n } = useTranslation();
   
-  // תמיכה בשמות בשתי שפות
   const name = typeof product.name === 'object' 
     ? product.name[i18n.language] || product.name['he'] 
     : product.name;
 
-  const description = typeof product.description === 'object'
-    ? product.description[i18n.language] || product.description['he']
-    : product.description;
-
   return (
-    <div className="group relative">
-      {/* תמונה עם אפקט זום עדין וכהות */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
-        <Link to={`/product/${product._id}`}> {/* אם יש לך דף מוצר, אחרת הסר את הלינק */}
+    <div className="group relative block w-full">
+      {/* מיכל התמונה - יחס גבוה יותר לאלגנטיות */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#1a1a1a] mb-6">
+        
+        {/* התמונה עצמה */}
+        <Link to={`/product/${product._id}`}>
             <img
               src={product.image}
               alt={name}
-              className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+              className="h-full w-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-110 opacity-90 group-hover:opacity-100"
             />
-            {/* שכבה כהה שמופיעה בהובר */}
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </Link>
-        
-        {/* כפתור הוספה לעגלה שצץ מלמטה */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+
+        {/* תגית פופולרי - עדינה ומוזהבת */}
+        {product.isPopular && (
+            <div className="absolute top-4 right-4 z-10">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-[#d4af37] border border-[#d4af37]/50 px-3 py-1 bg-black/50 backdrop-blur-sm">
+                    Exclusive
+                </span>
+            </div>
+        )}
+
+        {/* כפתור הוספה לעגלה - מופיע רק בהובר */}
+        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out z-20">
            <button
-            onClick={() => addToCart(product)}
-            className="w-full bg-white text-black py-3 uppercase tracking-widest text-xs font-medium hover:bg-[#d4af37] hover:text-white transition-colors shadow-lg"
+            onClick={(e) => {
+                e.preventDefault();
+                addToCart(product);
+            }}
+            className="w-full bg-[#d4af37] text-black py-4 uppercase tracking-[0.2em] text-xs font-bold hover:bg-white transition-colors"
           >
-            הוסף לסל
+            Add to Bag
           </button>
         </div>
+        
+        {/* Overlay כהה עדין שמופיע בהובר כדי להבליט את הכפתור */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       </div>
 
-      {/* פרטי מוצר */}
+      {/* פרטי המוצר - טקסט לבן נקי */}
       <div className="text-center">
-        <h3 className="text-lg font-serif text-gray-900 group-hover:text-[#d4af37] transition-colors">
+        <h3 className="text-lg md:text-xl font-serif text-white mb-2 group-hover:text-[#d4af37] transition-colors duration-300">
           <Link to={`/product/${product._id}`}>
             {name}
           </Link>
         </h3>
-        {product.isPopular && (
-            <span className="inline-block mt-1 px-2 py-0.5 text-[10px] border border-[#d4af37] text-[#d4af37] uppercase tracking-widest">
-                Best Seller
+        
+        <div className="flex justify-center items-center gap-2">
+            <span className="text-sm font-light tracking-widest text-gray-400">
+                ₪{product.price.toLocaleString()}
             </span>
-        )}
-        <p className="mt-2 text-sm text-gray-500 font-light line-clamp-2 px-2">
-            {description}
-        </p>
-        <p className="mt-3 text-base font-medium text-gray-900">
-          ₪{product.price.toLocaleString()}
-        </p>
+        </div>
       </div>
     </div>
   );
