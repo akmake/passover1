@@ -1,64 +1,65 @@
-// client/src/components/ProductCard.jsx
-
-import { Button } from '@/components/ui/Button';
-import { useCartStore } from '@/stores/cartStore';
-import { useAuthStore } from '@/stores/authStore';
+import React from 'react';
+import { useCartStore } from '../stores/cartStore';
 import { useTranslation } from 'react-i18next';
-
-// פונקציית עזר קטנה למפות את הערכים מה-DB למפתחות תרגום
-const getUnitKey = (unitType) => {
-  switch (unitType) {
-    case 'יחידה': return 'unit';
-    case 'גרם': return 'g';
-    case 'ק"ג': return 'kg';
-    case 'מ"ל': return 'ml';
-    case 'ליטר': return 'l';
-    default: return unitType; // החזר את הערך המקורי אם אין התאמה
-  }
-};
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => {
-  const addToCart = useCartStore((state) => state.addToCart);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { t, i18n } = useTranslation();
-  const currentLang = i18n.language;
-
-  const displayName = product.name?.[currentLang] || product.name?.he;
-  const displayDescription = product.description?.[currentLang] || product.description?.he;
-
-  // תרגום דינמי של התוויות
-  const categoryDisplay = t(`categories.${product.category}`, product.category);
-  const kashrutDisplay = t(`kashrut.${product.kashrut}`, product.kashrut);
+  const { addToCart } = useCartStore();
+  const { i18n } = useTranslation();
   
-  // ======================= התיקון נמצא כאן =======================
-  const unitKey = getUnitKey(product.unitType);
-  const translatedUnit = t(`units.${unitKey}`, product.unitType);
-  const unitDisplay = product.unitAmount ? `${product.unitAmount} ${translatedUnit}` : translatedUnit;
-  // ======================= סוף התיקון =======================
-  
+  // תמיכה בשמות בשתי שפות
+  const name = typeof product.name === 'object' 
+    ? product.name[i18n.language] || product.name['he'] 
+    : product.name;
+
+  const description = typeof product.description === 'object'
+    ? product.description[i18n.language] || product.description['he']
+    : product.description;
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-xl flex flex-col">
-      <img className="w-full h-56 object-cover" src={product.image || 'https://via.placeholder.com/400x300'} alt={displayName} />
-      <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">{displayName}</h3>
+    <div className="group relative">
+      {/* תמונה עם אפקט זום עדין וכהות */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
+        <Link to={`/product/${product._id}`}> {/* אם יש לך דף מוצר, אחרת הסר את הלינק */}
+            <img
+              src={product.image}
+              alt={name}
+              className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+            />
+            {/* שכבה כהה שמופיעה בהובר */}
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </Link>
         
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span className="bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">
-            {categoryDisplay}
-          </span>
-          <span className="bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">
-            {kashrutDisplay}
-          </span>
-          <span className="bg-gray-100 text-gray-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">
-            {unitDisplay}
-          </span>
+        {/* כפתור הוספה לעגלה שצץ מלמטה */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+           <button
+            onClick={() => addToCart(product)}
+            className="w-full bg-white text-black py-3 uppercase tracking-widest text-xs font-medium hover:bg-[#d4af37] hover:text-white transition-colors shadow-lg"
+          >
+            הוסף לסל
+          </button>
         </div>
+      </div>
 
-        <p className="text-gray-600 text-sm mb-4 flex-grow">{displayDescription}</p>
-        <div className="flex justify-between items-center mt-auto">
-          <span className="text-2xl font-semibold text-gray-800">₪{product.price}</span>
-          <Button size="sm" onClick={() => addToCart(product, isAuthenticated)}>{t('product.addToCart')}</Button>
-        </div>
+      {/* פרטי מוצר */}
+      <div className="text-center">
+        <h3 className="text-lg font-serif text-gray-900 group-hover:text-[#d4af37] transition-colors">
+          <Link to={`/product/${product._id}`}>
+            {name}
+          </Link>
+        </h3>
+        {product.isPopular && (
+            <span className="inline-block mt-1 px-2 py-0.5 text-[10px] border border-[#d4af37] text-[#d4af37] uppercase tracking-widest">
+                Best Seller
+            </span>
+        )}
+        <p className="mt-2 text-sm text-gray-500 font-light line-clamp-2 px-2">
+            {description}
+        </p>
+        <p className="mt-3 text-base font-medium text-gray-900">
+          ₪{product.price.toLocaleString()}
+        </p>
       </div>
     </div>
   );
