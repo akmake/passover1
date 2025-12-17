@@ -43,7 +43,7 @@ app.use(
 );
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'https://passover1.onrender.com',
+    origin: process.env.CLIENT_URL || 'https://passover1-1.onrender.com',
     credentials: true,
 }));
 
