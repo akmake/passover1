@@ -1,5 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Heebo:wght@300;400;500&display=swap');
+/* 1. ייבוא פונטים יוקרתיים התומכים בעברית */
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700&family=Assistant:wght@200;300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+
 @import "tailwindcss";
 
-/* זהו. אין כאן הגדרות צבע גלובליות. */
-/* כל דף יחליט בעצמו מה הצבע שלו. */
+/* 2. הגדרת משתני CSS כדי ש-Tailwind יכיר את הפונטים החדשים */
+@theme {
+  --font-serif: "Frank Ruhl Libre", "Playfair Display", serif;
+  --font-sans: "Assistant", sans-serif;
+}
+
+/* 3. הגדרות בסיס לכל האתר - High End Typography */
+@layer base {
+  html {
+    font-family: "Assistant", sans-serif; /* ברירת מחדל נקייה */
+    -webkit-font-smoothing: antialiased; /* טקסט חד יותר */
+    color: #1A1A1A; /* שחור פחם (לא שחור מלא) */
+  }
+
+  /* כותרות בפונט סריפי יוקרתי (כמו במגזין) */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Frank Ruhl Libre", serif;
+    font-weight: 400; /* יוקרה = משקל קל, לא בולד כבד */
+    letter-spacing: -0.02em; /* צמצום רווחים קל לכותרות */
+  }
+
+  /* כפתורים ותגיות - ריווח אותיות רחב */
+  button, .tracking-widest {
+    letter-spacing: 0.15em; /* רווח יוקרתי בין אותיות */
+  }
+}
+
+/* 4. מחלקות עזר לשימוש חופשי */
+.font-luxury {
+  font-family: "Frank Ruhl Libre", serif;
+}
+
+.text-gold {
+  color: #D4AF37;
+}
+
+/* החלקה של גלילה */
+html { 
+  scroll-behavior: smooth; 
+}
+
+/* הסתרת סרגל גלילה מכוער */
+.hide-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+.hide-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}

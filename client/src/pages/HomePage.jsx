@@ -87,12 +87,12 @@ const HomePage = () => {
             className="w-full h-full object-cover opacity-80"
             autoPlay loop muted playsInline
             // סרטון אווירה מופשט (זהב/חלקיקים) - כרגע תמונה סטטית מאוד חזקה אם אין וידאו
-            poster="https://unsplash.com/photos/three-grey-padded-chairs-by-the-bar-3Jex40r0C0o"
+            poster="https://ibb.co/n80tzMck"
           >
              <source src="https://v.ftcdn.net/05/65/52/62/700_F_565526227_3Xn...mp4" type="video/mp4" /> {/* Placeholder video link */}
           </video>
            <img 
-            src="https://unsplash.com/photos/three-grey-padded-chairs-by-the-bar-3Jex40r0C0o"
+            src="https://ibb.co/n80tzMck"
             className="absolute inset-0 w-full h-full object-cover animate-pan-slow"
             alt="Atmosphere"
            />

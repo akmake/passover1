@@ -33,7 +33,7 @@ app.set('trust proxy', 1);
 // Middlewares
 app.use(
     helmet({
-        crossOriginResourcePolicy: false, // מאפשר טעינת תמונות ממקור אחר (אם צריך)
+        crossOriginResourcePolicy: false,
         hsts: {
             maxAge: 31536000,
             includeSubDomains: true,
@@ -42,8 +42,24 @@ app.use(
     })
 );
 
+// --- התיקון הגדול: הגדרת CORS שמתאימה גם למחשב שלך ---
+const allowedOrigins = [
+    'http://localhost:5173', // הפיתוח המקומי שלך
+    'http://localhost:3000',
+    'https://passover1-1.onrender.com', // השרת ב-Render
+    process.env.CLIENT_URL // מה-ENV אם יש
+];
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'https://passover1-1.onrender.com',
+    origin: (origin, callback) => {
+        // מאפשר בקשות ללא origin (כמו Postman) או אם ה-origin ברשימה המותרת
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.log('Blocked by CORS:', origin); // לוג שיעזור לך לראות אם משהו נחסם
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }));
 
@@ -53,8 +69,7 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
-// --- תיקון: הפניית נתיב ה-Static למיקום החדש ב-Client ---
-// זה מאפשר גישה לקבצים גם דרך השרת אם צריך, למרות שהם יושבים בקליינט
+// הפניית קבצים סטטיים
 const uploadsPath = path.join(__dirname, '../client/public/uploads');
 app.use('/uploads', express.static(uploadsPath));
 
@@ -74,7 +89,6 @@ app.use('/api/upload', uploadRoutes);
 
 app.use(errorHandler);
 
-// לוג שגיאות
 app.use((err, req, res, next) => {
     logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
     res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
