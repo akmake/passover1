@@ -1,61 +1,53 @@
 import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
-// קביעת כתובת ה-API באופן דינמי
-// בייצור (Render) זה ייקח את הכתובת מהמשתנה, בפיתוח זה יהיה localhost
-const baseURL = import.meta.env.VITE_API_BASE_URL || 
-                (window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://passover1.onrender.com');
+// --- הגדרת כתובת השרת בצורה חכמה ---
+// אם אנחנו ב-Localhost -> תשתמש בפורט 5000
+// אחרת (ב-Render) -> תשתמש בכתובת הייצור (הנחתי שהיא passover1, תעדכן אם זה שונה)
+const getBaseUrl = () => {
+    if (window.location.hostname === 'localhost') {
+        return 'http://localhost:5000';
+    }
+    // החלף את זה לכתובת השרת האמיתית שלך ב-Render אם היא שונה
+    return 'https://passover1.onrender.com'; 
+};
 
+const baseURL = getBaseUrl();
 console.log('🔌 API Base URL:', baseURL);
 
 const api = axios.create({
     baseURL: baseURL,
-    withCredentials: true, // חובה בשביל Cookies/Session
+    withCredentials: true,
 });
 
-// --- Interceptors ---
-
-// 1. הוספת CSRF Token לכל בקשת שינוי (POST/PUT/DELETE)
+// --- Interceptors (טיפול בטוקנים ושגיאות) ---
 api.interceptors.request.use(async (config) => {
     if (['post', 'put', 'delete'].includes(config.method)) {
         try {
-            // ניסיון לשלוף את הטוקן מקוקי או מהשרת אם צריך
-            // כאן הנחנו שהשרת מספק אנדפוינט לזה, או שהקוקי נשלח אוטומטית
-            // במידה ויש אנדפוינט ספציפי:
-             const response = await axios.get(`${baseURL}/api/auth/csrf-token`, { withCredentials: true });
-             config.headers['X-CSRF-Token'] = response.data.csrfToken;
+            // שים לב: הוספתי /api גם כאן
+            const response = await axios.get(`${baseURL}/api/auth/csrf-token`, { withCredentials: true });
+            config.headers['X-CSRF-Token'] = response.data.csrfToken;
         } catch (error) {
-            // התעלמות משגיאה ב-GET פשוט, אך לוג אם זה קריטי
-            // console.warn('CSRF token fetch failed', error);
+            // התעלמות שקטה אם אין CSRF כרגע
         }
     }
     return config;
 });
 
-// 2. טיפול בשגיאות 401 (התנתקות/רענון טוקן)
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        // מניעת לולאה אינסופית
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                // נתיב רענון הטוקן חייב גם הוא לכלול /api
-                const { data: refreshedUserData } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
-                
-                // עדכון הסטייט עם המשתמש החדש
-                useAuthStore.getState().login(refreshedUserData);
-                
-                // עדכון ה-baseURL של הבקשה החוזרת
+                // נתיב רענון עם /api
+                const { data } = await axios.post(`${baseURL}/api/auth/refresh`, {}, { withCredentials: true });
+                useAuthStore.getState().login(data);
                 originalRequest.baseURL = baseURL;
                 return api(originalRequest);
             } catch (refreshError) {
-                // אם הרענון נכשל - ניתוק המשתמש
                 useAuthStore.getState().logout();
-                if (window.location.pathname !== '/login') {
-                    // window.location.href = '/login'; // אופציונלי: הפניה לדף התחברות
-                }
                 return Promise.reject(refreshError);
             }
         }
@@ -63,10 +55,10 @@ api.interceptors.response.use(
     }
 );
 
-// --- פונקציות API מתוקנות (הוספת /api) ---
+// --- פונקציות API (התיקון הקריטי) ---
 
 export const getProducts = async () => {
-    // התיקון הקריטי: הוספת /api לפני products
+    // הוספתי את ה-/api שהיה חסר וגרם ל-404
     const response = await api.get('/api/products');
     return response.data;
 };
@@ -76,7 +68,7 @@ export const getProductById = async (id) => {
     return response.data;
 };
 
-// ניתן להוסיף כאן עוד פונקציות לפי הצורך
+// הוסף את שאר הפונקציות לפי הצורך, תמיד עם /api בהתחלה
 export const createOrder = async (orderData) => {
     const response = await api.post('/api/orders', orderData);
     return response.data;

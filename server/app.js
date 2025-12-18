@@ -30,33 +30,28 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// Middlewares
 app.use(
     helmet({
         crossOriginResourcePolicy: false,
-        hsts: {
-            maxAge: 31536000,
-            includeSubDomains: true,
-            preload: true
-        }
+        hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }
     })
 );
 
-// --- התיקון הגדול: הגדרת CORS שמתאימה גם למחשב שלך ---
+// רשימת דומיינים מורשים - הוספתי את כולם ליתר ביטחון
 const allowedOrigins = [
-    'http://localhost:5173', // הפיתוח המקומי שלך
+    'http://localhost:5173',
     'http://localhost:3000',
-    'https://passover1-1.onrender.com', // השרת ב-Render
-    process.env.CLIENT_URL // מה-ENV אם יש
-];
+    'https://passover1.onrender.com',
+    'https://passover1-1.onrender.com',
+    process.env.CLIENT_URL
+].filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
-        // מאפשר בקשות ללא origin (כמו Postman) או אם ה-origin ברשימה המותרת
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            console.log('Blocked by CORS:', origin); // לוג שיעזור לך לראות אם משהו נחסם
+            console.log('Blocked by CORS:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -69,11 +64,11 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
-// הפניית קבצים סטטיים
+// סטטיק - חשוב לתמונות
 const uploadsPath = path.join(__dirname, '../client/public/uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-// Routes
+// נתיבים - שים לב לקידומת /api
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
