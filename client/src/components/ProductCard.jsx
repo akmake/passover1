@@ -62,7 +62,8 @@ const ProductCard = ({ product }) => {
 
       {/* פרטי מוצר */}
       <div className="text-center w-full px-2">
-         <h3 className="font-serif text-xl text-white group-hover:text-[#d4af37] transition-colors duration-300">
+         {/* שינינו מ-text-white ל-text-gray-900 */}
+         <h3 className="font-serif text-xl text-gray-900 group-hover:text-[#d4af37] transition-colors duration-300">
             {name}
          </h3>
          {description && (
