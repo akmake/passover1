@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-// אייקון עגלה (אופציונלי, אפשר להסיר אם אין לך ספריית אייקונים)
+import { useCartStore } from '../stores/cartStore'; // ייבוא ה-Store של העגלה
+import { useAuthStore } from '../stores/authStore'; // ייבוא ה-Store של האימות
+
+// אייקון עגלה
 const CartIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
 );
@@ -10,11 +13,16 @@ const ProductCard = ({ product }) => {
   const { t, i18n } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
-  // פונקציה חכמה לטיפול בכתובת התמונה
+  // שליפת הפונקציות והנתונים מה-Stores
+  const addToCart = useCartStore((state) => state.addToCart);
+  const toggleCart = useCartStore((state) => state.toggleCart);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // פונקציה לטיפול בכתובת התמונה
   const getImageUrl = (imgStr) => {
     if (!imgStr) return 'https://via.placeholder.com/400x600?text=No+Image';
-    if (imgStr.startsWith('http')) return imgStr; // קישור חיצוני (Unsplash)
-    return `https://localhost:5000${imgStr}`; // קובץ מקומי
+    if (imgStr.startsWith('http')) return imgStr; 
+    return `https://localhost:5000${imgStr}`; 
   };
 
   const name = product.name[i18n.language] || product.name.he || product.name;
@@ -50,8 +58,9 @@ const ProductCard = ({ product }) => {
                 className="w-full bg-white text-black font-medium text-xs uppercase tracking-widest py-4 hover:bg-[#d4af37] hover:text-white transition-colors shadow-xl flex items-center justify-center gap-2"
                 onClick={(e) => {
                    e.stopPropagation();
-                   alert(`Added to cart: ${name}`); 
-                   // כאן חבר את פונקציית ההוספה לעגלה שלך
+                   // --- הלוגיקה המתוקנת ---
+                   addToCart(product, isAuthenticated); // הוספה לעגלה
+                   toggleCart(); // פתיחת העגלה כדי לתת חיווי למשתמש
                 }}
               >
                  <CartIcon /> {t('addToCart', 'Add to Cart')} — ₪{product.price}
