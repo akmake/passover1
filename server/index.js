@@ -2,18 +2,14 @@ import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import app from './app.js'; // כאן אנחנו מייבאים את האפליקציה שהגדרנו למעלה
+import app from './app.js';
 import connectDB from './config/db.js'; // <--- 1. הוסף את הייבוא הזה!
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 
-
-
-// פונקציה להפעלת השרת
 const startServer = async () => {
     try {
         // --- 2. קודם כל מתחברים לדאטה-בייס ---

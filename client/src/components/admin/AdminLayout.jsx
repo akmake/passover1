@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Outlet, NavLink, Link } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, ShoppingCart, Package, Box, LayoutGrid,
   Ticket, FileText, Truck, Users, Home, Settings,
-  Menu, X, LogOut, ChevronDown, User, Bell
+  Menu, X, LogOut, ChevronDown, Bell
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
@@ -31,10 +31,17 @@ const adminGroups = [
     ]
   },
   {
-    title: 'דאטה ומערכת',
+    title: 'דוחות ולוגיסטיקה',
     items: [
       { to: '/admin/reports/preparation', label: 'דוח ייצור', icon: FileText },
+      { to: '/admin/reports/deliveries', label: 'דוח משלוחים', icon: Truck },
+    ]
+  },
+  {
+    title: 'מערכת ותוכן',
+    items: [
       { to: '/admin/users', label: 'משתמשים', icon: Users },
+      { to: '/admin/homepage-settings', label: 'דף הבית', icon: Home },
       { to: '/admin/settings', label: 'הגדרות', icon: Settings },
     ]
   }
@@ -52,23 +59,23 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-[#FDFCFB] flex flex-col font-sans text-slate-900" dir="rtl">
 
-      {/* 1. Sidebar for Desktop (מתחיל מתחת ל-Navbar הראשי) */}
-      <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:right-0 md:top-24 md:bottom-0 bg-white border-l border-slate-100 shadow-sm z-40">
+      {/* 1. Sidebar for Desktop */}
+      <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 md:right-0 bg-white border-l border-slate-100 shadow-sm z-50">
         <SidebarContent user={user} logout={handleLogout} />
       </aside>
 
-      {/* 2. Main Content Wrapper (כולו מתחיל מתחת ל-Navbar הראשי) */}
-      <div className="flex-1 md:pr-72 flex flex-col min-h-screen pt-24">
+      {/* 2. Main Content Wrapper */}
+      <div className="flex-1 md:pr-72 flex flex-col min-h-screen">
 
-        {/* Top Header - דביק מתחת ל-Navbar הראשי */}
-        <header className="sticky top-24 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 h-20 flex items-center justify-between px-8">
+        {/* Top Header */}
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 h-20 flex items-center justify-between px-8">
           <div className="flex items-center gap-4 md:hidden">
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
               <Menu className="h-6 w-6 text-slate-600" />
             </Button>
           </div>
 
-          {/* לוגו מרכזי בנאבר - תואם למותג */}
+          {/* מותג */}
           <div className="flex flex-col items-center flex-1 md:flex-initial">
             <h1 className="text-2xl font-serif tracking-[0.2em] text-slate-900 leading-none">ALI ZAHAV</h1>
             <span className="text-[10px] tracking-[0.4em] text-amber-600 mt-1 uppercase font-light">Luxury Events</span>
@@ -93,19 +100,19 @@ export default function AdminLayout() {
         </main>
       </div>
 
-      {/* Mobile Sidebar Drawer (מתחיל מתחת ל-Navbar הראשי) */}
+      {/* Mobile Sidebar Drawer */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-x-0 bottom-0 top-24 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 bottom-0 top-24 z-[70] w-72 md:hidden shadow-2xl bg-white"
+              className="fixed inset-y-0 right-0 z-[70] w-72 md:hidden shadow-2xl bg-white"
             >
               <SidebarContent user={user} logout={handleLogout} onClose={() => setSidebarOpen(false)} />
             </motion.div>
@@ -181,7 +188,6 @@ function NavItem({ item, onClick }) {
     </NavLink>
   );
 }
-
 
 function UserNav({ user, logout }) {
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';

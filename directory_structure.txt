@@ -1,5 +1,4 @@
 🚫 .git/ (נפסל לסריקה)
-📄 222.txt
 📄 README.md
   # passover1
 📁 client/
@@ -242,6 +241,9 @@
         <script type="module" src="/src/main.jsx"></script>
       </body>
     </html>
+  📄 localhost-key.pem
+  📄 localhost.pem
+  📄 mkcert.exe
   🚫 node_modules/ (נפסל לסריקה)
   📄 npm
   📄 npx
@@ -407,7 +409,7 @@
       // אחרת (ב-Render) -> תשתמש בכתובת הייצור (הנחתי שהיא passover1, תעדכן אם זה שונה)
       const getBaseUrl = () => {
           if (window.location.hostname === 'localhost') {
-              return 'http://localhost:5000';
+              return 'https://localhost:5000';
           }
           // החלף את זה לכתובת השרת האמיתית שלך ב-Render אם היא שונה
           return 'https://passover1.onrender.com';
@@ -737,7 +739,7 @@
           const isHomePage = location.pathname === '/'; // בדיקה האם המשתמש בדף הבית
         
           return (
-            <div className="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+            <div className="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col pt-24">
               <CartSlideOver />
         
               {/* התפריט העליון - נשאר קבוע */}
@@ -765,67 +767,100 @@
         
         export default Layout;
       📄 Navbar.jsx
-        import React, { useState, useEffect } from 'react';
-        import { Link, useNavigate, useLocation } from 'react-router-dom';
-        import { useAuthStore } from '../stores/authStore';
-        import { useCartStore } from '../stores/cartStore';
-        import { useTranslation } from 'react-i18next';
-        import { AnimatePresence, motion } from 'framer-motion';
+        // client/src/components/Navbar.jsx
         
-        // אייקונים דקים ואלגנטיים יותר
+        import React, { useEffect, useMemo, useState } from 'react';
+        import { Link, useLocation, useNavigate } from 'react-router-dom';
+        import { AnimatePresence, motion } from 'framer-motion';
+        import { useAuthStore } from '@/stores/authStore';
+        import { useCartStore } from '@/stores/cartStore';
+        import { useTranslation } from 'react-i18next';
+        import LanguageSwitcher from './LanguageSwitcher';
+        
+        // אייקונים דקים ואלגנטיים
         const Icons = {
           Bag: () => (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 7h12l-1 14H7L6 7z" />
+              <path d="M9 7a3 3 0 0 1 6 0" />
+            </svg>
           ),
           User: () => (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
           ),
           Menu: () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
           ),
           X: () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           )
         };
         
-        const Navbar = ({ toggleCart }) => {
-          const { user, logout, isAdmin } = useAuthStore();
-          const cartState = useCartStore();
-          const cart = cartState?.cart || [];
-        
-          const { t } = useTranslation();
+        const Navbar = () => {
+          const navigate = useNavigate();
           const location = useLocation();
+          const { t } = useTranslation();
+        
+          const user = useAuthStore((s) => s.user);
+          const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+          const logout = useAuthStore((s) => s.logout);
+        
+          const items = useCartStore((s) => s.items);
+          const toggleCart = useCartStore((s) => s.toggleCart);
         
           const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+          const [isScrolled, setIsScrolled] = useState(false);
         
-          // חישוב כמות (בטוח לשימוש)
-          const cartItemCount = Array.isArray(cart)
-            ? cart.reduce((acc, item) => acc + (item.quantity || 1), 0)
-            : 0;
+          const isAdmin = user?.role === 'admin';
         
+          const cartItemCount = useMemo(() => {
+            return Array.isArray(items) ? items.reduce((acc, item) => acc + (item.quantity || 1), 0) : 0;
+          }, [items]);
+        
+          // סגירת תפריט מובייל במעבר נתיב
           useEffect(() => {
             setIsMobileMenuOpen(false);
-          }, [location]);
+          }, [location.pathname]);
         
-          // --- שינוי טקסטים לשפה "גבוהה" ומכבדת יותר ---
+          // שקיפות רק אחרי גלילה
+          useEffect(() => {
+            const onScroll = () => setIsScrolled(window.scrollY > 12);
+            onScroll();
+            window.addEventListener('scroll', onScroll, { passive: true });
+            return () => window.removeEventListener('scroll', onScroll);
+          }, []);
+        
+          // לינקים רלוונטיים בלבד (הסרתי את אלה שלא מובילים/לא מעניינים אותך)
           const navLinks = [
-            { name: 'הקולקציה שלנו', path: '/menu' },
-            { name: 'עולם האירועים', path: '/menu?category=flowers' },
-            { name: 'עיצוב אישי (Bespoke)', path: '/package-builder' },
-            { name: 'מארזי יוקרה', path: '/menu?category=packages' },
+            { name: 'תפריט', path: '/menu' },
           ];
+        
+          const handleLogout = () => {
+            logout();
+            navigate('/');
+          };
         
           return (
             <>
-              {/* השינוי הגדול: bg-white תמיד.
-                 הוספתי shadow-sm ובורדר עדין בזהב למטה כדי להפריד מהרקע הלבן של הדף
-              */}
               <nav
-                className="fixed top-0 left-0 w-full z-50 bg-white border-b border-[#D4AF37]/20 shadow-sm transition-all duration-300"
+                className={[
+                  'fixed top-0 left-0 w-full z-50 transition-all duration-300',
+                  'border-b border-[#D4AF37]/20',
+                  isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm' : 'bg-white'
+                ].join(' ')}
               >
                 <div className="max-w-[1800px] mx-auto px-6 md:px-12 h-24 flex justify-between items-center">
-        
-                  {/* 1. תפריט ימין (דסקטופ) */}
+                  {/* ימין: לינקים דסקטופ */}
                   <div className="hidden md:flex items-center gap-10">
                     {navLinks.map((link) => (
                       <Link
@@ -834,128 +869,125 @@
                         className="text-sm font-serif tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-all relative group"
                       >
                         {link.name}
-                        {/* קו תחתון עדין במעבר עכבר */}
-                        <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#D4AF37] transition-all duration-500 group-hover:w-full"></span>
+                        <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#D4AF37] transition-all duration-500 group-hover:w-full" />
                       </Link>
                     ))}
                   </div>
         
-                  {/* 2. לוגו (מרכז) - גדלנו אותו והדגשנו */}
-                  <Link to="/" className="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center">
-                    <span className="text-3xl md:text-4xl font-serif font-bold tracking-[0.2em] text-[#1A1A1A]">
+                  {/* מרכז: לוגו */}
+                  <Link to="/" className="flex flex-col items-center select-none">
+                    <span className="text-xl md:text-2xl font-serif tracking-[0.25em] text-[#1A1A1A] leading-none">
                       ALI ZAHAV
                     </span>
-                    <span className="text-[10px] text-[#D4AF37] tracking-[0.4em] uppercase mt-1">
+                    <span className="text-[10px] tracking-[0.4em] text-[#D4AF37] mt-1 uppercase font-light">
                       Luxury Events
                     </span>
                   </Link>
         
-                  {/* 3. אייקונים (שמאל) */}
-                  <div className="flex items-center gap-8">
+                  {/* שמאל: פעולות */}
+                  <div className="flex items-center gap-3">
+                    {/* כפתור תרגום (קיים אצלך) */}
+                    <LanguageSwitcher />
         
-                    {/* כפתור אדמין אלגנטי */}
                     {isAdmin && (
                       <Link
-                        to="/admin"
-                        className="hidden md:block text-[10px] uppercase tracking-widest border border-[#1A1A1A] px-4 py-2 hover:bg-[#1A1A1A] hover:text-[#D4AF37] transition-all"
+                        to="/admin/dashboard"
+                        className="hidden md:inline-block text-xs font-semibold tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
                       >
-                        ניהול מערכת
+                        ADMIN
                       </Link>
                     )}
         
-                    {/* אזור אישי / התחברות */}
-                    {user ? (
-                      <div className="hidden md:flex items-center gap-4 text-xs font-serif tracking-wider text-gray-600">
-                        <span>שלום, {user.firstName}</span>
-                        <button onClick={logout} className="hover:text-[#D4AF37] transition-colors border-b border-gray-300 pb-0.5">יציאה</button>
-                      </div>
-                    ) : (
-                      <Link to="/login" className="hidden md:block hover:text-[#D4AF37] transition-colors" title="התחברות">
-                        <Icons.User />
-                      </Link>
-                    )}
-        
-                    {/* עגלה */}
                     <button
                       onClick={toggleCart}
-                      className="relative hover:text-[#D4AF37] transition-colors group"
+                      className="relative p-2 rounded-full hover:bg-black/5 transition-colors text-[#1A1A1A]"
+                      aria-label="Cart"
                     >
                       <Icons.Bag />
                       {cartItemCount > 0 && (
-                        <span className="absolute -top-1 -right-2 bg-[#1A1A1A] text-[#D4AF37] text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-white">
+                        <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-[#D4AF37] text-black text-[11px] font-bold flex items-center justify-center">
                           {cartItemCount}
                         </span>
                       )}
                     </button>
         
-                    {/* תפריט מובייל */}
+                    {isAuthenticated ? (
+                      <button
+                        onClick={handleLogout}
+                        className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 transition-all text-sm"
+                      >
+                        <Icons.User />
+                        <span className="tracking-widest text-xs">התנתקות</span>
+                      </button>
+                    ) : (
+                      <Link
+                        to="/login"
+                        className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 transition-all text-sm"
+                      >
+                        <Icons.User />
+                        <span className="tracking-widest text-xs">התחברות</span>
+                      </Link>
+                    )}
+        
+                    {/* מובייל: כפתור תפריט */}
                     <button
-                      className="md:hidden hover:text-[#D4AF37]"
-                      onClick={() => setIsMobileMenuOpen(true)}
+                      onClick={() => setIsMobileMenuOpen((v) => !v)}
+                      className="md:hidden p-2 rounded-full hover:bg-black/5 transition-colors text-[#1A1A1A]"
+                      aria-label="Menu"
                     >
-                      <Icons.Menu />
+                      {isMobileMenuOpen ? <Icons.X /> : <Icons.Menu />}
                     </button>
                   </div>
                 </div>
               </nav>
         
-              {/* --- תפריט צד למובייל (יוקרתי) --- */}
+              {/* מובייל: תפריט נפתח */}
               <AnimatePresence>
                 {isMobileMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="fixed top-24 left-0 right-0 z-50 md:hidden bg-white border-b border-[#D4AF37]/20 shadow-sm"
                   >
-                    <motion.div
-                      initial={{ x: '100%' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: '100%' }}
-                      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                      className="absolute right-0 top-0 h-full w-[80%] max-w-sm bg-white shadow-2xl flex flex-col"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* כותרת מובייל */}
-                      <div className="flex justify-between items-center p-8 border-b border-gray-100">
-                        <div>
-                            <span className="block text-xl font-serif font-bold tracking-widest text-[#1A1A1A]">ALI ZAHAV</span>
-                            <span className="text-[10px] text-[#D4AF37] tracking-[0.2em] uppercase">Art of Gifting</span>
-                        </div>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-400 hover:text-black">
-                          <Icons.X />
-                        </button>
-                      </div>
+                    <div className="px-6 py-4 flex flex-col gap-3 text-right">
+                      {navLinks.map((link) => (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          className="py-2 text-sm tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
+                        >
+                          {link.name}
+                        </Link>
+                      ))}
         
-                      {/* קישורים */}
-                      <div className="flex flex-col p-8 gap-8">
-                        {navLinks.map((link) => (
-                          <Link
-                            key={link.path}
-                            to={link.path}
-                            className="text-xl font-serif text-[#1A1A1A] hover:text-[#D4AF37] transition-colors flex justify-between items-center group"
+                      {isAdmin && (
+                        <Link
+                          to="/admin/dashboard"
+                          className="py-2 text-sm tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
+                        >
+                          ADMIN
+                        </Link>
+                      )}
+        
+                      <div className="pt-2 border-t border-black/5">
+                        {isAuthenticated ? (
+                          <button
+                            onClick={handleLogout}
+                            className="w-full text-right py-2 text-sm tracking-widest text-red-600 hover:text-red-700"
                           >
-                            {link.name}
-                            <span className="text-gray-300 group-hover:text-[#D4AF37] text-sm">→</span>
-                          </Link>
-                        ))}
-        
-                        <div className="w-full h-[1px] bg-gray-100 my-4"></div>
-        
-                        {user ? (
-                          <div className="space-y-4">
-                            <p className="text-gray-500 text-sm">מחובר כ: <span className="font-bold text-black">{user.firstName}</span></p>
-                            {isAdmin && <Link to="/admin" className="block text-[#D4AF37] font-bold text-sm uppercase tracking-widest">כניסה לניהול</Link>}
-                            <button onClick={logout} className="text-red-500 text-sm border-b border-red-200 pb-1">התנתק מהחשבון</button>
-                          </div>
+                            התנתקות
+                          </button>
                         ) : (
-                          <Link to="/login" className="text-lg font-serif text-black border-b border-black pb-1 inline-block w-max">
-                            התחברות למועדון לקוחות
+                          <Link
+                            to="/login"
+                            className="block py-2 text-sm tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
+                          >
+                            התחברות
                           </Link>
                         )}
                       </div>
-                    </motion.div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1010,7 +1042,10 @@
         import React, { useState } from 'react';
         import { motion } from 'framer-motion';
         import { useTranslation } from 'react-i18next';
-        // אייקון עגלה (אופציונלי, אפשר להסיר אם אין לך ספריית אייקונים)
+        import { useCartStore } from '../stores/cartStore'; // ייבוא ה-Store של העגלה
+        import { useAuthStore } from '../stores/authStore'; // ייבוא ה-Store של האימות
+        
+        // אייקון עגלה
         const CartIcon = () => (
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         );
@@ -1019,11 +1054,16 @@
           const { t, i18n } = useTranslation();
           const [isHovered, setIsHovered] = useState(false);
         
-          // פונקציה חכמה לטיפול בכתובת התמונה
+          // שליפת הפונקציות והנתונים מה-Stores
+          const addToCart = useCartStore((state) => state.addToCart);
+          const toggleCart = useCartStore((state) => state.toggleCart);
+          const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+        
+          // פונקציה לטיפול בכתובת התמונה
           const getImageUrl = (imgStr) => {
             if (!imgStr) return 'https://via.placeholder.com/400x600?text=No+Image';
-            if (imgStr.startsWith('http')) return imgStr; // קישור חיצוני (Unsplash)
-            return `https://localhost:5000${imgStr}`; // קובץ מקומי
+            if (imgStr.startsWith('http')) return imgStr;
+            return `https://localhost:5000${imgStr}`;
           };
         
           const name = product.name[i18n.language] || product.name.he || product.name;
@@ -1059,8 +1099,9 @@
                         className="w-full bg-white text-black font-medium text-xs uppercase tracking-widest py-4 hover:bg-[#d4af37] hover:text-white transition-colors shadow-xl flex items-center justify-center gap-2"
                         onClick={(e) => {
                            e.stopPropagation();
-                           alert(`Added to cart: ${name}`);
-                           // כאן חבר את פונקציית ההוספה לעגלה שלך
+                           // --- הלוגיקה המתוקנת ---
+                           addToCart(product, isAuthenticated); // הוספה לעגלה
+                           toggleCart(); // פתיחת העגלה כדי לתת חיווי למשתמש
                         }}
                       >
                          <CartIcon /> {t('addToCart', 'Add to Cart')} — ₪{product.price}
@@ -1071,7 +1112,8 @@
         
               {/* פרטי מוצר */}
               <div className="text-center w-full px-2">
-                 <h3 className="font-serif text-xl text-white group-hover:text-[#d4af37] transition-colors duration-300">
+                 {/* שינינו מ-text-white ל-text-gray-900 */}
+                 <h3 className="font-serif text-xl text-gray-900 group-hover:text-[#d4af37] transition-colors duration-300">
                     {name}
                  </h3>
                  {description && (
@@ -1342,7 +1384,7 @@
           import {
             LayoutDashboard, ShoppingCart, Package, Box, LayoutGrid,
             Ticket, FileText, Truck, Users, Home, Settings,
-            Menu, X, LogOut, ChevronDown, User
+            Menu, X, LogOut, ChevronDown, User, Bell
           } from 'lucide-react';
           import { useAuthStore } from '@/stores/authStore';
           import { Button } from '@/components/ui/Button';
@@ -1351,17 +1393,16 @@
           } from "@/components/ui/Dropdown-menu";
           import api from '@/api';
           
-          // --- הגדרת תפריט המנהל (מבנה הנתונים) ---
           const adminGroups = [
             {
-              title: 'כללי',
+              title: 'ניהול שוטף',
               items: [
                 { to: '/admin/dashboard', label: 'לוח בקרה', icon: LayoutDashboard },
                 { to: '/admin/orders', label: 'ניהול הזמנות', icon: ShoppingCart },
               ]
             },
             {
-              title: 'קטלוג',
+              title: 'חנות וקטלוג',
               items: [
                 { to: '/admin/products', label: 'מוצרים', icon: Package },
                 { to: '/admin/packages', label: 'חבילות חג', icon: Box },
@@ -1370,23 +1411,15 @@
               ]
             },
             {
-              title: 'דוחות',
+              title: 'דאטה ומערכת',
               items: [
                 { to: '/admin/reports/preparation', label: 'דוח ייצור', icon: FileText },
-                { to: '/admin/reports/delivery', label: 'דוח משלוחים', icon: Truck },
-              ]
-            },
-            {
-              title: 'מערכת',
-              items: [
                 { to: '/admin/users', label: 'משתמשים', icon: Users },
-                { to: '/admin/homepage-settings', label: 'עיצוב דף הבית', icon: Home },
                 { to: '/admin/settings', label: 'הגדרות', icon: Settings },
               ]
             }
           ];
           
-          // --- הקומפוננטה הראשית ---
           export default function AdminLayout() {
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const { user, logout: logoutFromStore } = useAuthStore();
@@ -1397,151 +1430,171 @@
             };
           
             return (
-              <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900" dir="rtl">
+              <div className="min-h-screen bg-[#FDFCFB] flex flex-col font-sans text-slate-900" dir="rtl">
           
-                {/* 1. Sidebar for Desktop (קבוע בצד ימין - RTL) */}
-                <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:right-0 border-l border-gray-200 bg-white z-50">
-                  <SidebarContent
-                    user={user}
-                    logout={handleLogout}
-                  />
+                {/* 1. Sidebar for Desktop (מתחיל מתחת ל-Navbar הראשי) */}
+                <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:right-0 md:top-24 md:bottom-0 bg-white border-l border-slate-100 shadow-sm z-40">
+                  <SidebarContent user={user} logout={handleLogout} />
+                </aside>
+          
+                {/* 2. Main Content Wrapper (כולו מתחיל מתחת ל-Navbar הראשי) */}
+                <div className="flex-1 md:pr-72 flex flex-col min-h-screen pt-24">
+          
+                  {/* Top Header - דביק מתחת ל-Navbar הראשי */}
+                  <header className="sticky top-24 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 h-20 flex items-center justify-between px-8">
+                    <div className="flex items-center gap-4 md:hidden">
+                      <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+                        <Menu className="h-6 w-6 text-slate-600" />
+                      </Button>
+                    </div>
+          
+                    {/* לוגו מרכזי בנאבר - תואם למותג */}
+                    <div className="flex flex-col items-center flex-1 md:flex-initial">
+                      <h1 className="text-2xl font-serif tracking-[0.2em] text-slate-900 leading-none">ALI ZAHAV</h1>
+                      <span className="text-[10px] tracking-[0.4em] text-amber-600 mt-1 uppercase font-light">Luxury Events</span>
+                    </div>
+          
+                    <div className="flex items-center gap-4">
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-amber-600 transition-colors">
+                        <Bell className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </header>
+          
+                  {/* 3. Page Content */}
+                  <main className="p-6 lg:p-10 flex-grow">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <Outlet />
+                    </motion.div>
+                  </main>
                 </div>
           
-                {/* 2. Mobile Top Bar */}
-                <div className="md:hidden flex items-center justify-between bg-white border-b h-16 px-4 sticky top-0 z-40">
-                  <Link to="/admin/dashboard" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                       Admin Panel
-                  </Link>
-          
-                  <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-                     <Menu className="h-6 w-6" />
-                  </Button>
-                </div>
-          
-                {/* 3. Mobile Drawer */}
+                {/* Mobile Sidebar Drawer (מתחיל מתחת ל-Navbar הראשי) */}
                 <AnimatePresence>
                   {sidebarOpen && (
+                    <>
                       <motion.div
-                          initial={{ x: '100%' }}
-                          animate={{ x: 0 }}
-                          exit={{ x: '100%' }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                          className="fixed inset-y-0 right-0 z-50 w-64 md:hidden shadow-2xl bg-white"
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-x-0 bottom-0 top-24 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed right-0 bottom-0 top-24 z-[70] w-72 md:hidden shadow-2xl bg-white"
                       >
-                          <SidebarContent
-                              user={user}
-                              logout={handleLogout}
-                              onClose={() => setSidebarOpen(false)}
-                          />
+                        <SidebarContent user={user} logout={handleLogout} onClose={() => setSidebarOpen(false)} />
                       </motion.div>
+                    </>
                   )}
                 </AnimatePresence>
+              </div>
+            );
+          }
           
-                {/* 4. Overlay for Mobile */}
-                {sidebarOpen && (
-                  <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
-                )}
+          function SidebarContent({ user, logout, onClose }) {
+            return (
+              <div className="flex flex-col h-full bg-white">
+                {/* Sidebar Header */}
+                <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold tracking-widest text-amber-600 uppercase">Admin Console</span>
+                    <span className="text-lg font-serif tracking-widest text-slate-900">DASHBOARD</span>
+                  </div>
+                  {onClose && (
+                    <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
+                      <X className="h-5 w-5 text-slate-400" />
+                    </Button>
+                  )}
+                </div>
           
-                {/* 5. Main Content Area */}
-                {/* ה-padding (pr-64) דוחף את התוכן שמאלה כדי שלא יוסתר ע"י הסרגל הקבוע */}
-                <div className="flex-1 md:pr-64">
-                  <main className="p-4 sm:p-6 lg:p-8">
-                    <Outlet />
-                  </main>
+                {/* Nav Groups */}
+                <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto custom-scrollbar">
+                  {adminGroups.map((group, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <h3 className="px-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">
+                        {group.title}
+                      </h3>
+                      <div className="space-y-1">
+                        {group.items.map((item) => (
+                          <NavItem key={item.to} item={item} onClick={onClose} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </nav>
+          
+                {/* Sidebar Footer - User Profile */}
+                <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+                  <UserNav user={user} logout={logout} />
                 </div>
               </div>
             );
           }
           
-          // --- תוכן הסרגל (זהה ל-Navbar.jsx שלך) ---
-          function SidebarContent({ user, logout, onClose }) {
-            return (
-                <div className="flex flex-col flex-grow overflow-y-auto h-full">
-          
-                    {/* Header */}
-                    <div className="flex items-center justify-between h-16 flex-shrink-0 px-4 bg-slate-50 border-b">
-                        <Link to="/admin/dashboard" onClick={onClose} className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            Admin Panel
-                        </Link>
-                        {onClose && (
-                            <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
-                                <X className="h-5 w-5" />
-                            </Button>
-                        )}
-                    </div>
-          
-                    {/* Navigation Items */}
-                    <div className="flex-1 flex flex-col py-4 px-3 gap-6">
-                        {adminGroups.map((group, idx) => (
-                            <div key={idx}>
-                                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                                  {group.title}
-                                </h3>
-                                <nav className="space-y-1">
-                                    {group.items.map((item) => (
-                                        <NavItem key={item.to} item={item} onClick={onClose} />
-                                    ))}
-                                </nav>
-                            </div>
-                        ))}
-                    </div>
-          
-                    {/* User Footer */}
-                    <div className="px-2 py-4 border-t bg-gray-50">
-                        <UserNav user={user} logout={logout} />
-                    </div>
-                </div>
-            );
-          }
-          
-          // --- פריט ניווט (הועתק מ-Navbar.jsx) ---
           function NavItem({ item, onClick }) {
-            const navLinkClass = "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors";
-            const activeClass = "bg-blue-50 text-blue-700";
-            const inactiveClass = "text-gray-600 hover:bg-gray-50 hover:text-gray-900";
-          
             return (
-                <NavLink
-                    to={item.to}
-                    onClick={onClick}
-                    className={({ isActive }) => `${navLinkClass} ${isActive ? activeClass : inactiveClass}`}
-                >
-                    <item.icon className="ml-3 flex-shrink-0 h-5 w-5" />
-                    {item.label}
-                </NavLink>
+              <NavLink
+                to={item.to}
+                onClick={onClick}
+                className={({ isActive }) => `
+                  group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200
+                  ${isActive
+                    ? "bg-slate-900 text-white shadow-lg shadow-slate-200 ring-1 ring-slate-900"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}
+                `}
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.icon
+                      className={`ml-3 h-5 w-5 transition-transform duration-200 group-hover:scale-110 ${
+                        isActive ? "text-amber-400" : "text-slate-400 group-hover:text-slate-600"
+                      }`}
+                    />
+                    <span className="tracking-wide">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
             );
           }
           
-          // --- תפריט משתמש (הועתק מ-Navbar.jsx) ---
+          
           function UserNav({ user, logout }) {
-            const getInitials = (name) => {
-                if (!name) return 'A';
-                const names = name.split(' ');
-                return names.length > 1 ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase() : name[0].toUpperCase();
-            };
+            const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';
           
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger className="w-full outline-none">
-                        <div className="flex items-center gap-3 text-sm font-medium p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
-                            <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700">
-                                {getInitials(user?.name)}
-                            </div>
-                            <div className="text-start flex-1 truncate">
-                                <p className="font-semibold text-gray-800">{user?.name || 'Admin'}</p>
-                                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-                            </div>
-                            <ChevronDown size={16} className="text-gray-500" />
-                        </div>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 mb-2" align="end" side="top">
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>התנתק</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="w-full focus:outline-none">
+                  <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all cursor-pointer">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-xs font-bold text-amber-400 ring-2 ring-white shadow-sm">
+                      {initials}
+                    </div>
+                    <div className="text-right flex-1 truncate">
+                      <p className="text-sm font-bold text-slate-800 tracking-wide">{user?.name || 'Admin User'}</p>
+                      <p className="text-[10px] text-slate-500 truncate font-medium uppercase tracking-tight">{user?.role || 'Administrator'}</p>
+                    </div>
+                    <ChevronDown size={14} className="text-slate-400" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 p-2 rounded-2xl shadow-xl border-slate-100" align="start" side="top" sideOffset={10}>
+                  <div className="px-3 py-2">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">מחובר כ-</p>
+                    <p className="text-sm font-bold text-slate-800">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator className="my-2 bg-slate-100" />
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="flex items-center px-3 py-2.5 text-sm text-red-600 font-bold hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <LogOut className="ml-2 h-4 w-4" />
+                    <span>התנתקות מהמערכת</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             );
           }
         📄 Sidebar.jsx
@@ -9149,6 +9202,7 @@
   
   if __name__ == "__main__":
       main()
+📄 mkcert.exe
 📁 server/
   📄 .env
   📄 app.js
@@ -9191,8 +9245,9 @@
         })
     );
     
-    // רשימת דומיינים מורשים - הוספתי את כולם ליתר ביטחון
+    // רשימת דומיינים מורשים
     const allowedOrigins = [
+        'https://localhost:5173', // הלקוח המאובטח
         'http://localhost:5173',
         'http://localhost:3000',
         'https://passover1.onrender.com',
@@ -9218,11 +9273,11 @@
     app.use(mongoSanitize());
     app.use(getLanguage);
     
-    // סטטיק - חשוב לתמונות
+    // סטטיק
     const uploadsPath = path.join(__dirname, '../client/public/uploads');
     app.use('/uploads', express.static(uploadsPath));
     
-    // נתיבים - שים לב לקידומת /api
+    // נתיבים
     app.use('/api/auth', authRoutes);
     app.use('/api/products', productRoutes);
     app.use('/api/cart', cartRoutes);
@@ -9243,6 +9298,7 @@
         res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
     });
     
+    // החלק החשוב שחסר לך קודם:
     export default app;
   📄 babel.config.js
     // server/babel.config.js
@@ -11305,50 +11361,44 @@
       ]
   📄 error.log
   📄 index.js
-    import dotenv from 'dotenv';
-    // dotenv.config() must be called before any other imports that need it
-    dotenv.config();
-    
-    import app from './app.js';
-    // Import the configured app
-    import connectDB from './config/db.js';
-    import logger from './utils/logger.js';
     import https from 'https';
     import fs from 'fs';
     import path from 'path';
     import { fileURLToPath } from 'url';
+    import app from './app.js';
+    import connectDB from './config/db.js'; // <--- 1. הוסף את הייבוא הזה!
     
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     
-    // Connect to database
-    connectDB();
+    const PORT = process.env.PORT || 5000;
     
-    // Render מגדיר את הפורט באופן אוטומטי, או שנשתמש ב-5000 כברירת מחדל
-    const port = process.env.PORT || 5000;
-    
-    // בדיקה האם אנחנו רוצים HTTPS מקומי (רק בפיתוח)
-    const useLocalHttps = process.env.NODE_ENV !== 'production' && process.env.HTTPS_DEV === 'true';
-    
-    if (useLocalHttps) {
+    const startServer = async () => {
         try {
+            // --- 2. קודם כל מתחברים לדאטה-בייס ---
+            await connectDB();
+            console.log('🌱 Database Connected Successfully');
+    
+            // --- 3. רק אז מריצים את השרת ---
             const sslOptions = {
-                key: fs.readFileSync(path.join(__dirname, 'certs/key.pem')),
-                cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem')),
+                key: fs.readFileSync(path.join(__dirname, 'localhost+1-key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, 'localhost+1.pem'))
             };
-            https.createServer(sslOptions, app).listen(port, () => {
-                logger.info(`Server is listening in HTTPS mode (Local) on https://localhost:${port}`);
+    
+            https.createServer(sslOptions, app).listen(PORT, () => {
+                console.log(`✅ Secure Server running on https://localhost:${PORT}`);
             });
+    
         } catch (error) {
-            logger.error('Failed to start HTTPS server. Ensure certs/key.pem and certs/cert.pem exist.');
-            process.exit(1);
+            console.error('❌ Failed to start server:', error.message);
+    
+            if (error.code === 'ENOENT') {
+                console.error('Check SSL certificates location.');
+            }
         }
-    } else {
-        // בפרודקשן (Render), השרת רץ כ-HTTP רגיל והענן מטפל ב-SSL
-        app.listen(port, () => {
-            logger.info(`Server is listening on port ${port}`);
-        });
-    }
+    };
+    
+    startServer();
   📄 jest.config.js
     // server/jest.config.js
     export default {
@@ -11365,6 +11415,8 @@
   📄 jest.setup.js
     // server/jest.setup.js
     import 'dotenv/config';
+  📄 localhost+1-key.pem
+  📄 localhost+1.pem
   📁 middleware/
     📄 authMiddleware.js
       import jwt from 'jsonwebtoken';
@@ -12370,20 +12422,18 @@
     dotenv.config();
     connectDB();
     
-    // מיפוי הקטגוריות מהדאטה החדש לקטגוריות הקיימות במודל שלך
-    // המודל שלך תומך רק ב: flowers, gifts, dinnerware, chocolate, decor, packages
     const CATEGORIES = {
-      FURNITURE: 'decor',   // מופה ל-decor
-      LIGHTING: 'decor',    // מופה ל-decor
-      TEXTILES: 'decor',    // מופה ל-decor
-      DECOR: 'decor',       // מופה ל-decor
-      ART: 'decor',         // מופה ל-decor
-      KITCHEN: 'dinnerware', // מופה ל-dinnerware (הכי קרוב)
-      SCENTS: 'gifts'       // מופה ל-gifts
+      FURNITURE: 'furniture',
+      LIGHTING: 'lighting',
+      TEXTILES: 'textiles',
+      DECOR: 'decor',
+      ART: 'art',
+      KITCHEN: 'kitchen'
     };
     
+    // מאגר של 100 תמונות ייחודיות מותאמות לקטגוריות
     const UNIQUE_PRODUCTS = [
-      // --- FURNITURE (Mapped to decor) ---
+      // --- FURNITURE (20 Items) ---
       { name: { he: 'כורסאת קטיפה ירוקה', en: 'Emerald Velvet Armchair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?q=80&w=800', price: 4500 },
       { name: { he: 'כיסא עץ מינימליסטי', en: 'Minimalist Oak Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?q=80&w=800', price: 1200 },
       { name: { he: 'ספת עור קוניאק', en: 'Cognac Leather Sofa' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1550226891-ef816aed4a98?q=80&w=800', price: 12000 },
@@ -12405,7 +12455,7 @@
       { name: { he: 'קונסולה לכניסה', en: 'Entryway Console' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1515362778563-6a8d0e44bc0b?q=80&w=800', price: 2300 },
       { name: { he: 'כיסא נדנדה מודרני', en: 'Modern Rocking Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1506898667547-42e22a46e125?q=80&w=800', price: 1900 },
     
-      // --- LIGHTING (Mapped to decor) ---
+      // --- LIGHTING (15 Items) ---
       { name: { he: 'מנורת רצפה קשת', en: 'Arc Floor Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1507473888900-52e1ad145986?q=80&w=800', price: 1500 },
       { name: { he: 'נורת אדיסון תלויה', en: 'Hanging Edison Bulb' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1540932296757-f5f95df48196?q=80&w=800', price: 350 },
       { name: { he: 'מנורת שולחן בטון', en: 'Concrete Desk Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1513506003011-38f04415426a?q=80&w=800', price: 450 },
@@ -12422,7 +12472,7 @@
       { name: { he: 'מנורת תלייה תעשייתית', en: 'Industrial Pendant' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1552554605-2415d8d64168?q=80&w=800', price: 950 },
       { name: { he: 'ספוט לייט מעוצב', en: 'Designer Spotlight' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1550534245-c4d62325c7be?q=80&w=800', price: 600 },
     
-      // --- TEXTILES (Mapped to decor) ---
+      // --- TEXTILES (15 Items) ---
       { name: { he: 'כרית נוי חרדל', en: 'Mustard Throw Pillow' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?q=80&w=800', price: 250 },
       { name: { he: 'שמיכת צמר סרוגה', en: 'Knitted Wool Blanket' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1579656381226-5fc7036d6c35?q=80&w=800', price: 650 },
       { name: { he: 'שטיח בוהו שיק', en: 'Boho Chic Rug' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1617325247661-675ab4b64ae8?q=80&w=800', price: 1800 },
@@ -12439,7 +12489,7 @@
       { name: { he: 'פלייסמטים קלועים', en: 'Woven Placemats' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?q=80&w=800', price: 150 },
       { name: { he: 'שמיכת טלאים', en: 'Quilt Blanket' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1578983427937-26078ee3d9d3?q=80&w=800', price: 580 },
     
-      // --- DECOR (Mapped to decor) ---
+      // --- DECOR (20 Items) ---
       { name: { he: 'אגרטל קרמיקה לבן', en: 'White Ceramic Vase' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1581783342308-f792ca11dfdd?q=80&w=800', price: 280 },
       { name: { he: 'פסל אבסטרקטי', en: 'Abstract Sculpture' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800', price: 850 },
       { name: { he: 'מגש שיש ירוק', en: 'Green Marble Tray' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1578500494198-246f612d3b3d?q=80&w=800', price: 420 },
@@ -12461,7 +12511,7 @@
       { name: { he: 'כד חרס עתיק', en: 'Antique Clay Jug' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1615486511484-92e172cc416d?q=80&w=800', price: 850 },
       { name: { he: 'מגש מראה', en: 'Mirrored Tray' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1584680269384-5f7267f53df5?q=80&w=800', price: 340 },
     
-      // --- KITCHEN (Mapped to dinnerware) ---
+      // --- KITCHEN (15 Items) ---
       { name: { he: 'סט צלחות קרמיקה', en: 'Ceramic Dinner Set' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1577905753086-647d6d370146?q=80&w=800', price: 950 },
       { name: { he: 'כוסות יין קריסטל', en: 'Crystal Wine Glasses' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1596541223130-5d31a73fb6c6?q=80&w=800', price: 480 },
       { name: { he: 'סכו"ם זהב מט', en: 'Matte Gold Cutlery' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1616231631557-2384a3299388?q=80&w=800', price: 650 },
@@ -12478,7 +12528,7 @@
       { name: { he: 'כותש שום שיש', en: 'Marble Mortar' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?q=80&w=800', price: 260 },
       { name: { he: 'כוסות וויסקי', en: 'Whiskey Tumblers' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=800', price: 380 },
     
-      // --- ART (Mapped to decor) ---
+      // --- ART (8 Items) ---
       { name: { he: 'הדפס אבסטרקטי שחור', en: 'Black Abstract Print' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1580136906451-b94b05e5715e?q=80&w=800', price: 550 },
       { name: { he: 'ציור שמן נוף', en: 'Landscape Oil Painting' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=800', price: 2500 },
       { name: { he: 'מסגרת עץ אלון', en: 'Oak Wood Frame' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=800', price: 180 },
@@ -12488,7 +12538,7 @@
       { name: { he: 'פסל קיר מתכת', en: 'Metal Wall Art' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800', price: 1500 },
       { name: { he: 'גלריה שחור לבן', en: 'BW Gallery Set' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1531913764164-f859dc02d1e5?q=80&w=800', price: 2800 },
     
-      // --- SCENTS (Mapped to gifts) ---
+      // --- SCENTS (7 Items) ---
       { name: { he: 'נר בריח יסמין', en: 'Jasmine Scented Candle' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1602143407151-01114195932e?q=80&w=800', price: 150 },
       { name: { he: 'מפיץ ריח יוקרתי', en: 'Luxury Diffuser' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?q=80&w=800', price: 280 },
       { name: { he: 'שמנים אתריים', en: 'Essential Oils Set' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1596436065584-3b610d486253?q=80&w=800', price: 320 },
@@ -12510,7 +12560,7 @@
             en: `The ${item.name.en} from our ${new Date().getFullYear()} collection. Timeless design combining quality materials and meticulous finish.`
           },
           price: item.price,
-          category: item.cat, // כאן נכנסת הקטגוריה הממופה התקינה
+          category: item.cat,
           image: item.img,
           isPopular: Math.random() > 0.8,
           stock: Math.floor(Math.random() * 50) + 5
