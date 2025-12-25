@@ -14,7 +14,7 @@ const ProductCard = ({ product }) => {
   const getImageUrl = (imgStr) => {
     if (!imgStr) return 'https://via.placeholder.com/400x600?text=No+Image';
     if (imgStr.startsWith('http')) return imgStr; // קישור חיצוני (Unsplash)
-    return `http://localhost:5000${imgStr}`; // קובץ מקומי
+    return `https://localhost:5000${imgStr}`; // קובץ מקומי
   };
 
   const name = product.name[i18n.language] || product.name.he || product.name;
