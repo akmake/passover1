@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import app from './app.js';
 import connectDB from './config/db.js'; // <--- 1. הוסף את הייבוא הזה!
+import 'dotenv/config'; // <--- הוסף את השורה הזו ראשונה!
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

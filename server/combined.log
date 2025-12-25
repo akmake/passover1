@@ -142,3 +142,4 @@
 {"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
 {"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
 {"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
+{"level":"error","message":{"ip":"::1","method":"POST","url":"/api/upload"}}

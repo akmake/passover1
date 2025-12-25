@@ -31,33 +31,35 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(
-    helmet({
-        crossOriginResourcePolicy: false,
-        hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }
-    })
+  helmet({
+    crossOriginResourcePolicy: false,
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  })
 );
 
 // רשימת דומיינים מורשים
 const allowedOrigins = [
-    'https://localhost:5173', // הלקוח המאובטח
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://passover1.onrender.com',
-    'https://passover1-1.onrender.com',
-    process.env.CLIENT_URL
+  'https://localhost:5173', // הלקוח המאובטח
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://passover1.onrender.com',
+  'https://passover1-1.onrender.com',
+  process.env.CLIENT_URL,
 ].filter(Boolean);
 
-app.use(cors({
+app.use(
+  cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.log('Blocked by CORS:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log('Blocked by CORS:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
     },
     credentials: true,
-}));
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -65,11 +67,21 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
-// סטטיק
-const uploadsPath = path.join(__dirname, '../client/public/uploads');
+// =====================
+// סטטיק (מתוקן)
+// =====================
+
+// 1) זה המקום הנכון לקבצים שמועלים ע"י השרת (server/uploads)
+const uploadsPath = path.join(__dirname, 'uploads'); // server/uploads
 app.use('/uploads', express.static(uploadsPath));
 
+// 2) (אופציונלי) אם עדיין יש לך קבצים ידניים ב-client/public/uploads ורוצה לשמור תאימות:
+const clientUploadsPath = path.join(__dirname, '../client/public/uploads');
+app.use('/uploads', express.static(clientUploadsPath));
+
+// =====================
 // נתיבים
+// =====================
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
@@ -86,9 +98,9 @@ app.use('/api/upload', uploadRoutes);
 app.use(errorHandler);
 
 app.use((err, req, res, next) => {
-    logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-    res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
+  logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
 });
 
-// החלק החשוב שחסר לך קודם:
+// החלק החשוב:
 export default app;

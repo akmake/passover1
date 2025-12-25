@@ -12,6 +12,7 @@ const defaultHomepageLayout = {
           {
             id: 'slide1',
             image: '/uploads/default-hero.jpg',
+            video: '', // חדש
             headline: '<h1><strong>ברוכים הבאים לקייטרינג פלוס</strong></h1>',
             subheadline: '<p>ניהול מלא של התוכן דרך פאנל הניהול החדש והגמיש.</p>',
           }
