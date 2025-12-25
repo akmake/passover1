@@ -112,16 +112,16 @@
 {"level":"info","message":"Server is listening on https://localhost:5000"}
 {"level":"info","message":"Server is listening on https://localhost:5000"}
 {"level":"info","message":"Server is listening on https://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
-{"level":"info","message":"Server is listening on http://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
+{"level":"info","message":"Server is listening on https://localhost:5000"}
 {"level":"info","message":"Server is listening on https://localhost:5000"}
 {"level":"info","message":"Server is listening in HTTPS mode on https://localhost:5000"}
 {"level":"info","message":"Server is listening in HTTPS mode on https://localhost:5000"}
@@ -136,3 +136,9 @@
 {"level":"info","message":"Server is listening in HTTPS mode on https://localhost:5000"}
 {"level":"info","message":"Server is listening in HTTPS mode on https://localhost:5000"}
 {"level":"info","message":"Server is listening in HTTPS mode on https://localhost:5000"}
+{"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
+{"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
+{"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
+{"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
+{"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}
+{"level":"info","message":"Server is listening in HTTPS mode (Local) on https://localhost:5000"}

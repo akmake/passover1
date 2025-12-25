@@ -1,83 +1,82 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import User from './models/userModel.js';
+import connectDB from './config/db.js';
 
-// --- הגדרות המנהל החדש (שנה את זה למה שאתה רוצה) ---
-const adminName = 'Admin User';
-const adminEmail = 'yosefdaean@gmail.com';
-const adminPassword = '0546205955'; // עכשיו זה יעבוד גם עם סיסמה פשוטה
-// ----------------------------------------------------
+// --- הגדרות המנהל ---
+const adminConfig = {
+  name: 'Admin User',
+  email: 'yosefdaean@gmail.com', // האימייל שלך
+  password: '0546205955'          // הסיסמה החדשה
+};
 
-// הגדרת נתיבים לטעינת משתני הסביבה (.env)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// טעינת משתני סביבה
+dotenv.config();
 
-const createAdmin = async () => {
+const createOrUpdateAdmin = async () => {
   try {
-    // בדיקת חיבור למסד הנתונים
-    if (!process.env.MONGO_URI) {
-      throw new Error('❌ MONGO_URI חסר בקובץ .env');
-    }
+    // 1. חיבור למסד הנתונים באמצעות הקונפיגורציה הקיימת של הפרויקט
+    await connectDB();
 
-    console.log('🔗 מתחבר ל-MongoDB...');
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ מחובר.');
+    // 2. בדיקה אם המשתמש קיים
+    const existingUser = await User.findOne({ email: adminConfig.email });
 
-    // בדיקה אם המשתמש כבר קיים
-    const existingUser = await User.findOne({ email: adminEmail });
+    // הצפנת הסיסמה (מותאם ל-authController שלך עם Salt 12)
+    const salt = await bcrypt.genSalt(12);
+    const passwordHash = await bcrypt.hash(adminConfig.password, salt);
+
     if (existingUser) {
       console.log('⚠️ משתמש עם אימייל זה כבר קיים.');
-      if (existingUser.role === 'admin') {
-        console.log('✅ והוא כבר מוגדר כמנהל.');
-      } else {
-        console.log('🔄 מעדכן אותו למנהל...');
-        existingUser.role = 'admin';
-        await existingUser.save();
-        console.log('✅ עודכן בהצלחה.');
-      }
-      process.exit(0);
+      
+      // עדכון פרטים למשתמש קיים (שדרוג לניהול + איפוס סיסמה)
+      existingUser.name = adminConfig.name;
+      existingUser.passwordHash = passwordHash;
+      existingUser.role = 'admin';
+      
+      // איפוס מונים למקרה שהמשתמש נעול
+      existingUser.failedLoginAttempts = 0;
+      existingUser.lockUntil = null;
+
+      await existingUser.save();
+      console.log('✅ המשתמש עודכן בהצלחה: סיסמה אופסה והוגדר כמנהל.');
+    } else {
+      // יצירת משתמש חדש
+      console.log('🔨 יוצר משתמש מנהל חדש...');
+      
+      const newAdmin = new User({
+        name: adminConfig.name,
+        email: adminConfig.email,
+        passwordHash: passwordHash,
+        role: 'admin',
+        // שדות אופציונליים במודל שלך - אין חובה למלא אותם למנהל
+        cart: [],
+        shippingDetails: {
+            customerName: adminConfig.name,
+            phone: '0000000000',
+            city: 'Admin City',
+            streetAddress: 'Admin HQ'
+        }
+      });
+
+      await newAdmin.save();
+      console.log('🎉 משתמש מנהל נוצר בהצלחה!');
     }
 
-    // יצירת משתמש חדש
-    console.log('🔨 יוצר משתמש מנהל חדש...');
-
-    // הצפנת הסיסמה (חובה, כי המודל מצפה ל-passwordHash)
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(adminPassword, salt);
-
-    const newAdmin = new User({
-      name: adminName,
-      email: adminEmail,
-      passwordHash: passwordHash,
-      role: 'admin', // <-- כאן הקסם קורה
-      shippingDetails: { // שדות חובה למניעת שגיאות ולידציה עתידיות
-        customerName: adminName,
-        phone: '054',
-        city: 'Tel Aviv',
-        streetAddress: 'Admin St',
-      }
-    });
-
-    await newAdmin.save();
-
     console.log(`
-🎉 נוצר בהצלחה!
-👤 שם: ${adminName}
-📧 אימייל: ${adminEmail}
-🔑 סיסמה: ${adminPassword}
+---------------------------------------
+👤 משתמש: ${adminConfig.email}
+🔑 סיסמה: ${adminConfig.password}
 👑 תפקיד: Admin
+---------------------------------------
     `);
 
     process.exit(0);
 
   } catch (error) {
-    console.error('❌ שגיאה:', error);
+    console.error('❌ שגיאה ביצירת מנהל:', error.message);
     process.exit(1);
   }
 };
 
-createAdmin();
+createOrUpdateAdmin();
