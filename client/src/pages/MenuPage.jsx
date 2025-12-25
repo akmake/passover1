@@ -28,7 +28,7 @@ const MenuPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get('/products');
+        const { data } = await api.get('/api/products');
         setProducts(data);
 
         const categoryParam = searchParams.get('category');

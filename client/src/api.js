@@ -6,7 +6,7 @@ import { useAuthStore } from './stores/authStore';
 // אחרת (ב-Render) -> תשתמש בכתובת הייצור (הנחתי שהיא passover1, תעדכן אם זה שונה)
 const getBaseUrl = () => {
     if (window.location.hostname === 'localhost') {
-        return 'http://localhost:5000';
+        return 'https://localhost:5000';
     }
     // החלף את זה לכתובת השרת האמיתית שלך ב-Render אם היא שונה
     return 'https://passover1.onrender.com'; 

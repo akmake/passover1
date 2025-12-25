@@ -12,9 +12,9 @@ const Layout = () => {
   const isHomePage = location.pathname === '/'; // בדיקה האם המשתמש בדף הבית
 
   return (
-    <div className="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+    <div className="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col pt-24">
       <CartSlideOver />
-      
+
       {/* התפריט העליון - נשאר קבוע */}
       <Navbar />
 
@@ -24,10 +24,10 @@ const Layout = () => {
           3. שאר הדפים הציבוריים (תפריט וכו'): מקבלים container וריפוד כדי שהתוכן לא יידבק לקצוות.
       */}
       <main className={`flex-grow ${
-          isAdminPage 
-            ? 'px-4 py-8 lg:px-8' 
-            : isHomePage 
-              ? 'w-full p-0' 
+          isAdminPage
+            ? 'px-4 py-8 lg:px-8'
+            : isHomePage
+              ? 'w-full p-0'
               : 'container mx-auto px-4 py-8'
         }`}>
         <Outlet />

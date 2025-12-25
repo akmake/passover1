@@ -1,44 +1,42 @@
-import dotenv from 'dotenv';
-// dotenv.config() must be called before any other imports that need it
-dotenv.config();
-
-import app from './app.js';
-// Import the configured app
-import connectDB from './config/db.js';
-import logger from './utils/logger.js';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import app from './app.js'; // כאן אנחנו מייבאים את האפליקציה שהגדרנו למעלה
+import connectDB from './config/db.js'; // <--- 1. הוסף את הייבוא הזה!
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Connect to database
-connectDB();
+const PORT = process.env.PORT || 5000;
 
-// Render מגדיר את הפורט באופן אוטומטי, או שנשתמש ב-5000 כברירת מחדל
-const port = process.env.PORT || 5000;
 
-// בדיקה האם אנחנו רוצים HTTPS מקומי (רק בפיתוח)
-const useLocalHttps = process.env.NODE_ENV !== 'production' && process.env.HTTPS_DEV === 'true';
 
-if (useLocalHttps) {
+// פונקציה להפעלת השרת
+const startServer = async () => {
     try {
+        // --- 2. קודם כל מתחברים לדאטה-בייס ---
+        await connectDB(); 
+        console.log('🌱 Database Connected Successfully');
+
+        // --- 3. רק אז מריצים את השרת ---
         const sslOptions = {
-            key: fs.readFileSync(path.join(__dirname, 'certs/key.pem')),
-            cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem')),
+            key: fs.readFileSync(path.join(__dirname, 'localhost+1-key.pem')),
+            cert: fs.readFileSync(path.join(__dirname, 'localhost+1.pem'))
         };
-        https.createServer(sslOptions, app).listen(port, () => {
-            logger.info(`Server is listening in HTTPS mode (Local) on https://localhost:${port}`);
+
+        https.createServer(sslOptions, app).listen(PORT, () => {
+            console.log(`✅ Secure Server running on https://localhost:${PORT}`);
         });
+
     } catch (error) {
-        logger.error('Failed to start HTTPS server. Ensure certs/key.pem and certs/cert.pem exist.');
-        process.exit(1);
+        console.error('❌ Failed to start server:', error.message);
+        
+        if (error.code === 'ENOENT') {
+            console.error('Check SSL certificates location.');
+        }
     }
-} else {
-    // בפרודקשן (Render), השרת רץ כ-HTTP רגיל והענן מטפל ב-SSL
-    app.listen(port, () => {
-        logger.info(`Server is listening on port ${port}`);
-    });
-}
+};
+
+startServer();

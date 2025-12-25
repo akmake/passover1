@@ -37,8 +37,9 @@ app.use(
     })
 );
 
-// רשימת דומיינים מורשים - הוספתי את כולם ליתר ביטחון
+// רשימת דומיינים מורשים
 const allowedOrigins = [
+    'https://localhost:5173', // הלקוח המאובטח
     'http://localhost:5173',
     'http://localhost:3000',
     'https://passover1.onrender.com',
@@ -64,11 +65,11 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
-// סטטיק - חשוב לתמונות
+// סטטיק
 const uploadsPath = path.join(__dirname, '../client/public/uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-// נתיבים - שים לב לקידומת /api
+// נתיבים
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
@@ -89,4 +90,5 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
 });
 
+// החלק החשוב שחסר לך קודם:
 export default app;
