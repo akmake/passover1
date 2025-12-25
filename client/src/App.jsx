@@ -34,6 +34,11 @@ import AdminHomepageSettingsPage from './pages/admin/AdminHomepageSettingsPage';
 import AdminCategoryListPage from './pages/admin/AdminCategoryListPage';
 import AdminCouponListPage from './pages/admin/AdminCouponListPage';
 import AdminCouponFormPage from './pages/admin/AdminCouponFormPage';
+import HomePageManage from './pages/admin/HomePageManage';
+
+
+
+
 
 function App() {
   const { i18n } = useTranslation();
@@ -83,6 +88,7 @@ function App() {
               <Route path="coupons" element={<AdminCouponListPage />} />
               <Route path="coupons/new" element={<AdminCouponFormPage />} />
               <Route path="coupons/:id/edit" element={<AdminCouponFormPage />} />
+              <Route path="homepage" element={<HomePageManage />} />
             </Route>
           </Route>
         </Route>

@@ -22,6 +22,10 @@ import couponRoutes from './routes/couponRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import getLanguage from './middleware/languageMiddleware.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import homePageRoutes from './routes/homePageRoutes.js';
+
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,6 +86,7 @@ app.use('/uploads', express.static(clientUploadsPath));
 // =====================
 // נתיבים
 // =====================
+app.use('/api/homepage', homePageRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
