@@ -1,42 +1,38 @@
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
-import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-// טעינת משתני סביבה כדי לגשת למפתחות
-dotenv.config();
+// ESM-friendly __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// הגדרת החיבור ל-Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Save uploads to: server/uploads
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
-// הגדרת האחסון - העלאה ישירה לתיקייה בענן
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'passover-catering', // השם של התיקייה שתיווצר בתוך Cloudinary
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    },
-});
-
-// מסנן קבצים - מוודא שמעלים רק תמונות
 const fileFilter = (req, file, cb) => {
-    // בדיקה שהקובץ הוא תמונה
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('רק קבצי תמונה מותרים! (jpeg, jpg, png, gif, webp)'), false);
-    }
+  const mt = (file?.mimetype || '').toLowerCase();
+  const ok = mt.startsWith('video/') || mt.startsWith('image/');
+  if (!ok) return cb(new Error('Only image/video files are allowed'), false);
+  cb(null, true);
 };
 
-// הגדרת ה-Multer עם ההגדרות של Cloudinary
-const upload = multer({ 
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // מגבלה של 5 מגה לקובץ
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const original = file?.originalname || 'file';
+    const safe = original.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${Date.now()}-${safe}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
 });
 
 export default upload;
