@@ -1,38 +1,27 @@
-import https from 'https';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import app from './app.js';
-import connectDB from './config/db.js'; // <--- 1. הוסף את הייבוא הזה!
-import 'dotenv/config'; // <--- הוסף את השורה הזו ראשונה!
+import connectDB from './config/db.js';
+import 'dotenv/config';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// הגדרת הפורט - חובה להשתמש ב-process.env.PORT בשביל רנדר
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
     try {
-        // --- 2. קודם כל מתחברים לדאטה-בייס ---
-        await connectDB(); 
+        // 1. התחברות למונגו (כמו שביקשת - מלא)
+        await connectDB();
         console.log('🌱 Database Connected Successfully');
 
-        // --- 3. רק אז מריצים את השרת ---
-        const sslOptions = {
-            key: fs.readFileSync(path.join(__dirname, 'localhost+1-key.pem')),
-            cert: fs.readFileSync(path.join(__dirname, 'localhost+1.pem'))
-        };
-
-        https.createServer(sslOptions, app).listen(PORT, () => {
-            console.log(`✅ Secure Server running on https://localhost:${PORT}`);
+        // 2. הרצת השרת בפרוטוקול HTTP רגיל
+        // הסבר: רנדר לוקח את ה-HTTP הזה והופך אותו ל-HTTPS אוטומטית כלפי חוץ.
+        // אין צורך לייבא https או fs כאן.
+        app.listen(PORT, () => {
+            console.log(`✅ Server running on port ${PORT}`);
         });
 
     } catch (error) {
         console.error('❌ Failed to start server:', error.message);
-        
-        if (error.code === 'ENOENT') {
-            console.error('Check SSL certificates location.');
-        }
+        // אם המסד נתונים לא מתחבר, עוצרים את השרת כדי לא להריץ אפליקציה שבורה
+        process.exit(1);
     }
 };
 
