@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll } from 'framer-motion';
 import { CardContainer, CardBody, CardItem } from '../components/ui/Hover3DCard'; 
+import ProductDrawer from '../components/ProductDrawer'; // ודא שיש לך את הרכיב הזה מהשלב הקודם
 import api from '@/api'; 
 
 // --- פונקציית עזר למניעת קריסות (טקסטים שהם אובייקטים) ---
@@ -15,7 +16,7 @@ const getText = (textObj) => {
 const FontsInjection = () => (
   <style>
     {`
-      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@200;300;400&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@200;300;400;500&display=swap');
       
       .font-cinzel { font-family: 'Cinzel', serif; }
       .font-playfair { font-family: 'Playfair Display', serif; }
@@ -148,48 +149,58 @@ const HeroSlider = ({ slides, interval = 5, height = 95 }) => {
 };
 
 // --- רכיב המוצרים הנבחרים ---
-const CuratedSelection = ({ featured }) => {
+const CuratedSelection = ({ featured, onProductClick }) => {
   const targetRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: targetRef });
 
   return (
-    // שינוי 1: רקע בז' בהיר במקום שחור
+    // שינוי 1: רקע בז' בהיר
     <section className="py-24 bg-[#F9F9F9] relative overflow-hidden" ref={targetRef}>
       <div className="max-w-7xl mx-auto px-6 mb-12 flex justify-between items-end">
          <div>
-            <h3 className="font-cinzel text-4xl text-[#1A1A1A]">Curated Selection</h3> {/* טקסט כהה */}
+            {/* טקסט כהה */}
+            <h3 className="font-cinzel text-4xl text-[#1A1A1A]">Curated Selection</h3>
             <p className="font-montserrat text-gray-500 mt-2 text-sm tracking-widest">LIMITED EDITIONS</p>
          </div>
          <Link to="/menu" className="hidden md:flex items-center gap-3 text-[#1A1A1A] font-montserrat text-xs tracking-[0.2em] hover:text-[#D4AF37] transition-colors">
             VIEW ALL <span className="text-xl">→</span>
          </Link>
       </div>
+
+      {/* אזור ה-Marquee האינסופי */}
       <div className="relative w-full overflow-hidden py-10">
          {featured && featured.length > 0 ? (
-             <div className="flex gap-12 px-6 overflow-x-auto no-scrollbar snap-x pb-4">
-                {featured.map((product) => (
-                   <Link to={`/product/${product._id}`} key={product._id} className="min-w-[300px] md:min-w-[400px] snap-center group block relative cursor-pointer">
-                      {/* שינוי 2: רקע לבן לכרטיס + צללית */}
-                      <div className="h-[500px] overflow-hidden relative mb-6 bg-white shadow-sm group-hover:shadow-xl transition-all duration-500 border border-gray-100">
-                         <img 
-                            src={product.image || product.imageUrl} 
-                            alt={getText(product.name)} 
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[1.5s] ease-in-out"
-                         />
-                         {/* מחיר על רקע לבן חצי שקוף */}
-                         <div className="absolute bottom-6 left-6 text-left bg-white/90 px-4 py-2 backdrop-blur-sm">
-                            <p className="text-[#1A1A1A] font-cinzel text-xl">₪{product.price}</p>
-                         </div>
-                      </div>
-                      <h4 className="font-playfair text-2xl text-[#1A1A1A] group-hover:text-[#D4AF37] transition-colors">
-                        {getText(product.name)}
-                      </h4>
-                      <p className="font-montserrat text-xs text-gray-500 mt-1 uppercase tracking-wider">
-                          {product.category || 'Premium Collection'}
-                      </p>
-                   </Link>
-                ))}
-                <div className="min-w-[50px]"></div>
+             <div className="flex w-full overflow-hidden group/marquee">
+                 <motion.div 
+                    className="flex gap-8 px-6 min-w-max"
+                    animate={{ x: ["0%", "-100%"] }} 
+                    transition={{ repeat: Infinity, ease: "linear", duration: 40 }} 
+                    style={{ x: 0 }}
+                    whileHover={{ animationPlayState: "paused" }} 
+                 >
+                    {[...featured, ...featured, ...featured].map((product, idx) => (
+                       <div 
+                          key={`${product._id}-${idx}`} 
+                          onClick={() => onProductClick(product)} // לחיצה פותחת מגירה
+                          className="min-w-[300px] md:min-w-[380px] cursor-pointer group/item relative"
+                       >
+                          {/* שינוי 2: כרטיס לבן עם צללית */}
+                          <div className="h-[480px] overflow-hidden relative mb-6 bg-white shadow-sm group-hover/item:shadow-xl transition-all duration-500 border border-gray-100">
+                             <img 
+                                src={product.image || product.imageUrl} 
+                                alt={getText(product.name)} 
+                                className="w-full h-full object-cover transform group-hover/item:scale-105 transition-transform duration-[1.5s]"
+                             />
+                             {/* מחיר על רקע לבן */}
+                             <div className="absolute bottom-6 left-6 text-left bg-white/90 px-4 py-2 backdrop-blur-sm shadow-sm">
+                                <p className="text-[#1A1A1A] font-cinzel text-xl">₪{product.price}</p>
+                             </div>
+                          </div>
+                          <h4 className="font-playfair text-2xl text-[#1A1A1A] group-hover/item:text-[#D4AF37] transition-colors">{getText(product.name)}</h4>
+                          <p className="font-montserrat text-xs text-gray-500 mt-1 uppercase tracking-wider">{product.category || 'Premium'}</p>
+                       </div>
+                    ))}
+                 </motion.div>
              </div>
          ) : (
              <div className="text-center py-10 px-4 border border-gray-200 rounded mx-6 text-gray-400 font-montserrat">
@@ -205,6 +216,10 @@ const CuratedSelection = ({ featured }) => {
 const HomePage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // ניהול המגירה
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -220,6 +235,11 @@ const HomePage = () => {
     fetchHomeData();
   }, []);
 
+  const openDrawer = (product) => {
+      setSelectedProduct(product);
+      setIsDrawerOpen(true);
+  };
+
   const categories = (data?.categories && data.categories.length > 0 && data.categories[0].image) 
     ? data.categories 
     : DEFAULT_CATEGORIES;
@@ -234,10 +254,17 @@ const HomePage = () => {
   );
 
   return (
-    // שינוי 3: רקע בז' כללי (#F9F9F9) וטקסט כהה (#1A1A1A)
+    // שינוי 3: רקע כללי בז' בהיר
     <div className="bg-[#F9F9F9] min-h-screen text-[#1A1A1A] overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
       <FontsInjection />
       
+      {/* מגירה */}
+      <ProductDrawer 
+        product={selectedProduct} 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+      />
+
       {/* Hero Slider */}
       <HeroSlider 
           slides={heroData.slides} 
@@ -273,10 +300,9 @@ const HomePage = () => {
               >
                 <Link to={cat.link || '#'}>
                   <CardContainer containerClassName="w-full h-full">
-                    {/* כרטיס בהיר עם צללית */}
+                    {/* כרטיס לבן */}
                     <CardBody className="bg-white relative group/card border-gray-100 w-full h-[550px] overflow-hidden border shadow-lg hover:shadow-2xl transition-shadow duration-500">
                       
-                      {/* Image Layer */}
                       <CardItem translateZ="40" className="w-full h-full">
                         <div className="absolute inset-0 bg-black/10 group-hover/card:bg-black/0 transition-colors duration-500 z-10"></div>
                         <img 
@@ -286,7 +312,6 @@ const HomePage = () => {
                         />
                       </CardItem>
 
-                      {/* Text Layer */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center z-20 p-8 m-4 border-[1px] border-white/40 group-hover/card:border-[#D4AF37] transition-all duration-700">
                         <CardItem translateZ="80" className="text-center">
                            <h4 className="font-cinzel text-4xl text-white mb-2 drop-shadow-lg">{getText(cat.title)}</h4>
@@ -306,7 +331,7 @@ const HomePage = () => {
       </section>
 
       {/* Featured Products */}
-      <CuratedSelection featured={featured} />
+      <CuratedSelection featured={featured} onProductClick={openDrawer} />
 
       {/* Bespoke / Services (Static) */}
       <section className="grid grid-cols-1 lg:grid-cols-2 min-h-[80vh]">
@@ -314,9 +339,9 @@ const HomePage = () => {
             <img 
                src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop" 
                alt="Luxury Event" 
-               className="absolute inset-0 w-full h-full object-cover"
+               className="absolute inset-0 w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
             />
-            <div className="absolute inset-0 bg-black/20"></div> {/* הבהרתי את ה-Overlay */}
+            <div className="absolute inset-0 bg-black/20"></div>
          </div>
          
          <div className="bg-white flex flex-col justify-center p-12 lg:p-24 relative text-[#1A1A1A]">
@@ -335,13 +360,13 @@ const HomePage = () => {
             
             <ul className="space-y-4 font-playfair text-xl text-gray-800 mb-12">
                <li className="flex items-center gap-4">
-                  <span className="w-2 h-2 bg-[#D4AF37] rounded-full"></span> עיצוב שולחנות הוט-קוטור
+                  <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full"></span> עיצוב שולחנות הוט-קוטור
                </li>
                <li className="flex items-center gap-4">
-                  <span className="w-2 h-2 bg-[#D4AF37] rounded-full"></span> שזירת פרחים אומנותית
+                  <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full"></span> שזירת פרחים אומנותית
                </li>
                <li className="flex items-center gap-4">
-                  <span className="w-2 h-2 bg-[#D4AF37] rounded-full"></span> מארזי מיתוג VIP
+                  <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full"></span> מארזי מיתוג VIP
                </li>
             </ul>
 
@@ -351,7 +376,7 @@ const HomePage = () => {
          </div>
       </section>
 
-      {/* Footer CTA - נשאר שחור לקונטרסט */}
+      {/* Footer CTA - כהה לקונטרסט */}
       <section className="py-32 bg-black text-center px-4 relative overflow-hidden">
          <div className="relative z-10">
             <h2 className="font-cinzel text-5xl md:text-8xl text-white mb-8 font-bold">ALI ZAHAV</h2>

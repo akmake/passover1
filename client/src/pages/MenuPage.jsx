@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ChevronDown } from 'lucide-react'; 
 import api from '../api';
 import ProductCard from '../components/ProductCard'; 
+import ProductDrawer from '../components/ProductDrawer'; // ייבוא המגירה הצדדית
 
 // --- 1. פונקציית עזר למניעת קריסה ---
 const getName = (nameObj) => {
@@ -45,6 +46,10 @@ const MenuPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // סטייט למגירה הצדדית
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -77,9 +82,22 @@ const MenuPage = () => {
     setSearchParams({ category: catId === 'all' ? '' : catId });
   };
 
+  // פונקציה לפתיחת המגירה
+  const openDrawer = (product) => {
+      setSelectedProduct(product);
+      setIsDrawerOpen(true);
+  };
+
   return (
     <div className="bg-[#FAFAFA] min-h-screen w-full text-[#2D2D2D] selection:bg-[#D4AF37] selection:text-white font-hebrew-text" dir="rtl">
       <FontsInjection />
+      
+      {/* --- מגירה צדדית --- */}
+      <ProductDrawer 
+        product={selectedProduct} 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)} 
+      />
       
       {/* --- HERO SECTION: מצומצם וקומפקטי --- */}
       <header className="relative w-full pt-12 pb-4 px-6 flex flex-col items-center justify-center text-center bg-white border-b border-gray-100">
@@ -155,7 +173,11 @@ const MenuPage = () => {
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3 }}
                   >
-                      <ProductCard product={product} /> 
+                      {/* העברת פונקציית הפתיחה לכרטיס */}
+                      <ProductCard 
+                        product={product} 
+                        onClick={openDrawer}
+                      /> 
                   </motion.div>
                 ))}
               </AnimatePresence>
