@@ -9,26 +9,24 @@ import CartSlideOver from './CartSlideOver';
 const Layout = () => {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
-  const isHomePage = location.pathname === '/'; // בדיקה האם המשתמש בדף הבית
+  const isHomePage = location.pathname === '/';
 
   return (
     <div className="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col pt-24">
       <CartSlideOver />
 
-      {/* התפריט העליון - נשאר קבוע */}
+      {/* התפריט העליון */}
       <Navbar />
 
-      {/* לוגיקה לקביעת המחלקות של התוכן הראשי:
-          1. אם זה אדמין: ריפוד רגיל של דף ניהול.
-          2. אם זה דף הבית: רוחב מלא (w-full) וללא ריפוד (p-0) כדי שהתמונות יתחילו מיד.
-          3. שאר הדפים הציבוריים (תפריט וכו'): מקבלים container וריפוד כדי שהתוכן לא יידבק לקצוות.
+      {/* שינוי: כעת כל הדפים מקבלים w-full (רוחב מלא).
+          ההבדל היחיד הוא ה-Padding (ריפוד):
+          - דף הבית: ללא ריפוד בכלל (p-0).
+          - כל שאר הדפים (כולל אדמין ודפים רגילים): מקבלים ריפוד כדי שהטקסט לא יידבק לקצה.
       */}
-      <main className={`flex-grow ${
-          isAdminPage
-            ? 'px-4 py-8 lg:px-8'
-            : isHomePage
-              ? 'w-full p-0'
-              : 'container mx-auto px-4 py-8'
+      <main className={`flex-grow w-full ${
+          isHomePage 
+            ? 'p-0' 
+            : 'px-1 py-4 lg:px-4'
         }`}>
         <Outlet />
       </main>

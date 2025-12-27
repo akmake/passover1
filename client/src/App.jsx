@@ -35,8 +35,7 @@ import AdminCategoryListPage from './pages/admin/AdminCategoryListPage';
 import AdminCouponListPage from './pages/admin/AdminCouponListPage';
 import AdminCouponFormPage from './pages/admin/AdminCouponFormPage';
 import HomePageManage from './pages/admin/HomePageManage';
-
-
+import AdminPromotions from './pages/admin/AdminPromotions';
 
 
 
@@ -89,6 +88,7 @@ function App() {
               <Route path="coupons/new" element={<AdminCouponFormPage />} />
               <Route path="coupons/:id/edit" element={<AdminCouponFormPage />} />
               <Route path="homepage" element={<HomePageManage />} />
+              <Route path="/admin/promotions" element={<AdminPromotions />} />
             </Route>
           </Route>
         </Route>

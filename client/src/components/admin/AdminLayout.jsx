@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, ShoppingCart, Package, Box, LayoutGrid,
   Ticket, FileText, Truck, Users, Home, Settings,
-  Menu, X, LogOut, ChevronDown, Bell
+  Menu, X, LogOut, ChevronDown, Bell, Flame
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/Button';
@@ -40,8 +40,7 @@ const adminGroups = [
     title: 'חנות וקטלוג',
     items: [
       { to: '/admin/products', label: 'מוצרים', icon: Package },
-      { to: '/admin/packages', label: 'חבילות חג', icon: Box },
-      { to: '/admin/categories', label: 'קטגוריות', icon: LayoutGrid },
+      { to: '/admin/promotions', label: 'מבצעים חמים', icon: Flame },
       { to: '/admin/coupons', label: 'קופונים', icon: Ticket },
     ]
   },

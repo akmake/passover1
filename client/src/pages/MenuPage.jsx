@@ -1,9 +1,11 @@
+// client/src/pages/MenuPage.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2 } from 'lucide-react'; 
+import { Search, Loader2 } from 'lucide-react';
 import api from '../api';
-import ProductCard from '../components/ProductCard'; 
+import ProductCard from '../components/ProductCard';
 import ProductDrawer from '../components/ProductDrawer';
 
 // פונקציית עזר לחילוץ טקסט
@@ -15,11 +17,11 @@ const getText = (field) => {
 
 const MenuPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]); 
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // במקום סינון, נשתמש בזה כדי לדעת איזה כפתור להאיר למעלה
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,15 +38,38 @@ const MenuPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // 1. קטגוריות
-        const catsRes = await api.get('/api/categories'); 
+
+        // --- השינוי הגדול: טעינת הכל במקביל (מוצרים, קטגוריות, מבצעים) ---
+        const [catsRes, prodRes, promosRes] = await Promise.all([
+            api.get('/api/categories'),
+            api.get('/api/products'),
+            api.get('/api/promotions') // הוספנו את זה
+        ]);
+
+        const rawProducts = prodRes.data;
+        const promotions = promosRes.data;
+
+        // מיזוג המבצעים לתוך המוצרים
+        const mergedProducts = rawProducts.map(product => {
+            // האם יש מבצע פעיל למוצר הזה?
+            const activePromo = promotions.find(p => 
+                (p.product?._id === product._id) || (p.product === product._id)
+            );
+
+            if (activePromo) {
+                return {
+                    ...product,
+                    price: activePromo.discountPrice, // דורס את המחיר לתצוגה ולהוספה
+                    originalPrice: product.price,     // שומר את המקורי לקו חוצה
+                    isSaleItem: true
+                };
+            }
+            return product;
+        });
+
         // אנו לא צריכים את "הכל" ברשימה למטה, אבל כן בתפריט למעלה ככפתור לראש הדף
         setCategories(catsRes.data);
-
-        // 2. מוצרים
-        const prodRes = await api.get('/api/products');
-        setProducts(prodRes.data);
+        setProducts(mergedProducts); // שומרים את המוצרים הממוזגים
 
       } catch (error) {
         console.error("Error loading data:", error);
@@ -56,16 +81,14 @@ const MenuPage = () => {
   }, []);
 
   // --- מנגנון Scroll Spy (זיהוי מיקום בגלילה) ---
+  // (הקוד המקורי שלך נשמר במלואו)
   useEffect(() => {
     const handleScroll = () => {
-      if (isClickingRef.current) return; // אם הגלילה נובעת לחיצה, אל תשנה סטייט
+      if (isClickingRef.current) return; 
 
-      const scrollPosition = window.scrollY + 200; // אופסט כדי שהזיהוי יקרה קצת לפני שמגיעים
-      
-      // בדיקה איזה סקשן הכי קרוב
+      const scrollPosition = window.scrollY + 200; 
       let currentSection = 'all';
-      
-      // אם אנחנו ממש למעלה - סמן את הכל
+
       if (window.scrollY < 100) {
         setActiveCategory('all');
         return;
@@ -102,7 +125,6 @@ const MenuPage = () => {
     } else {
       const element = sectionRefs.current[catId];
       if (element) {
-        // קיזוז של הגובה של ההדר (בערך 180 פיקסלים)
         const headerOffset = 180;
         const elementPosition = element.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.scrollY - headerOffset;
@@ -114,37 +136,30 @@ const MenuPage = () => {
       }
     }
 
-    // שחרור הנעילה אחרי סיום הגלילה (בערך)
     setTimeout(() => {
       isClickingRef.current = false;
     }, 1000);
   };
 
   // קיבוץ מוצרים לפי קטגוריות
-  // אנו מסננים קודם לפי חיפוש, ואז מציגים את התוצאות בתוך הקטגוריות שלהן
   const getProductsByCategory = (catId) => {
     return products.filter(p => {
       const pCatId = typeof p.category === 'object' ? p.category?._id : p.category;
-      
-      // התאמה לקטגוריה
       const matchCat = pCatId === catId;
-      
-      // התאמה לחיפוש
       const matchSearch = getText(p.name).toLowerCase().includes(searchQuery.toLowerCase());
-      
       return matchCat && matchSearch;
     });
   };
 
   return (
     <div className="bg-[#F9F8F6] min-h-screen w-full text-[#1A1A1A] font-sans" dir="rtl">
-      
-      <ProductDrawer 
-        product={selectedProduct} 
-        isOpen={isDrawerOpen} 
-        onClose={() => setIsDrawerOpen(false)} 
+
+      <ProductDrawer
+        product={selectedProduct}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
       />
-      
+
       {/* HEADER ראשית - תמיד למעלה */}
       <header className="pt-12 pb-6 text-center bg-[#F9F8F6]">
           <h1 className="text-4xl md:text-5xl text-[#1A1A1A] tracking-wider font-serif font-bold">
@@ -158,14 +173,13 @@ const MenuPage = () => {
       {/* STICKY NAV BAR - הפס שיורד איתך */}
       <div className="sticky top-0 z-40 bg-[#F9F8F6]/95 backdrop-blur-md border-b border-[#E5E5E5] py-4 shadow-sm transition-all duration-300">
           <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            
+
             {/* רשימת קטגוריות - גלילה אופקית */}
             <div className="flex gap-8 overflow-x-auto hide-scrollbar w-full md:w-auto justify-center md:justify-start px-2">
-                {/* כפתור "הכל" שגולל למעלה */}
-                <button 
+                <button
                     onClick={() => scrollToCategory('all')}
                     className={`relative pb-2 text-sm transition-all duration-300 whitespace-nowrap tracking-wide
-                    ${activeCategory === 'all' ? 'text-[#D4AF37] font-bold' : 'text-[#5A5A5A] hover:text-[#1A1A1A]'}`}
+                  ${activeCategory === 'all' ? 'text-[#D4AF37] font-bold' : 'text-[#5A5A5A] hover:text-[#1A1A1A]'}`}
                 >
                     כל הקולקציה
                     {activeCategory === 'all' && (
@@ -176,9 +190,9 @@ const MenuPage = () => {
                 {categories.map((cat) => {
                     const isActive = activeCategory === cat._id;
                     const catName = getText(cat.name);
-                    
+
                     return (
-                        <button 
+                        <button
                             key={cat._id}
                             onClick={() => scrollToCategory(cat._id)}
                             className={`relative pb-2 text-sm transition-all duration-300 whitespace-nowrap tracking-wide
@@ -195,9 +209,9 @@ const MenuPage = () => {
 
             {/* חיפוש */}
             <div className="relative w-full md:w-64">
-                <input 
-                  type="text" 
-                  placeholder="חיפוש פריט..." 
+                <input
+                  type="text"
+                  placeholder="חיפוש פריט..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white border border-[#E0E0E0] rounded-sm px-4 py-2 pl-10 text-sm focus:outline-none focus:border-[#D4AF37]"
@@ -214,20 +228,18 @@ const MenuPage = () => {
                <Loader2 className="w-10 h-10 text-[#D4AF37] animate-spin" />
             </div>
         ) : (
-            <div className="space-y-20 mt-12"> 
-              {/* לולאה שעוברת על כל הקטגוריות ומציגה אותן אחת אחרי השניה */}
+            <div className="space-y-20 mt-12">
               {categories.map((cat) => {
                 const catProducts = getProductsByCategory(cat._id);
-                
-                // אם אין מוצרים בקטגוריה (בגלל חיפוש או ריק), לא מציגים את הסקשן
+
                 if (catProducts.length === 0) return null;
 
                 return (
-                  <section 
-                    key={cat._id} 
+                  <section
+                    key={cat._id}
                     id={cat._id}
-                    ref={(el) => (sectionRefs.current[cat._id] = el)} // חיבור לרפרנס לגלילה
-                    className="scroll-mt-40" // מרווח לגלילה
+                    ref={(el) => (sectionRefs.current[cat._id] = el)}
+                    className="scroll-mt-40"
                   >
                     {/* כותרת ומפריד לכל קטגוריה */}
                     <div className="flex items-center gap-4 mb-10">
@@ -238,16 +250,16 @@ const MenuPage = () => {
                         <div className="h-[1px] bg-[#D4AF37]/30 flex-grow"></div>
                     </div>
 
-                    {/* גריד המוצרים של הקטגוריה הזו */}
+                    {/* גריד המוצרים */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12">
                         {catProducts.map((product) => (
-                          <ProductCard 
-                            key={product._id} 
-                            product={product} 
+                          <ProductCard
+                            key={product._id}
+                            product={product}
                             onClick={() => {
                                 setSelectedProduct(product);
                                 setIsDrawerOpen(true);
-                            }} 
+                            }}
                           />
                         ))}
                     </div>

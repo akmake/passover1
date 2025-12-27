@@ -6,7 +6,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import logger from './utils/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import promotionRoutes from './routes/promotionRoutes.js';
 // Import Routes
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -99,6 +99,8 @@ app.use('/api/delivery-options', deliveryOptionsRoutes);
 app.use('/api/homepage-settings', homepageSettingsRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/promotions', promotionRoutes);
+
 
 app.use(errorHandler);
 
