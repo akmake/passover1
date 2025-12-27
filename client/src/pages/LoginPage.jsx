@@ -1,17 +1,138 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, CheckCircle } from 'lucide-react';
 import api from '../api.js';
 import { useAuthStore } from '../stores/authStore';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
-    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const login = useAuthStore((state) => state.login);
+    const canvasRef = useRef(null);
+
+    // --- לוגיקת קנבס: זהב על לבן נקי ---
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let mouse = { x: null, y: null, radius: 150 };
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        window.addEventListener('mouseleave', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.1;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.density = (Math.random() * 30) + 1;
+                // צבע זהב כהה כדי שיראה טוב על לבן
+                this.color = '#D4AF37'; 
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            update() {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                let forceDirectionX = dx / distance;
+                let forceDirectionY = dy / distance;
+                let maxDistance = mouse.radius;
+                let force = (maxDistance - distance) / maxDistance;
+                let directionX = forceDirectionX * force * this.density;
+                let directionY = forceDirectionY * force * this.density;
+
+                if (distance < mouse.radius) {
+                    this.x -= directionX;
+                    this.y -= directionY;
+                } else {
+                    if (this.x !== this.baseX) {
+                        let dx = this.x - this.baseX;
+                        this.x -= dx / 10;
+                    }
+                    if (this.y !== this.baseY) {
+                        let dy = this.y - this.baseY;
+                        this.y -= dy / 10;
+                    }
+                }
+                this.draw();
+            }
+        }
+
+        let particlesArray = [];
+        function init() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 9000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+            }
+            connect();
+        }
+
+        function connect() {
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x))
+                        + ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+                    
+                    if (distance < (canvas.width/7) * (canvas.height/7)) {
+                        let opacityValue = 1 - (distance / 20000);
+                        // קווים בצבע זהב עדין מאוד
+                        ctx.strokeStyle = `rgba(212, 175, 55, ${opacityValue})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        init();
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resizeCanvas);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -20,12 +141,7 @@ export default function LoginPage() {
         try {
             const response = await api.post('/api/auth/login', { email, password });
             login(response.data);
-            if (rememberMe) {
-                localStorage.setItem('rememberedEmail', email);
-            } else {
-                localStorage.removeItem('rememberedEmail');
-            }
-            window.location.href = response.data.role === 'admin' ? '/admin/dashboard' : '/';
+            window.location.href = response.data.role === 'admin' ? '/admin/products' : '/';
         } catch (error) {
             const message = error.response?.data?.message || 'שגיאה בהתחברות';
             setError(message);
@@ -35,123 +151,77 @@ export default function LoginPage() {
     };
 
     return (
-        <div
-            className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-200 via-yellow-100 to-purple-200"
-            style={{
-                backgroundImage: `url('/images/passover-table.jpg')`, // תמונת רקע של שולחן פסח
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundBlendMode: 'overlay',
-            }}
-        >
-            <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-                className="bg-white bg-opacity-80 backdrop-blur-lg p-10 rounded-2xl shadow-2xl w-full max-w-sm"
+        <div className="relative min-h-screen w-full bg-white overflow-hidden flex items-center justify-center font-sans" dir="rtl">
+            
+            {/* הקנבס יושב ברקע על הלבן */}
+            <canvas 
+                ref={canvasRef} 
+                className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"
+            />
+
+            {/* תוכן הטופס - ללא כרטיס, ללא רקע */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="relative z-10 w-full max-w-sm px-6"
             >
-                <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-6">
-                    התחבר לחגיגה של קייטרינג פסח
-                </h2>
+                <div className="text-center mb-16">
+                    <h1 className="text-5xl font-serif font-bold text-black mb-2 tracking-wider">ALI ZAHAV</h1>
+                    <p className="text-[#D4AF37] text-xs tracking-[0.4em] uppercase font-bold">Luxury Home Collection</p>
+                </div>
 
-                <AnimatePresence>
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            className="mb-4 p-4 bg-red-500 text-white rounded-lg text-sm flex items-center justify-center"
-                        >
-                            <span>{error}</span>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {error && (
+                    <div className="mb-8 text-red-600 text-sm text-center font-medium bg-red-50 py-2 rounded">
+                        {error}
+                    </div>
+                )}
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-12">
+                    
+                    {/* שדות קלט מינימליסטיים - רק קו תחתון */}
                     <div className="relative group">
-                        <motion.div
-                            className="absolute right-3 top-3 text-gray-500 group-focus-within:text-yellow-600"
-                            animate={email ? { scale: 1.2 } : { scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <Mail className="h-5 w-5" />
-                        </motion.div>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="כתובת אימייל"
-                            className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-right"
+                            className="block py-2.5 px-0 w-full text-lg text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-[#D4AF37] peer text-right"
+                            placeholder=" "
                             required
                         />
+                        <label className="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[top_right] peer-focus:start-0 peer-focus:text-[#D4AF37] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6 right-0">
+                            כתובת אימייל
+                        </label>
                     </div>
 
                     <div className="relative group">
-                        <motion.div
-                            className="absolute right-3 top-3 text-gray-500 group-focus-within:text-yellow-600"
-                            animate={password ? { scale: 1.2 } : { scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <Lock className="h-5 w-5" />
-                        </motion.div>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="סיסמה"
-                            className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-right"
+                            className="block py-2.5 px-0 w-full text-lg text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-[#D4AF37] peer text-right"
+                            placeholder=" "
                             required
                         />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                        <label className="flex items-center space-x-2 space-x-reverse">
-                            <motion.div
-                                animate={rememberMe ? { rotate: 360 } : { rotate: 0 }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <CheckCircle
-                                    className={`h-5 w-5 ${rememberMe ? 'text-yellow-600' : 'text-gray-400'}`}
-                                />
-                            </motion.div>
-                            <span className="text-sm text-gray-600">זכור אותי</span>
-                            <input
-                                type="checkbox"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                                className="hidden"
-                            />
+                        <label className="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[top_right] peer-focus:start-0 peer-focus:text-[#D4AF37] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6 right-0">
+                            סיסמה
                         </label>
-                        <Link
-                            to="/forgot-password"
-                            className="text-sm text-purple-600 hover:text-purple-800 transition-colors"
-                        >
-                            שכחת סיסמה?
-                        </Link>
                     </div>
 
-                    <motion.button
+                    <button
                         type="submit"
                         disabled={isLoading}
-                        whileHover={{ scale: 1.05, boxShadow: '0 0 15px rgba(234, 179, 8, 0.5)' }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`w-full py-3 rounded-lg text-white font-semibold ${
-                            isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-yellow-600 hover:bg-yellow-700'
-                        } transition-colors`}
+                        className="w-full py-4 bg-black text-[#D4AF37] font-bold tracking-widest uppercase hover:bg-[#D4AF37] hover:text-black transition-all duration-300 flex justify-center items-center gap-2 mt-8"
                     >
-                        {isLoading ? 'טוען...' : 'התחבר לחג'}
-                    </motion.button>
+                        {isLoading ? <Loader2 className="animate-spin" /> : 'כניסה'}
+                    </button>
                 </form>
 
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    אין לך חשבון?{' '}
-                    <Link
-                        to="/register"
-                        className="text-purple-600 hover:text-purple-800 font-medium transition-colors"
-                    >
-                        הירשם עכשיו
+                <div className="mt-12 text-center">
+                    <Link to="/" className="text-gray-400 hover:text-black text-sm transition-colors flex items-center justify-center gap-2">
+                        <ArrowLeft size={14} /> חזרה לחנות
                     </Link>
-                </p>
+                </div>
             </motion.div>
         </div>
     );

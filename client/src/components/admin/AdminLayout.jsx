@@ -84,33 +84,7 @@ export default function AdminLayout() {
       <div className="flex-1 md:pr-72 flex flex-col min-h-screen transition-all duration-300">
 
         {/* Top Header */}
-        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 h-20 flex items-center justify-between px-8 shadow-sm">
-          <div className="flex items-center gap-4 md:hidden">
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-              <Menu className="h-6 w-6 text-slate-600" />
-            </Button>
-          </div>
 
-          {/* מותג (מופיע רק במובייל בדר"כ, או ככותרת עמוד) */}
-          <div className="flex flex-col items-center flex-1 md:hidden">
-            <h1 className="text-xl font-cinzel font-bold tracking-[0.2em] text-[#050505] leading-none">ALI ZAHAV</h1>
-          </div>
-
-          {/* כותרת עמוד דינמית (אופציונלי) או ריווח */}
-          <div className="hidden md:block flex-1">
-             {/* אפשר להוסיף פה Breadcrumbs בעתיד */}
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-[#D4AF37] transition-colors relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </Button>
-            <div className="hidden md:block">
-                <UserNav user={user} logout={handleLogout} />
-            </div>
-          </div>
-        </header>
 
         {/* 3. Page Content */}
         <main className="p-6 lg:p-10 flex-grow bg-[#F8F9FA]">
@@ -187,9 +161,6 @@ function SidebarContent({ user, logout, onClose }) {
       </nav>
 
       {/* Sidebar Footer */}
-      <div className="p-4 bg-slate-50 border-t border-slate-100 md:hidden">
-        <UserNav user={user} logout={logout} />
-      </div>
       <div className="p-4 text-center text-[10px] text-slate-300 tracking-widest uppercase hidden md:block">
         v1.0.0 • Ali Zahav
       </div>
@@ -226,37 +197,3 @@ function NavItem({ item, onClick }) {
   );
 }
 
-function UserNav({ user, logout }) {
-  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="w-full focus:outline-none">
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/80 hover:shadow-sm border border-transparent hover:border-slate-100 transition-all cursor-pointer">
-          <div className="h-10 w-10 rounded-full bg-[#050505] flex items-center justify-center text-xs font-bold text-[#D4AF37] ring-2 ring-slate-100 shadow-sm">
-            {initials}
-          </div>
-          <div className="text-right flex-1 truncate hidden md:block">
-            <p className="text-sm font-bold text-slate-800 tracking-wide">{user?.name || 'Admin User'}</p>
-            <p className="text-[10px] text-slate-500 truncate font-medium uppercase tracking-tight">{user?.role || 'Administrator'}</p>
-          </div>
-          <ChevronDown size={14} className="text-slate-400 md:block hidden" />
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64 p-2 rounded-2xl shadow-xl border-slate-100 bg-white" align="end" side="bottom" sideOffset={10}>
-        <div className="px-3 py-2 bg-slate-50 rounded-xl mb-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">מחובר כ-</p>
-          <p className="text-sm font-bold text-slate-800">{user?.email}</p>
-        </div>
-        
-        <DropdownMenuItem
-          onClick={logout}
-          className="flex items-center px-3 py-2.5 text-sm text-red-600 font-bold hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-        >
-          <LogOut className="ml-2 h-4 w-4" />
-          <span>התנתקות מהמערכת</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}

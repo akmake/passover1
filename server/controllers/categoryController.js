@@ -13,3 +13,12 @@ export const getPublicCategories = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+export const createCategory = async (req, res) => {
+  try {
+    const newCategory = new Category(req.body);
+    const savedCategory = await newCategory.save();
+    res.status(201).json(savedCategory);
+  } catch (error) {
+    res.status(500).json({ message: "שגיאה ביצירת קטגוריה", error: error.message });
+  }
+};

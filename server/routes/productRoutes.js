@@ -1,12 +1,25 @@
 import express from 'express';
-import { getPublicProducts, getProductById } from '../controllers/productController.js';
+// ייבוא כל הפונקציות מהקונטרולר המעודכן
+import { 
+  getPublicProducts, 
+  getProductById, 
+  createProduct, 
+  deleteProduct 
+} from '../controllers/productController.js';
+// ייבוא המידלוור לאבטחה
+import { requireAuth, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// GET /api/products - נתיב ציבורי לשליפת כל המוצרים לתפריט
+// 1. נתיבים ציבוריים (פתוחים לכולם)
 router.get('/', getPublicProducts);
-
-// GET /api/products/:id - נתיב ציבורי לשליפת מוצר ספציפי
 router.get('/:id', getProductById);
+
+// 2. נתיבים מוגנים (רק למנהלים מחוברים)
+// זה הנתיב שפתר את שגיאת ה-404 שלך:
+router.post('/', requireAuth, requireAdmin, createProduct);
+
+// נתיב למחיקת מוצר
+router.delete('/:id', requireAuth, requireAdmin, deleteProduct);
 
 export default router;

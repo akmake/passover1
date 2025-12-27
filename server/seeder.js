@@ -1,162 +1,155 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import colors from 'colors';
-import Product from './models/productModel.js';
+import Product from './models/productModel.js'; 
+import Category from './models/categoryModel.js'; 
 import connectDB from './config/db.js';
 
 dotenv.config();
 connectDB();
 
-const CATEGORIES = {
-  FURNITURE: 'furniture',
-  LIGHTING: 'lighting',
-  TEXTILES: 'textiles',
-  DECOR: 'decor',
-  ART: 'art',
-  KITCHEN: 'kitchen'
-};
-
-// מאגר של 100 תמונות ייחודיות מותאמות לקטגוריות
-const UNIQUE_PRODUCTS = [
-  // --- FURNITURE (20 Items) ---
-  { name: { he: 'כורסאת קטיפה ירוקה', en: 'Emerald Velvet Armchair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?q=80&w=800', price: 4500 },
-  { name: { he: 'כיסא עץ מינימליסטי', en: 'Minimalist Oak Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?q=80&w=800', price: 1200 },
-  { name: { he: 'ספת עור קוניאק', en: 'Cognac Leather Sofa' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1550226891-ef816aed4a98?q=80&w=800', price: 12000 },
-  { name: { he: 'שידת צד מודרנית', en: 'Modern Nightstand' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1532372320572-cda25653a26d?q=80&w=800', price: 1800 },
-  { name: { he: 'שולחן קפה שיש', en: 'Marble Coffee Table' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?q=80&w=800', price: 3500 },
-  { name: { he: 'כיסא אוכל ראטן', en: 'Rattan Dining Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1519947486511-46149fa0a254?q=80&w=800', price: 950 },
-  { name: { he: 'הדום קטיפה כחול', en: 'Navy Velvet Ottoman' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800', price: 890 },
-  { name: { he: 'מזנון עץ אגוז', en: 'Walnut Sideboard' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?q=80&w=800', price: 5600 },
-  { name: { he: 'כורסאת רביצה', en: 'Lounge Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?q=80&w=800', price: 2800 },
-  { name: { he: 'שרפרף עץ גושני', en: 'Raw Wood Stool' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1503602642458-2321114458ed?q=80&w=800', price: 650 },
-  { name: { he: 'ספה פינתית אפורה', en: 'Grey Sectional Sofa' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=800', price: 9800 },
-  { name: { he: 'שולחן כתיבה מעוצב', en: 'Designer Desk' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?q=80&w=800', price: 4200 },
-  { name: { he: 'שידת מגירות לבנה', en: 'White Chest Drawers' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1595515106967-1434857ed836?q=80&w=800', price: 2100 },
-  { name: { he: 'כיסא בר גבוה', en: 'High Bar Stool' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?q=80&w=800', price: 850 },
-  { name: { he: 'מדפי ספרים מתכת', en: 'Metal Bookshelf' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1594620302200-9a762244a156?q=80&w=800', price: 3200 },
-  { name: { he: 'שולחן צד עגול', en: 'Round Side Table' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1611967164521-abae8fba4668?q=80&w=800', price: 1100 },
-  { name: { he: 'כורסאת עור שחורה', en: 'Black Leather Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?q=80&w=800', price: 3900 },
-  { name: { he: 'מיטה זוגית מרופדת', en: 'Upholstered Bed' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1505693416388-b0346ef3bf2b?q=80&w=800', price: 7500 },
-  { name: { he: 'קונסולה לכניסה', en: 'Entryway Console' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1515362778563-6a8d0e44bc0b?q=80&w=800', price: 2300 },
-  { name: { he: 'כיסא נדנדה מודרני', en: 'Modern Rocking Chair' }, cat: CATEGORIES.FURNITURE, img: 'https://images.unsplash.com/photo-1506898667547-42e22a46e125?q=80&w=800', price: 1900 },
-
-  // --- LIGHTING (15 Items) ---
-  { name: { he: 'מנורת רצפה קשת', en: 'Arc Floor Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1507473888900-52e1ad145986?q=80&w=800', price: 1500 },
-  { name: { he: 'נורת אדיסון תלויה', en: 'Hanging Edison Bulb' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1540932296757-f5f95df48196?q=80&w=800', price: 350 },
-  { name: { he: 'מנורת שולחן בטון', en: 'Concrete Desk Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1513506003011-38f04415426a?q=80&w=800', price: 450 },
-  { name: { he: 'נברשת מודרנית', en: 'Modern Chandelier' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?q=80&w=800', price: 2800 },
-  { name: { he: 'מנורת קיר פליז', en: 'Brass Wall Sconce' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?q=80&w=800', price: 890 },
-  { name: { he: 'מנורת לילה כדורית', en: 'Globe Bedside Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1534234828569-1f3571d4b441?q=80&w=800', price: 550 },
-  { name: { he: 'אהיל ראטן טבעי', en: 'Rattan Shade' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1517991104123-1d56a6e81ed9?q=80&w=800', price: 620 },
-  { name: { he: 'מנורת תקרה גיאומטרית', en: 'Geometric Ceiling Light' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?q=80&w=800', price: 1200 },
-  { name: { he: 'מנורת עמידה שחורה', en: 'Black Standing Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1511467007265-431872196d4b?q=80&w=800', price: 1100 },
-  { name: { he: 'מנורת קריאה', en: 'Reading Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?q=80&w=800', price: 480 },
-  { name: { he: 'נברשת זכוכית', en: 'Glass Chandelier' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1543198126-18d092305330?q=80&w=800', price: 3400 },
-  { name: { he: 'מנורת שולחן קרמיקה', en: 'Ceramic Table Lamp' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1616164282363-2337d122240b?q=80&w=800', price: 790 },
-  { name: { he: 'תאורת אווירה', en: 'Ambient Light' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1567861911437-538298e4232c?q=80&w=800', price: 320 },
-  { name: { he: 'מנורת תלייה תעשייתית', en: 'Industrial Pendant' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1552554605-2415d8d64168?q=80&w=800', price: 950 },
-  { name: { he: 'ספוט לייט מעוצב', en: 'Designer Spotlight' }, cat: CATEGORIES.LIGHTING, img: 'https://images.unsplash.com/photo-1550534245-c4d62325c7be?q=80&w=800', price: 600 },
-
-  // --- TEXTILES (15 Items) ---
-  { name: { he: 'כרית נוי חרדל', en: 'Mustard Throw Pillow' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?q=80&w=800', price: 250 },
-  { name: { he: 'שמיכת צמר סרוגה', en: 'Knitted Wool Blanket' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1579656381226-5fc7036d6c35?q=80&w=800', price: 650 },
-  { name: { he: 'שטיח בוהו שיק', en: 'Boho Chic Rug' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1617325247661-675ab4b64ae8?q=80&w=800', price: 1800 },
-  { name: { he: 'וילונות פשתן לבנים', en: 'White Linen Curtains' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800', price: 900 },
-  { name: { he: 'כרית קטיפה ורודה', en: 'Pink Velvet Pillow' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1531835551805-16d864c8d311?q=80&w=800', price: 220 },
-  { name: { he: 'מצעים מכותנה מצרית', en: 'Egyptian Cotton Sheets' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1522771753035-1a5b6562f329?q=80&w=800', price: 850 },
-  { name: { he: 'שטיח כניסה יוטה', en: 'Jute Doormat' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1522758971460-1d21eed7dc1d?q=80&w=800', price: 180 },
-  { name: { he: 'כריות נוי מעור', en: 'Leather Accent Pillows' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1586105251261-72a756497a11?q=80&w=800', price: 380 },
-  { name: { he: 'שמיכת פליז רכה', en: 'Soft Fleece Throw' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1512918760513-95f192972563?q=80&w=800', price: 320 },
-  { name: { he: 'מגבות אמבט יוקרה', en: 'Luxury Bath Towels' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1566438480900-0609be27a4be?q=80&w=800', price: 450 },
-  { name: { he: 'ראנר לשולחן', en: 'Table Runner' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1574635836916-2911b3b27b87?q=80&w=800', price: 280 },
-  { name: { he: 'שטיח צמר גיאומטרי', en: 'Geometric Wool Rug' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1534882294437-074691458319?q=80&w=800', price: 2100 },
-  { name: { he: 'כרית משי', en: 'Silk Pillowcase' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1578840602674-bd891cb7ea5b?q=80&w=800', price: 290 },
-  { name: { he: 'פלייסמטים קלועים', en: 'Woven Placemats' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?q=80&w=800', price: 150 },
-  { name: { he: 'שמיכת טלאים', en: 'Quilt Blanket' }, cat: CATEGORIES.TEXTILES, img: 'https://images.unsplash.com/photo-1578983427937-26078ee3d9d3?q=80&w=800', price: 580 },
-
-  // --- DECOR (20 Items) ---
-  { name: { he: 'אגרטל קרמיקה לבן', en: 'White Ceramic Vase' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1581783342308-f792ca11dfdd?q=80&w=800', price: 280 },
-  { name: { he: 'פסל אבסטרקטי', en: 'Abstract Sculpture' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800', price: 850 },
-  { name: { he: 'מגש שיש ירוק', en: 'Green Marble Tray' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1578500494198-246f612d3b3d?q=80&w=800', price: 420 },
-  { name: { he: 'אבני נוי דקורטיביות', en: 'Decorative Stones' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1533158388470-9a56699990c6?q=80&w=800', price: 120 },
-  { name: { he: 'שעון חול מעוצב', en: 'Designer Hourglass' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=800', price: 180 },
-  { name: { he: 'פמוטי זהב', en: 'Gold Candlesticks' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1603517886478-f71663b46944?q=80&w=800', price: 320 },
-  { name: { he: 'קערת עץ טיק', en: 'Teak Wood Bowl' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=800', price: 350 },
-  { name: { he: 'מראה עם מסגרת פליז', en: 'Brass Framed Mirror' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=800', price: 1400 },
-  { name: { he: 'מעמד ספרים שיש', en: 'Marble Bookends' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800', price: 290 },
-  { name: { he: 'אגרטל זכוכית מעושנת', en: 'Smoked Glass Vase' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1580483253372-e1d09017688c?q=80&w=800', price: 250 },
-  { name: { he: 'סלסלת קש קלועה', en: 'Woven Wicker Basket' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1591123720664-59654a434157?q=80&w=800', price: 190 },
-  { name: { he: 'פסל ראש יווני', en: 'Greek Bust Sculpture' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1576158673758-a567677d242a?q=80&w=800', price: 680 },
-  { name: { he: 'עציץ בטון', en: 'Concrete Planter' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=800', price: 150 },
-  { name: { he: 'מתלה מעילים מעוצב', en: 'Modern Coat Rack' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1517174637372-46a2a0d922a8?q=80&w=800', price: 480 },
-  { name: { he: 'קופסת אחסון דקורטיבית', en: 'Decorative Storage Box' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1565111000-845f22e38953?q=80&w=800', price: 220 },
-  { name: { he: 'מעמד עציצים זהב', en: 'Gold Plant Stand' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1600424566373-c60f4e38a4c1?q=80&w=800', price: 360 },
-  { name: { he: 'קישוט קיר מקרמה', en: 'Macrame Wall Hanging' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1519098901909-b1553a1190af?q=80&w=800', price: 280 },
-  { name: { he: 'שעון קיר מינימליסטי', en: 'Minimalist Wall Clock' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1563861826100-9cb868c06c7e?q=80&w=800', price: 420 },
-  { name: { he: 'כד חרס עתיק', en: 'Antique Clay Jug' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1615486511484-92e172cc416d?q=80&w=800', price: 850 },
-  { name: { he: 'מגש מראה', en: 'Mirrored Tray' }, cat: CATEGORIES.DECOR, img: 'https://images.unsplash.com/photo-1584680269384-5f7267f53df5?q=80&w=800', price: 340 },
-
-  // --- KITCHEN (15 Items) ---
-  { name: { he: 'סט צלחות קרמיקה', en: 'Ceramic Dinner Set' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1577905753086-647d6d370146?q=80&w=800', price: 950 },
-  { name: { he: 'כוסות יין קריסטל', en: 'Crystal Wine Glasses' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1596541223130-5d31a73fb6c6?q=80&w=800', price: 480 },
-  { name: { he: 'סכו"ם זהב מט', en: 'Matte Gold Cutlery' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1616231631557-2384a3299388?q=80&w=800', price: 650 },
-  { name: { he: 'קערת פירות', en: 'Fruit Bowl' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1610629738435-0816823c0487?q=80&w=800', price: 220 },
-  { name: { he: 'בוצ\'ר בלוק', en: 'Butcher Block' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1594385208974-2e75f8d7bb48?q=80&w=800', price: 550 },
-  { name: { he: 'צנצנות זכוכית לתבלינים', en: 'Glass Spice Jars' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1595248557262-d9f2c69e5d48?q=80&w=800', price: 180 },
-  { name: { he: 'קנקן מים מעוצב', en: 'Designer Water Pitcher' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1574969884448-fe50ceeb2b81?q=80&w=800', price: 320 },
-  { name: { he: 'כלי הגשה מעץ', en: 'Wooden Serving Ware' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1602404987770-56279930f429?q=80&w=800', price: 450 },
-  { name: { he: 'ספלי אספרסו', en: 'Espresso Cups' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?q=80&w=800', price: 180 },
-  { name: { he: 'תבנית אפייה קרמית', en: 'Ceramic Baking Dish' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1585250003058-2f47a5b51a4a?q=80&w=800', price: 280 },
-  { name: { he: 'קומקום תה יפני', en: 'Japanese Tea Pot' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1563822249548-9a72b6353cd1?q=80&w=800', price: 420 },
-  { name: { he: 'מגבות מטבח פשתן', en: 'Linen Kitchen Towels' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=800', price: 120 },
-  { name: { he: 'מעמד לעוגה', en: 'Cake Stand' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1600863071295-a22c544d93e8?q=80&w=800', price: 350 },
-  { name: { he: 'כותש שום שיש', en: 'Marble Mortar' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1603569283847-aa295f0d016a?q=80&w=800', price: 260 },
-  { name: { he: 'כוסות וויסקי', en: 'Whiskey Tumblers' }, cat: CATEGORIES.KITCHEN, img: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=800', price: 380 },
-
-  // --- ART (8 Items) ---
-  { name: { he: 'הדפס אבסטרקטי שחור', en: 'Black Abstract Print' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1580136906451-b94b05e5715e?q=80&w=800', price: 550 },
-  { name: { he: 'ציור שמן נוף', en: 'Landscape Oil Painting' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=800', price: 2500 },
-  { name: { he: 'מסגרת עץ אלון', en: 'Oak Wood Frame' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1515405295579-ba7b45403062?q=80&w=800', price: 180 },
-  { name: { he: 'פוסטר בוטני', en: 'Botanical Poster' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1507643179173-442f8552932c?q=80&w=800', price: 220 },
-  { name: { he: 'צילום אדריכלי', en: 'Architecture Photography' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1481277542470-605612bd2d61?q=80&w=800', price: 850 },
-  { name: { he: 'קנבס מינימליסטי', en: 'Minimalist Canvas' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=800', price: 1200 },
-  { name: { he: 'פסל קיר מתכת', en: 'Metal Wall Art' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800', price: 1500 },
-  { name: { he: 'גלריה שחור לבן', en: 'BW Gallery Set' }, cat: CATEGORIES.ART, img: 'https://images.unsplash.com/photo-1531913764164-f859dc02d1e5?q=80&w=800', price: 2800 },
-
-  // --- SCENTS (7 Items) ---
-  { name: { he: 'נר בריח יסמין', en: 'Jasmine Scented Candle' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1602143407151-01114195932e?q=80&w=800', price: 150 },
-  { name: { he: 'מפיץ ריח יוקרתי', en: 'Luxury Diffuser' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?q=80&w=800', price: 280 },
-  { name: { he: 'שמנים אתריים', en: 'Essential Oils Set' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1596436065584-3b610d486253?q=80&w=800', price: 320 },
-  { name: { he: 'נר בתוך בטון', en: 'Concrete Candle' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1595981267035-7b04ca84a82d?q=80&w=800', price: 180 },
-  { name: { he: 'מבער שמנים', en: 'Oil Burner' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1608503816912-f703e7215286?q=80&w=800', price: 140 },
-  { name: { he: 'תרסיס ריח לבית', en: 'Room Spray' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1616053335552-320d3f82527c?q=80&w=800', price: 160 },
-  { name: { he: 'נרות ארוכים לשולחן', en: 'Taper Candles' }, cat: CATEGORIES.SCENTS, img: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?q=80&w=800', price: 90 }
+// --- 1. הגדרת 6 קטגוריות חדשות ---
+const CATEGORIES_DATA = [
+    { key: 'kitchen', he: 'מטבח גורמה', en: 'Gourmet Kitchen', img: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=800' },
+    { key: 'bar', he: 'בר ויין', en: 'Bar & Wine', img: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800' },
+    { key: 'office', he: 'משרד יוקרתי', en: 'Executive Office', img: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=800' },
+    { key: 'bath', he: 'ספא ורחצה', en: 'Spa & Bath', img: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800' },
+    { key: 'outdoor', he: 'גן ומרפסת', en: 'Outdoor Living', img: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=800' },
+    { key: 'bedding', he: 'סוויטת שינה', en: 'Bedroom Suite', img: 'https://images.unsplash.com/photo-1505693416388-b0346efee958?q=80&w=800' }
 ];
+
+// פונקציית עזר ליצירת פריט
+const createItem = (skuSuffix, heName, enName, price, img, heDesc, enDesc) => ({
+    name: { he: heName, en: enName },
+    description: { he: heDesc, en: enDesc },
+    details: { 
+        he: `פריט זה מקולקציית ${heName} משלב עיצוב מודרני עם חומרים איכותיים ועמידים. נבחר בקפידה כדי לשדרג את חלל הבית ולהעניק תחושת יוקרה.`, 
+        en: `This item from the ${enName} collection combines modern design with high-quality durable materials. Carefully selected to upgrade your home space.` 
+    },
+    price,
+    image: img,
+    skuSuffix
+});
+
+// --- 2. מאגר המוצרים (10 לכל קטגוריה = 60 מוצרים) ---
+const PRODUCTS_DATA = {
+    'kitchen': [
+        createItem('K01', 'סט סכיני שף דמשק', 'Damascus Knife Set', 1200, 'https://images.unsplash.com/photo-1593618998160-e34015e67543?q=80&w=800', 'פלדת דמשק ב-67 שכבות.', '67-layer Damascus steel.'),
+        createItem('K02', 'סיר יצוק אמייל', 'Enameled Cast Iron Pot', 450, 'https://images.unsplash.com/photo-1584990347449-a54833f5d456?q=80&w=800', 'פיזור חום מושלם לבישול איטי.', 'Perfect heat distribution for slow cooking.'),
+        createItem('K03', 'מכונת אספרסו רטרו', 'Retro Espresso Machine', 2800, 'https://images.unsplash.com/photo-1520981825232-ece5fae45120?q=80&w=800', 'עיצוב איטלקי קלאסי.', 'Classic Italian design.'),
+        createItem('K04', 'קרש חיתוך אגוז', 'Walnut Cutting Board', 320, 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=800', 'עץ אגוז אמריקאי מלא.', 'Solid American walnut wood.'),
+        createItem('K05', 'בלנדר מקצועי', 'Professional Blender', 1500, 'https://images.unsplash.com/photo-1570222094114-28a9d8895272?q=80&w=800', 'עוצמה של מטבח תעשייתי.', 'Industrial kitchen power.'),
+        createItem('K06', 'סט תבלינים מגנטי', 'Magnetic Spice Set', 180, 'https://images.unsplash.com/photo-1532336414038-cf19250c5757?q=80&w=800', 'ארגון חכם ומעוצב.', 'Smart and stylish organization.'),
+        createItem('K07', 'משקל מטבח דיגיטלי', 'Digital Kitchen Scale', 120, 'https://images.unsplash.com/photo-1595348020949-87cdfbb44174?q=80&w=800', 'דיוק של גרם אחד.', 'One gram precision.'),
+        createItem('K08', 'מטחנת פלפל חשמלית', 'Electric Pepper Mill', 220, 'https://images.unsplash.com/photo-1585672288636-b6d474cb43bc?q=80&w=800', 'טחינה בלחיצת כפתור.', 'Grinding at the push of a button.'),
+        createItem('K09', 'סט כלי ששת נחושת', 'Copper Utensil Set', 350, 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=800', 'אלגנטיות בכל ערבוב.', 'Elegance in every stir.'),
+        createItem('K10', 'טוסטר אובן חכם', 'Smart Toaster Oven', 900, 'https://images.unsplash.com/photo-1585836894080-6060c5c36336?q=80&w=800', 'אפייה מדויקת עם שליטה באפליקציה.', 'Precision baking with app control.')
+    ],
+    'bar': [
+        createItem('B01', 'דקנטר קריסטל', 'Crystal Decanter', 450, 'https://images.unsplash.com/photo-1542845893-f4c0df006764?q=80&w=800', 'לפתיחת הטעמים של היין.', 'Unlocking wine flavors.'),
+        createItem('B02', 'סט שייקר קוקטייל', 'Cocktail Shaker Set', 280, 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800', 'כל מה שצריך לבר ביתי.', 'Everything needed for a home bar.'),
+        createItem('B03', 'מקרר יין קומפקטי', 'Compact Wine Fridge', 1800, 'https://images.unsplash.com/photo-1585553616435-2dc0a54e271d?q=80&w=800', 'שומר על טמפרטורה אידיאלית.', 'Keeps ideal temperature.'),
+        createItem('B04', 'כוסות וויסקי חרוטות', 'Etched Whiskey Glasses', 220, 'https://images.unsplash.com/photo-1598155523122-38423bb4d6cf?q=80&w=800', 'כבד ומרשים ביד.', 'Heavy and impressive in hand.'),
+        createItem('B05', 'דלי קרח כסוף', 'Silver Ice Bucket', 300, 'https://images.unsplash.com/photo-1572111559815-37604fb6b693?q=80&w=800', 'בידוד כפול לשמירת הקור.', 'Double insulation to keep cold.'),
+        createItem('B06', 'פותחן יין חשמלי', 'Electric Wine Opener', 150, 'https://images.unsplash.com/photo-1516535794938-6063878f08cc?q=80&w=800', 'פתיחה חלקה ללא מאמץ.', 'Smooth effortless opening.'),
+        createItem('B07', 'תחתיות שיש', 'Marble Coasters', 120, 'https://images.unsplash.com/photo-1616428787720-305141df3c1a?q=80&w=800', 'הגנה בסטייל על השולחן.', 'Stylish protection for the table.'),
+        createItem('B08', 'עגלת משקאות', 'Bar Cart', 950, 'https://images.unsplash.com/photo-1505693416388-b0346efee958?q=80&w=800', 'ניידות ואירוח בסלון.', 'Mobility and hosting in the living room.'),
+        createItem('B09', 'אבני קירור לוויסקי', 'Whiskey Stones', 90, 'https://images.unsplash.com/photo-1608757877296-60c7df255c4d?q=80&w=800', 'קירור ללא דילול המשקה.', 'Cooling without diluting.'),
+        createItem('B10', 'מעמד בקבוקים', 'Wine Rack', 380, 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?q=80&w=800', 'תצוגה מרשימה לאוסף שלך.', 'Impressive display for your collection.')
+    ],
+    'office': [
+        createItem('O01', 'מנורת שולחן פליז', 'Brass Desk Lamp', 420, 'https://images.unsplash.com/photo-1513506003013-19c6cd580199?q=80&w=800', 'תאורה ממוקדת ועיצוב רטרו.', 'Focused lighting and retro design.'),
+        createItem('O02', 'משטח שולחן מעור', 'Leather Desk Pad', 250, 'https://images.unsplash.com/photo-1520699697851-3dc68aa3a474?q=80&w=800', 'משטח עבודה יוקרתי ונעים.', 'Luxury and comfortable workspace.'),
+        createItem('O03', 'ארגונית עץ אלון', 'Oak Desk Organizer', 180, 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=800', 'סדר בעיניים סדר בראש.', 'Order in sight, order in mind.'),
+        createItem('O04', 'כיסא מנהלים ארגונומי', 'Ergonomic Chair', 1800, 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?q=80&w=800', 'תמיכה מלאה לגב.', 'Full back support.'),
+        createItem('O05', 'עט נובע יוקרתי', 'Luxury Fountain Pen', 350, 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?q=80&w=800', 'חווית כתיבה אחרת.', 'A different writing experience.'),
+        createItem('O06', 'שעון חול מעוצב', 'Designer Hourglass', 120, 'https://images.unsplash.com/photo-1563205764-6e01297e283b?q=80&w=800', 'ניהול זמן בסטייל.', 'Time management in style.'),
+        createItem('O07', 'מחברת כריכת עור', 'Leather Notebook', 90, 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800', 'למחשבות הגדולות שלך.', 'For your big thoughts.'),
+        createItem('O08', 'מעמד לפטופ אלומיניום', 'Aluminum Laptop Stand', 200, 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=800', 'זווית צפייה מושלמת.', 'Perfect viewing angle.'),
+        createItem('O09', 'צמח סוקולנט מלאכותי', 'Faux Succulent', 60, 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?q=80&w=800', 'ירוק ללא טיפול.', 'Green without care.'),
+        createItem('O10', 'גלובוס שולחני', 'Desktop Globe', 280, 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=800', 'העולם בכף ידך.', 'The world in your palm.')
+    ],
+    'bath': [
+        createItem('S01', 'דיפיוזר קרמי', 'Ceramic Diffuser', 220, 'https://images.unsplash.com/photo-1608503816912-f703e7215286?q=80&w=800', 'פיזור ריח שקט ומרגיע.', 'Quiet and relaxing scent diffusion.'),
+        createItem('S02', 'מגש אמבטיה במבוק', 'Bamboo Bathtub Tray', 180, 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800', 'לקרוא ספר באמבטיה.', 'Read a book in the bath.'),
+        createItem('S03', 'סט סבונים טבעיים', 'Natural Soap Set', 120, 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?q=80&w=800', 'רכיבים אורגניים בלבד.', 'Organic ingredients only.'),
+        createItem('S04', 'חלוק רחצה מצרי', 'Egyptian Cotton Robe', 350, 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?q=80&w=800', 'כמו במלון 5 כוכבים.', 'Like a 5-star hotel.'),
+        createItem('S05', 'מחמם מגבות', 'Towel Warmer', 600, 'https://images.unsplash.com/photo-1565183928294-7063f23ce0f8?q=80&w=800', 'לצאת למגבת חמה.', 'Step out to a warm towel.'),
+        createItem('S06', 'מראת איפור מוארת', 'Lighted Makeup Mirror', 280, 'https://images.unsplash.com/photo-1596462502278-27bfdd403cc2?q=80&w=800', 'תאורה מחמיאה ומדויקת.', 'Flattering and precise lighting.'),
+        createItem('S07', 'נר ריחני גדול', 'Large Scented Candle', 150, 'https://images.unsplash.com/photo-1602523961358-f9f03dd557db?q=80&w=800', '60 שעות בעירה.', '60 hours of burn time.'),
+        createItem('S08', 'סל כביסה קלוע', 'Woven Laundry Basket', 200, 'https://images.unsplash.com/photo-1582735689369-c613c66070a8?q=80&w=800', 'מסתיר את הבלאגן ביופי.', 'Hides mess beautifully.'),
+        createItem('S09', 'שטיחון אמבטיה סופג', 'Absorbent Bath Mat', 90, 'https://images.unsplash.com/photo-1576426863848-c21f5fc67255?q=80&w=800', 'רך ונעים לכפות הרגליים.', 'Soft and pleasant for feet.'),
+        createItem('S10', 'ראש מקלחת גשם', 'Rain Shower Head', 450, 'https://images.unsplash.com/photo-1517616233156-6a4a1599540c?q=80&w=800', 'חווית מקלחת מפנקת.', 'Pampering shower experience.')
+    ],
+    'outdoor': [
+        createItem('G01', 'בור אש לגינה', 'Garden Fire Pit', 850, 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=800', 'חמימות בלילות קרירים.', 'Warmth on cool nights.'),
+        createItem('G02', 'ערסל מקרמה', 'Macrame Hammock', 320, 'https://images.unsplash.com/photo-1541004995602-b3e898709909?q=80&w=800', 'בוהו שיק למרפסת.', 'Boho chic for the balcony.'),
+        createItem('G03', 'תאורת גן סולארית', 'Solar Garden Lights', 180, 'https://images.unsplash.com/photo-1510137600163-2729bc699b0b?q=80&w=800', 'חסכוני וירוק.', 'Economical and green.'),
+        createItem('G04', 'כלי גינון נחושת', 'Copper Gardening Tools', 250, 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=800', 'עמידים ויפים.', 'Durable and beautiful.'),
+        createItem('G05', 'עציץ בטון גדול', 'Large Concrete Planter', 400, 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=800', 'לצמחים גדולים ומרשימים.', 'For large impressive plants.'),
+        createItem('G06', 'כיסא נוח מעץ', 'Wooden Lounge Chair', 550, 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800', 'נוחות מקסימלית בשמש.', 'Maximum comfort in the sun.'),
+        createItem('G07', 'מזרקת מים קטנה', 'Small Water Fountain', 380, 'https://images.unsplash.com/photo-1515263167123-e1867db3269b?q=80&w=800', 'צליל פכפוך מרגיע.', 'Relaxing trickling sound.'),
+        createItem('G08', 'גריל פחמים נייד', 'Portable Charcoal Grill', 450, 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?q=80&w=800', 'לפיקניק מושלם.', 'For a perfect picnic.'),
+        createItem('G09', 'שמיכת פיקניק עמידה', 'Durable Picnic Blanket', 120, 'https://images.unsplash.com/photo-1596241913256-254243ff5605?q=80&w=800', 'דוחה מים וכתמים.', 'Water and stain repellent.'),
+        createItem('G10', 'בית נר לנרות', 'Lantern Candle Holder', 150, 'https://images.unsplash.com/photo-1542835843-988941f17e79?q=80&w=800', 'אווירה קסומה.', 'Magical atmosphere.')
+    ],
+    'bedding': [
+        createItem('L01', 'סט מצעי משי', 'Silk Bedding Set', 1500, 'https://images.unsplash.com/photo-1505693416388-b0346efee958?q=80&w=800', 'חלק וקריר למגע.', 'Smooth and cool to touch.'),
+        createItem('L02', 'שמיכת פוך אווזים', 'Goose Down Duvet', 1200, 'https://images.unsplash.com/photo-1522771772428-a1998dd99a77?q=80&w=800', 'קל כנוצה ומחמם.', 'Light as a feather and warm.'),
+        createItem('L03', 'כרית שינה אורטופדית', 'Orthopedic Pillow', 350, 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?q=80&w=800', 'תמיכה לצוואר.', 'Neck support.'),
+        createItem('L04', 'שמיכת כובד מרגיעה', 'Weighted Blanket', 450, 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?q=80&w=800', 'לשינה עמוקה ורגועה.', 'For deep restful sleep.'),
+        createItem('L05', 'כיסוי עיניים משי', 'Silk Sleep Mask', 90, 'https://images.unsplash.com/photo-1518542331925-4e91e9aa0074?q=80&w=800', 'חושך מוחלט בכל מקום.', 'Total darkness anywhere.'),
+        createItem('L06', 'קראף מים לשידה', 'Bedside Water Carafe', 120, 'https://images.unsplash.com/photo-1542845893-f4c0df006764?q=80&w=800', 'מים צלולים ליד המיטה.', 'Clear water by the bed.'),
+        createItem('L07', 'שטיח צמר לחדר', 'Wool Bedroom Rug', 800, 'https://images.unsplash.com/photo-1571701385458-9419b48622f9?q=80&w=800', 'צעד ראשון רך בבוקר.', 'Soft first step in the morning.'),
+        createItem('L08', 'וילונות האפלה', 'Blackout Curtains', 550, 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800', 'פרטיות מלאה.', 'Full privacy.'),
+        createItem('L09', 'מגש ארוחת בוקר', 'Breakfast Tray', 180, 'https://images.unsplash.com/photo-1511252062534-8c8f00030588?q=80&w=800', 'פינוק במיטה.', 'Pampering in bed.'),
+        createItem('L10', 'תרסיס לבנדר לכרית', 'Lavender Pillow Mist', 60, 'https://images.unsplash.com/photo-1608503816912-f703e7215286?q=80&w=800', 'ניחוח מרגיע לפני השינה.', 'Calming scent before sleep.')
+    ]
+};
 
 const importData = async () => {
   try {
     await Product.deleteMany();
-    console.log('Cleared old products...'.red.inverse);
+    await Category.deleteMany();
+    console.log('נמחקו נתונים ישנים...'.red.inverse);
 
-    const products = UNIQUE_PRODUCTS.map(item => ({
-      name: item.name,
-      description: { 
-        he: `פריט ${item.name.he} מקולקציית ${new Date().getFullYear()}. עיצוב על-זמני המשלב חומרים איכותיים וגימור מוקפד.`, 
-        en: `The ${item.name.en} from our ${new Date().getFullYear()} collection. Timeless design combining quality materials and meticulous finish.` 
-      },
-      price: item.price,
-      category: item.cat,
-      image: item.img,
-      isPopular: Math.random() > 0.8,
-      stock: Math.floor(Math.random() * 50) + 5
-    }));
+    // יצירת הקטגוריות
+    const categoryMap = {};
+    for (const cat of CATEGORIES_DATA) {
+        const createdCat = await Category.create({
+            name: { he: cat.he, en: cat.en },
+            key: cat.key,
+            image: cat.img,
+            isActive: true,
+            showOnHomepage: true
+        });
+        categoryMap[cat.key] = createdCat._id;
+        console.log(`קטגוריה נוצרה: ${cat.he}`.green);
+    }
 
-    await Product.insertMany(products);
-    
-    console.log(`Successfully imported ${products.length} unique luxury items!`.green.inverse);
+    // יצירת המוצרים
+    const productsToInsert = [];
+    for (const [key, items] of Object.entries(PRODUCTS_DATA)) {
+        if (categoryMap[key]) {
+            items.forEach(item => {
+                productsToInsert.push({
+                    ...item,
+                    category: categoryMap[key],
+                    sku: `${key.toUpperCase()}-${item.skuSuffix}`,
+                    isPopular: Math.random() > 0.8,
+                    isActive: true, // חובה!
+                    inStock: true
+                });
+            });
+        }
+    }
+
+    await Product.insertMany(productsToInsert);
+    console.log(`בהצלחה! יובאו ${productsToInsert.length} מוצרים חדשים`.green.inverse);
     process.exit();
+
   } catch (error) {
-    console.error(`Error: ${error.message}`.red.inverse);
+    console.error(`שגיאה: ${error.message}`.red.inverse);
     process.exit(1);
   }
 };
