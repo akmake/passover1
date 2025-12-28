@@ -3,10 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
-import logger from './utils/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import promotionRoutes from './routes/promotionRoutes.js';
+
+// Import Utils & Middleware
+import logger from './utils/logger.js';
+import getLanguage from './middleware/languageMiddleware.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
 // Import Routes
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -20,20 +24,19 @@ import deliveryOptionsRoutes from './routes/deliveryOptionsRoutes.js';
 import homepageSettingsRoutes from './routes/homepageSettingsRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
-import getLanguage from './middleware/languageMiddleware.js';
-import { errorHandler } from './middleware/errorHandler.js';
 import homePageRoutes from './routes/homePageRoutes.js';
-
-
-
+import homeMediaRoutes from './routes/homeMediaRoutes.js';
+import promotionRoutes from './routes/promotionRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// הגדרת Trust Proxy עבור עבודה מאחורי Render/Proxies
 app.set('trust proxy', 1);
 
+// אבטחה - מאפשר טעינת מדיה ממקורות שונים (חשוב לוידאו ותמונות)
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
@@ -41,9 +44,9 @@ app.use(
   })
 );
 
-// רשימת דומיינים מורשים
+// הגדרת CORS מסונכרנת
 const allowedOrigins = [
-  'https://localhost:5173', // הלקוח המאובטח
+  'https://localhost:5173',
   'http://localhost:5173',
   'http://localhost:3000',
   'https://passover1.onrender.com',
@@ -71,20 +74,25 @@ app.use(cookieParser());
 app.use(mongoSanitize());
 app.use(getLanguage);
 
-// =====================
-// סטטיק (מתוקן)
-// =====================
+// ==========================================
+// טיפול בקבצים סטטיים (Uploads) 
+// ==========================================
 
-// 1) זה המקום הנכון לקבצים שמועלים ע"י השרת (server/uploads)
-const uploadsPath = path.join(__dirname, 'uploads'); // server/uploads
-app.use('/uploads', express.static(uploadsPath));
+// 1. נתיב השרת המרכזי (server/uploads) - כאן נשמרים הקבצים החדשים
+const uploadsPath = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
+    setHeaders: (res, path) => {
+        // מוודא שהדפדפן מבין שמדובר בתוכן שיכול להיות מוזרם (חשוב לוידאו)
+        res.set('Access-Control-Allow-Origin', '*');
+    }
+}));
 
-// 2) (אופציונלי) אם עדיין יש לך קבצים ידניים ב-client/public/uploads ורוצה לשמור תאימות:
+// 2. נתיב גיבוי ללקוח (client/public/uploads) - עבור קבצים ישנים אם קיימים
 const clientUploadsPath = path.join(__dirname, '../client/public/uploads');
 app.use('/uploads', express.static(clientUploadsPath));
 
 // =====================
-// נתיבים
+// רישום נתיבי ה-API
 // =====================
 app.use('/api/homepage', homePageRoutes);
 app.use('/api/auth', authRoutes);
@@ -99,9 +107,10 @@ app.use('/api/delivery-options', deliveryOptionsRoutes);
 app.use('/api/homepage-settings', homepageSettingsRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/promotions', promotionRoutes);
+app.use('/api/home-media', homeMediaRoutes); // נוסף לסנכרון מלא
+app.use('/api/promotions', promotionRoutes); // נוסף לסנכרון מלא
 
-
+// טיפול בשגיאות
 app.use(errorHandler);
 
 app.use((err, req, res, next) => {
@@ -109,5 +118,4 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
 });
 
-// החלק החשוב:
 export default app;

@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll } from 'framer-motion';
 import { CardContainer, CardBody, CardItem } from '../components/ui/Hover3DCard'; 
-import ProductDrawer from '../components/ProductDrawer'; // ודא שיש לך את הרכיב הזה מהשלב הקודם
+import ProductDrawer from '../components/ProductDrawer'; 
 import api from '@/api'; 
+// הוספת אייקונים עבור אזור הלידים
+import { Phone, Mail, MapPin, Send } from 'lucide-react';
 
 // --- פונקציית עזר למניעת קריסות (טקסטים שהם אובייקטים) ---
 const getText = (textObj) => {
@@ -24,6 +26,29 @@ const FontsInjection = () => (
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* סגנונות לשדות הטופס באזור הלידים */
+      .contact-input {
+        width: 100%;
+        background-color: transparent;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 12px 0;
+        font-family: 'Montserrat', sans-serif;
+        color: #1A1A1A;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+      .contact-input:focus {
+        border-bottom-color: #D4AF37;
+      }
+      .contact-label {
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #9CA3AF;
+        margin-bottom: 4px;
+        display: block;
+      }
     `}
   </style>
 );
@@ -148,68 +173,194 @@ const HeroSlider = ({ slides, interval = 5, height = 95 }) => {
     );
 };
 
-// --- רכיב המוצרים הנבחרים ---
+// --- רכיב המוצרים (CuratedSelection) - שונה לקרוסלה כפי שביקשת ---
 const CuratedSelection = ({ featured, onProductClick }) => {
-  const targetRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: targetRef });
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 4;
+  
+  // שימוש ב-ref כדי לעקוב אחרי הריחוף מבלי לגרום לרינדור מחדש או איפוס הטיימר
+  const isHoveredRef = useRef(false);
+
+  const validFeatured = featured || [];
+  const totalPages = Math.ceil(validFeatured.length / itemsPerPage);
+
+  // לוגיקת החלפה: הטיימר רץ תמיד, אבל מחליף דף רק אם לא מרחפים
+  useEffect(() => {
+      if (totalPages <= 1) return;
+      
+      const timer = setInterval(() => {
+          if (!isHoveredRef.current) {
+              setCurrentPage((prev) => (prev + 1) % totalPages);
+          }
+      }, 5000); // כל 5 שניות
+
+      return () => clearInterval(timer);
+  }, [totalPages]);
+
+  const currentProducts = validFeatured.slice(
+      currentPage * itemsPerPage, 
+      (currentPage * itemsPerPage) + itemsPerPage
+  );
 
   return (
-    // שינוי 1: רקע בז' בהיר
-    <section className="py-24 bg-[#F9F9F9] relative overflow-hidden" ref={targetRef}>
+    <section className="py-24 bg-[#F9F9F9] relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 mb-12 flex justify-between items-end">
          <div>
-            {/* טקסט כהה */}
             <h3 className="font-cinzel text-4xl text-[#1A1A1A]">Curated Selection</h3>
             <p className="font-montserrat text-gray-500 mt-2 text-sm tracking-widest">LIMITED EDITIONS</p>
          </div>
-         <Link to="/menu" className="hidden md:flex items-center gap-3 text-[#1A1A1A] font-montserrat text-xs tracking-[0.2em] hover:text-[#D4AF37] transition-colors">
-            VIEW ALL <span className="text-xl">→</span>
-         </Link>
+         <div className="flex gap-2">
+            {Array.from({ length: totalPages }).map((_, idx) => (
+                <button 
+                    key={idx}
+                    onClick={() => setCurrentPage(idx)}
+                    className={`h-1 transition-all duration-500 rounded-full ${currentPage === idx ? 'w-8 bg-[#D4AF37]' : 'w-2 bg-gray-300 hover:bg-gray-400'}`}
+                />
+            ))}
+         </div>
       </div>
 
-      {/* אזור ה-Marquee האינסופי */}
-      <div className="relative w-full overflow-hidden py-10">
-         {featured && featured.length > 0 ? (
-             <div className="flex w-full overflow-hidden group/marquee">
-                 <motion.div 
-                    className="flex gap-8 px-6 min-w-max"
-                    animate={{ x: ["0%", "-100%"] }} 
-                    transition={{ repeat: Infinity, ease: "linear", duration: 40 }} 
-                    style={{ x: 0 }}
-                    whileHover={{ animationPlayState: "paused" }} 
-                 >
-                    {[...featured, ...featured, ...featured].map((product, idx) => (
-                       <div 
-                          key={`${product._id}-${idx}`} 
-                          onClick={() => onProductClick(product)} // לחיצה פותחת מגירה
-                          className="min-w-[300px] md:min-w-[380px] cursor-pointer group/item relative"
-                       >
-                          {/* שינוי 2: כרטיס לבן עם צללית */}
-                          <div className="h-[480px] overflow-hidden relative mb-6 bg-white shadow-sm group-hover/item:shadow-xl transition-all duration-500 border border-gray-100">
-                             <img 
-                                src={product.image || product.imageUrl} 
-                                alt={getText(product.name)} 
-                                className="w-full h-full object-cover transform group-hover/item:scale-105 transition-transform duration-[1.5s]"
-                             />
-                             {/* מחיר על רקע לבן */}
-                             <div className="absolute bottom-6 left-6 text-left bg-white/90 px-4 py-2 backdrop-blur-sm shadow-sm">
-                                <p className="text-[#1A1A1A] font-cinzel text-xl">₪{product.price}</p>
-                             </div>
-                          </div>
-                          <h4 className="font-playfair text-2xl text-[#1A1A1A] group-hover/item:text-[#D4AF37] transition-colors">{getText(product.name)}</h4>
-                          <p className="font-montserrat text-xs text-gray-500 mt-1 uppercase tracking-wider">{product.category || 'Premium'}</p>
-                       </div>
-                    ))}
-                 </motion.div>
-             </div>
-         ) : (
-             <div className="text-center py-10 px-4 border border-gray-200 rounded mx-6 text-gray-400 font-montserrat">
-                 The collection is being curated. Please check back soon.
-             </div>
-         )}
+      <div 
+        className="max-w-7xl mx-auto px-6 min-h-[500px]"
+        onMouseEnter={() => { isHoveredRef.current = true; }}
+        onMouseLeave={() => { isHoveredRef.current = false; }}
+      >
+          <AnimatePresence mode="wait">
+             <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.6 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+             >
+                 {currentProducts.length > 0 ? currentProducts.map((product) => (
+                    <div 
+                        key={product._id} 
+                        className="group cursor-pointer relative"
+                        onClick={() => onProductClick(product)}
+                    >
+                      <div className="h-[450px] overflow-hidden relative mb-6 bg-white shadow-sm group-hover:shadow-xl transition-all duration-500 border border-gray-100">
+                         <img 
+                            src={product.image || product.imageUrl} 
+                            alt={getText(product.name)} 
+                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[1.5s]"
+                         />
+                         <div className="absolute bottom-6 left-6 text-left bg-white/90 px-4 py-2 backdrop-blur-sm shadow-sm z-10">
+                            <p className="text-[#1A1A1A] font-cinzel text-xl">₪{product.price}</p>
+                         </div>
+                      </div>
+                      <h4 className="font-playfair text-2xl text-[#1A1A1A] group-hover:text-[#D4AF37] transition-colors">{getText(product.name)}</h4>
+                      <p className="font-montserrat text-xs text-gray-500 mt-1 uppercase tracking-wider">{product.category || 'Premium'}</p>
+                    </div>
+                 )) : (
+                     <div className="col-span-4 text-center py-20 text-gray-400 font-montserrat tracking-widest">COLLECTION UPDATING...</div>
+                 )}
+             </motion.div>
+          </AnimatePresence>
       </div>
     </section>
   );
+};
+
+// --- רכיב חדש: Contact Section (לידים) ---
+const ContactSection = () => {
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        alert("תודה רבה! פנייתך התקבלה בהצלחה.");
+    };
+
+    return (
+        <section className="bg-white py-24 border-t border-gray-100">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+                    
+                    {/* צד שמאל: פרטים */}
+                    <div className="flex flex-col justify-center">
+                        <span className="font-cinzel text-[#D4AF37] text-xs tracking-[0.4em] mb-4">GET IN TOUCH</span>
+                        <h2 className="font-playfair text-4xl lg:text-5xl text-[#1A1A1A] mb-8 leading-tight">
+                            Let's Create <br />
+                            Something <span className="italic text-gray-400">Unique</span>
+                        </h2>
+                        
+                        <div className="space-y-8 font-montserrat text-sm tracking-wide mt-8">
+                            {/* טלפון / וואטסאפ לחיץ */}
+                            <a href="https://wa.me/972501234567" target="_blank" rel="noopener noreferrer" className="flex items-start gap-4 group cursor-pointer">
+                                <div className="p-3 bg-[#F9F9F9] rounded-full text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-colors">
+                                    <Phone size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">Phone / WhatsApp</h4>
+                                    <p className="text-gray-500 group-hover:text-[#D4AF37] transition-colors">050-123-4567</p>
+                                </div>
+                            </a>
+
+                            <div className="flex items-start gap-4 group">
+                                <div className="p-3 bg-[#F9F9F9] rounded-full text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-colors">
+                                    <Mail size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">Email</h4>
+                                    <p className="text-gray-500">studio@alizahav.co.il</p>
+                                </div>
+                            </div>
+                            
+                             <div className="flex items-start gap-4 group">
+                                <div className="p-3 bg-[#F9F9F9] rounded-full text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-colors">
+                                    <MapPin size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">Address</h4>
+                                    <p className="text-gray-500">Jerusalem, Israel</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* צד ימין: טופס */}
+                    <div className="bg-[#F9F9F9] p-8 md:p-12 shadow-sm border border-gray-100">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="contact-label">שם פרטי</label>
+                                    <input type="text" className="contact-input" required />
+                                </div>
+                                <div>
+                                    <label className="contact-label">שם משפחה</label>
+                                    <input type="text" className="contact-input" required />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="contact-label">טלפון</label>
+                                    <input type="tel" className="contact-input" required />
+                                </div>
+                                <div>
+                                    <label className="contact-label">מייל</label>
+                                    <input type="email" className="contact-input" required />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="contact-label">נושא הבקשה / שאלה</label>
+                                <input type="text" className="contact-input" />
+                            </div>
+
+                            <div>
+                                <label className="contact-label">הודעה</label>
+                                <textarea rows="4" className="contact-input resize-none" required></textarea>
+                            </div>
+
+                            <button type="submit" className="w-full bg-[#1A1A1A] text-white py-4 font-cinzel text-xs tracking-[0.2em] font-bold hover:bg-[#D4AF37] transition-colors flex items-center justify-center gap-2 mt-4">
+                                SEND MESSAGE <Send size={14} />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
 };
 
 // --- הדף הראשי ---
@@ -217,7 +368,6 @@ const HomePage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // ניהול המגירה
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -254,11 +404,9 @@ const HomePage = () => {
   );
 
   return (
-    // שינוי 3: רקע כללי בז' בהיר
     <div className="bg-[#F9F9F9] min-h-screen text-[#1A1A1A] overflow-x-hidden selection:bg-[#D4AF37] selection:text-white">
       <FontsInjection />
       
-      {/* מגירה */}
       <ProductDrawer 
         product={selectedProduct} 
         isOpen={isDrawerOpen} 
@@ -272,7 +420,7 @@ const HomePage = () => {
           height={heroData.height} 
       />
 
-      {/* Statement Bar - בהיר */}
+      {/* Statement Bar */}
       <div className="bg-white py-6 border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center text-xs md:text-sm font-montserrat text-gray-500 tracking-widest uppercase font-medium">
           <span className="hidden md:inline">Worldwide Inspiration</span>
@@ -281,15 +429,15 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Categories (Masterpieces) - רקע בהיר */}
-      <section className="py-32 px-4 bg-[#F9F9F9] relative">
+      {/* Categories */}
+      <section className="py-32 px-2 md:px-4 bg-[#F9F9F9] relative">
          <div className="max-w-7xl mx-auto mb-20 text-center">
             <h3 className="font-cinzel text-3xl md:text-5xl text-[#1A1A1A] mb-4">Masterpieces</h3>
             <div className="w-[1px] h-20 bg-[#D4AF37] mx-auto mb-4"></div>
             <p className="font-playfair italic text-gray-500 text-xl">"Details are not just details. They make the design."</p>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 max-w-8xl mx-auto">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-10 w-full max-w-screen-2xl mx-auto px-2">
             {categories.map((cat, index) => (
               <motion.div 
                 key={cat._id || index} 
@@ -300,7 +448,6 @@ const HomePage = () => {
               >
                 <Link to={cat.link || '#'}>
                   <CardContainer containerClassName="w-full h-full">
-                    {/* כרטיס לבן */}
                     <CardBody className="bg-white relative group/card border-gray-100 w-full h-[550px] overflow-hidden border shadow-lg hover:shadow-2xl transition-shadow duration-500">
                       
                       <CardItem translateZ="40" className="w-full h-full">
@@ -308,7 +455,7 @@ const HomePage = () => {
                         <img 
                             src={cat.image} 
                             alt={getText(cat.title)} 
-                            className="h-full w-full object-cover grayscale group-hover/card:grayscale-0 transition-all duration-1000 ease-out" 
+                            className="h-full w-full object-cover grayscale group-hover/card:grayscale-0 transition-[filter,transform] duration-700 ease-out transform-gpu will-change-transform"
                         />
                       </CardItem>
 
@@ -330,63 +477,17 @@ const HomePage = () => {
          </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Featured Products (Now Carousel) */}
       <CuratedSelection featured={featured} onProductClick={openDrawer} />
 
-      {/* Bespoke / Services (Static) */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 min-h-[80vh]">
-         <div className="relative h-[50vh] lg:h-auto overflow-hidden">
-            <img 
-               src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=2069&auto=format&fit=crop" 
-               alt="Luxury Event" 
-               className="absolute inset-0 w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
-            />
-            <div className="absolute inset-0 bg-black/20"></div>
-         </div>
-         
-         <div className="bg-white flex flex-col justify-center p-12 lg:p-24 relative text-[#1A1A1A]">
-            <div className="absolute top-10 bottom-10 left-10 right-10 border border-[#D4AF37]/20 pointer-events-none hidden md:block"></div>
-            
-            <span className="font-cinzel text-[#D4AF37] text-sm tracking-[0.4em] mb-6">SERVICES</span>
-            <h2 className="font-playfair text-4xl lg:text-6xl text-[#1A1A1A] mb-8 leading-tight">
-               Crafting <br/>
-               <span className="italic text-gray-400">Your</span> Legend
-            </h2>
-            <p className="font-montserrat text-gray-500 font-light leading-8 mb-10 max-w-md">
-               אנחנו לא סתם "מפיקים אירועים". אנחנו ארכיטקטים של אווירה.
-               <br/>
-               מחתונות אקסקלוסיביות ועד מארזי שי עסקיים שנחרטים בזיכרון.
-            </p>
-            
-            <ul className="space-y-4 font-playfair text-xl text-gray-800 mb-12">
-               <li className="flex items-center gap-4">
-                  <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full"></span> עיצוב שולחנות הוט-קוטור
-               </li>
-               <li className="flex items-center gap-4">
-                  <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full"></span> שזירת פרחים אומנותית
-               </li>
-               <li className="flex items-center gap-4">
-                  <span className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full"></span> מארזי מיתוג VIP
-               </li>
-            </ul>
+      {/* Contact Section (Added Here) */}
+      <ContactSection />
 
-            <Link to="/contact" className="inline-block border-b border-[#D4AF37] text-[#D4AF37] pb-2 text-sm tracking-[0.3em] hover:text-black hover:border-black transition-all w-max font-bold">
-               START A PROJECT
-            </Link>
-         </div>
-      </section>
+      {/* Bespoke / Services */}
 
-      {/* Footer CTA - כהה לקונטרסט */}
-      <section className="py-32 bg-black text-center px-4 relative overflow-hidden">
-         <div className="relative z-10">
-            <h2 className="font-cinzel text-5xl md:text-8xl text-white mb-8 font-bold">ALI ZAHAV</h2>
-            <h3 className="font-playfair text-2xl md:text-4xl text-gray-400 mb-10">מוכנים ליצור את הבלתי יאומן?</h3>
-            <Link to="/menu" className="inline-block bg-[#D4AF37] text-white font-cinzel font-bold px-12 py-5 hover:bg-white hover:text-black transition-colors tracking-widest shadow-lg shadow-[#D4AF37]/20">
-               SHOP NOW
-            </Link>
-         </div>
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D4AF37]/10 rounded-full blur-[120px]"></div>
-      </section>
+
+      {/* Footer CTA */}
+
 
     </div>
   );
