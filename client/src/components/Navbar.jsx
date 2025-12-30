@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
-import CartSlideOver from './CartSlideOver'; // --- הוספתי את זה ---
+import CartSlideOver from './CartSlideOver';
 
 // אייקונים דקים ואלגנטיים
 const Icons = {
@@ -84,7 +84,6 @@ const Navbar = () => {
 
   return (
     <>
-      {/* --- הוספתי את הרכיב כאן כדי שיעבוד --- */}
       <CartSlideOver />
 
       <nav
@@ -94,8 +93,11 @@ const Navbar = () => {
           isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm' : 'bg-white'
         ].join(' ')}
       >
-        <div className="max-w-[1800px] mx-auto px-6 md:px-12 h-24 flex justify-between items-center">
-          {/* ימין: לינקים דסקטופ */}
+        {/* הוספתי relative כדי שהלוגו יוכל להתמקם אבסולוטית ביחס לקונטיינר הזה */}
+        <div className="relative max-w-[1800px] mx-auto px-6 md:px-12 h-24 flex justify-between items-center">
+          
+          {/* צד אחד: לינקים דסקטופ */}
+          {/* בגלל justify-between, זה יידבק לקצה אחד */}
           <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
               <Link
@@ -110,18 +112,22 @@ const Navbar = () => {
           </div>
 
           {/* מרכז: לוגו */}
-          <Link to="/" className="flex flex-col items-center select-none">
-            <span className="text-xl md:text-2xl font-serif tracking-[0.25em] text-[#1A1A1A] leading-none">
+          {/* שינוי קריטי: absolute position כדי למרכז במדויק באמצע המסך ולהתעלם מהאלמנטים בצדדים */}
+          <Link 
+            to="/" 
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center select-none z-10"
+          >
+            <span className="text-xl md:text-2xl font-serif tracking-[0.25em] text-[#1A1A1A] leading-none whitespace-nowrap">
               {t('hero.title') || 'ALI ZAHAV'}
             </span>
-            <span className="text-[10px] tracking-[0.4em] text-[#D4AF37] mt-1 uppercase font-light">
+            <span className="text-[10px] tracking-[0.4em] text-[#D4AF37] mt-1 uppercase font-light whitespace-nowrap">
               {t('hero.subtitle') || 'Luxury Events'}
             </span>
           </Link>
 
-          {/* שמאל: פעולות */}
+          {/* צד שני: פעולות */}
+          {/* בגלל justify-between, זה יידבק לקצה השני */}
           <div className="flex items-center gap-3">
-            {/* כפתור תרגום */}
             <LanguageSwitcher />
 
             {isAdmin && (

@@ -72,8 +72,8 @@ const DEFAULT_HERO_SLIDES = [
 
 const DEFAULT_CATEGORIES = [
   { _id: 'd1', title: "WEDDINGS", hebrewTitle: "חתונות ואירועים", subtitle: "עיצוב בלתי נשכח לרגעים הגדולים", image: "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2070&auto=format&fit=crop", link: "/menu" },
-  { _id: 'd2', title: "VIP GIFTS", hebrewTitle: "מארזי יוקרה", subtitle: "כשרוצים להעניק את הטוב ביותר", image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=2040&auto=format&fit=crop", link: "/menu" },
-  { _id: 'd3', title: "BESPOKE", hebrewTitle: "בהתאמה אישית", subtitle: "אומנות היצירה לפי החזון שלך", image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=2069&auto=format&fit=crop", link: "/contact" }
+  { _id: 'd2', title: "VIP GIFTS", hebrewTitle: "מארזי יוקרה", subtitle: "כשרוצים להעניק את הטוב ביותר", image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=2040&auto=format&fit=crop", link: "/menu?category=695041e21902b53a72acdbe8" },
+  { _id: 'd3', title: "BESPOKE", hebrewTitle: "בהתאמה אישית", subtitle: "אומנות היצירה לפי החזון שלך", image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=2069&auto=format&fit=crop", link: "/menu?category=695041e21902b53a72acdbe4" }
 ];
 
 // --- רכיב הסליידר הראשי ---
