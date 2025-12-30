@@ -54,16 +54,17 @@ const FontsInjection = () => (
 );
 
 // --- נתוני ברירת מחדל (העיצוב המקורי) ---
+
 const DEFAULT_HERO_SLIDES = [
-    {
-        type: 'video',
-        url: 'https://cdn.coverr.co/videos/coverr-pouring-champagne-into-a-glass-5494/1080p.mp4', 
-        topText: 'EST. 2024 • ISRAEL',
-        title: 'ALI ZAHAV',
-        subtitle: 'The Art of Celebration',
-        buttonText: 'Explore Collection',
-        link: '/menu'
-    }
+  {
+    type: 'video',
+    url: '/videos/opo.mp4',
+    topText: 'EST. 2024 • ISRAEL',
+    title: 'ALI ZAHAV',
+    subtitle: 'The Art of Celebration',
+    buttonText: 'Explore Collection',
+    link: '/menu'
+  }
 ];
 
 const DEFAULT_CATEGORIES = [
@@ -75,7 +76,11 @@ const DEFAULT_CATEGORIES = [
 // --- רכיב הסליידר הראשי ---
 const HeroSlider = ({ slides, interval = 5, height = 95 }) => {
     const [current, setCurrent] = useState(0);
-    const activeSlides = (slides && slides.length > 0) ? slides : DEFAULT_HERO_SLIDES;
+    const hasValidSlides =
+  Array.isArray(slides) &&
+  slides.some(s => typeof s?.url === 'string' && s.url.trim().length > 0);
+
+const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
 
     useEffect(() => {
         if (activeSlides.length <= 1) return;
