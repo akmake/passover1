@@ -6,12 +6,15 @@ import ProductDrawer from '../components/ProductDrawer';
 import api from '@/api'; 
 // הוספת אייקונים עבור אזור הלידים
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
+import { useTranslation } from 'react-i18next'; // הוספתי את הספרייה
 
 // --- פונקציית עזר למניעת קריסות (טקסטים שהם אובייקטים) ---
-const getText = (textObj) => {
+// עדכנתי שתקבל את השפה הנוכחית
+const getText = (textObj, lang) => {
   if (!textObj) return '';
   if (typeof textObj === 'string') return textObj;
-  return textObj.he || textObj.en || textObj.name || '';
+  // לוגיקה חכמה: אם עברית, נסה עברית. אם אין, קח אנגלית. ולהפך.
+  return lang === 'he' ? (textObj.he || textObj.en || textObj.name || '') : (textObj.en || textObj.he || textObj.name || '');
 };
 
 // --- הגדרות עיצוב ופונטים ---
@@ -75,12 +78,13 @@ const DEFAULT_CATEGORIES = [
 
 // --- רכיב הסליידר הראשי ---
 const HeroSlider = ({ slides, interval = 5, height = 95 }) => {
+    const { t } = useTranslation(); // תרגום
     const [current, setCurrent] = useState(0);
     const hasValidSlides =
-  Array.isArray(slides) &&
-  slides.some(s => typeof s?.url === 'string' && s.url.trim().length > 0);
+      Array.isArray(slides) &&
+      slides.some(s => typeof s?.url === 'string' && s.url.trim().length > 0);
 
-const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
+    const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
 
     useEffect(() => {
         if (activeSlides.length <= 1) return;
@@ -133,11 +137,12 @@ const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
                     </h2>
                     
                     <h1 className="font-playfair text-5xl md:text-7xl lg:text-9xl text-white mb-4 leading-none drop-shadow-2xl">
-                        {slide.title || 'ALI ZAHAV'}
+                        {/* כאן אפשר להשתמש ב-t אם רוצים לתרגם את הכותרת הראשית */}
+                        {slide.title || t('hero.title') || 'ALI ZAHAV'}
                     </h1>
 
                     <p className="font-montserrat text-gray-200 tracking-[0.2em] text-lg uppercase font-light mb-10 drop-shadow-md">
-                        {slide.subtitle || 'The Art of Celebration'}
+                        {slide.subtitle || t('hero.subtitle') || 'The Art of Celebration'}
                     </p>
                     
                     <div className="flex justify-center mt-12">
@@ -146,7 +151,7 @@ const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
                             className="group relative px-10 py-4 overflow-hidden border border-[#D4AF37] text-[#D4AF37] transition-all hover:text-black bg-black/20 hover:bg-white"
                         >
                             <span className="relative z-10 font-cinzel tracking-widest font-bold">
-                                {slide.buttonText || 'Explore Collection'}
+                                {slide.buttonText || t('hero.cta') || 'Explore Collection'}
                             </span>
                         </Link>
                     </div>
@@ -159,7 +164,7 @@ const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
                 animate={{ opacity: 1 }} 
                 transition={{ delay: 1.5, duration: 1 }}
             >
-                <span className="text-[10px] tracking-[0.3em] font-montserrat">SCROLL TO DISCOVER</span>
+                <span className="text-[10px] tracking-[0.3em] font-montserrat">{t('hero.scroll')}</span>
                 <div className="w-[1px] h-16 bg-gradient-to-b from-white to-transparent"></div>
             </motion.div>
 
@@ -180,6 +185,7 @@ const activeSlides = hasValidSlides ? slides : DEFAULT_HERO_SLIDES;
 
 // --- רכיב המוצרים (CuratedSelection) - שונה לקרוסלה כפי שביקשת ---
 const CuratedSelection = ({ featured, onProductClick }) => {
+  const { t, i18n } = useTranslation();
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 4;
   
@@ -209,10 +215,11 @@ const CuratedSelection = ({ featured, onProductClick }) => {
 
   return (
     <section className="py-24 bg-[#F9F9F9] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 mb-12 flex justify-between items-end">
+      {/* תיקון סימטריה: max-w-[1440px] px-6 */}
+      <div className="max-w-[1440px] mx-auto px-6 mb-12 flex justify-between items-end">
          <div>
-            <h3 className="font-cinzel text-4xl text-[#1A1A1A]">Curated Selection</h3>
-            <p className="font-montserrat text-gray-500 mt-2 text-sm tracking-widest">LIMITED EDITIONS</p>
+            <h3 className="font-cinzel text-4xl text-[#1A1A1A]">{t('home.featured_title')}</h3>
+            <p className="font-montserrat text-gray-500 mt-2 text-sm tracking-widest">{t('menu.sale') || 'LIMITED EDITIONS'}</p>
          </div>
          <div className="flex gap-2">
             {Array.from({ length: totalPages }).map((_, idx) => (
@@ -225,8 +232,9 @@ const CuratedSelection = ({ featured, onProductClick }) => {
          </div>
       </div>
 
+      {/* תיקון סימטריה: אותו רוחב בדיוק כמו למעלה */}
       <div 
-        className="max-w-7xl mx-auto px-6 min-h-[500px]"
+        className="max-w-[1440px] mx-auto px-6 min-h-[500px]"
         onMouseEnter={() => { isHoveredRef.current = true; }}
         onMouseLeave={() => { isHoveredRef.current = false; }}
       >
@@ -246,16 +254,16 @@ const CuratedSelection = ({ featured, onProductClick }) => {
                         onClick={() => onProductClick(product)}
                     >
                       <div className="h-[450px] overflow-hidden relative mb-6 bg-white shadow-sm group-hover:shadow-xl transition-all duration-500 border border-gray-100">
-                         <img 
+                          <img 
                             src={product.image || product.imageUrl} 
-                            alt={getText(product.name)} 
+                            alt={getText(product.name, i18n.language)} 
                             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[1.5s]"
-                         />
-                         <div className="absolute bottom-6 left-6 text-left bg-white/90 px-4 py-2 backdrop-blur-sm shadow-sm z-10">
+                          />
+                          <div className="absolute bottom-6 left-6 text-left bg-white/90 px-4 py-2 backdrop-blur-sm shadow-sm z-10">
                             <p className="text-[#1A1A1A] font-cinzel text-xl">₪{product.price}</p>
-                         </div>
+                          </div>
                       </div>
-                      <h4 className="font-playfair text-2xl text-[#1A1A1A] group-hover:text-[#D4AF37] transition-colors">{getText(product.name)}</h4>
+                      <h4 className="font-playfair text-2xl text-[#1A1A1A] group-hover:text-[#D4AF37] transition-colors">{getText(product.name, i18n.language)}</h4>
                       <p className="font-montserrat text-xs text-gray-500 mt-1 uppercase tracking-wider">{product.category || 'Premium'}</p>
                     </div>
                  )) : (
@@ -270,22 +278,24 @@ const CuratedSelection = ({ featured, onProductClick }) => {
 
 // --- רכיב חדש: Contact Section (לידים) ---
 const ContactSection = () => {
+    const { t } = useTranslation();
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert("תודה רבה! פנייתך התקבלה בהצלחה.");
+        alert(t('common.success') || "תודה רבה! פנייתך התקבלה בהצלחה.");
     };
 
     return (
         <section className="bg-white py-24 border-t border-gray-100">
-            <div className="max-w-7xl mx-auto px-6">
+            {/* תיקון סימטריה: max-w-[1440px] px-6 */}
+            <div className="max-w-[1440px] mx-auto px-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
                     
                     {/* צד שמאל: פרטים */}
                     <div className="flex flex-col justify-center">
                         <span className="font-cinzel text-[#D4AF37] text-xs tracking-[0.4em] mb-4">GET IN TOUCH</span>
                         <h2 className="font-playfair text-4xl lg:text-5xl text-[#1A1A1A] mb-8 leading-tight">
-                            Let's Create <br />
-                            Something <span className="italic text-gray-400">Unique</span>
+                            {t('home.contact_title')} <br />
+                            <span className="italic text-gray-400">Unique</span>
                         </h2>
                         
                         <div className="space-y-8 font-montserrat text-sm tracking-wide mt-8">
@@ -295,7 +305,7 @@ const ContactSection = () => {
                                     <Phone size={20} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">Phone / WhatsApp</h4>
+                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">{t('home.phone_label')}</h4>
                                     <p className="text-gray-500 group-hover:text-[#D4AF37] transition-colors">050-123-4567</p>
                                 </div>
                             </a>
@@ -305,7 +315,7 @@ const ContactSection = () => {
                                     <Mail size={20} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">Email</h4>
+                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">{t('home.email')}</h4>
                                     <p className="text-gray-500">studio@alizahav.co.il</p>
                                 </div>
                             </div>
@@ -315,7 +325,7 @@ const ContactSection = () => {
                                     <MapPin size={20} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">Address</h4>
+                                    <h4 className="font-bold text-[#1A1A1A] uppercase mb-1 text-xs tracking-widest">{t('home.address')}</h4>
                                     <p className="text-gray-500">Jerusalem, Israel</p>
                                 </div>
                             </div>
@@ -327,38 +337,33 @@ const ContactSection = () => {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="contact-label">שם פרטי</label>
+                                    <label className="contact-label">{t('home.name_label')}</label>
                                     <input type="text" className="contact-input" required />
                                 </div>
                                 <div>
-                                    <label className="contact-label">שם משפחה</label>
+                                    <label className="contact-label">{t('home.phone_label')}</label>
                                     <input type="text" className="contact-input" required />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="contact-label">טלפון</label>
-                                    <input type="tel" className="contact-input" required />
-                                </div>
-                                <div>
-                                    <label className="contact-label">מייל</label>
+                                    <label className="contact-label">{t('home.email')}</label>
                                     <input type="email" className="contact-input" required />
                                 </div>
+                                <div>
+                                    <label className="contact-label">{t('nav.menu')}</label>
+                                    <input type="text" className="contact-input" />
+                                </div>
                             </div>
 
                             <div>
-                                <label className="contact-label">נושא הבקשה / שאלה</label>
-                                <input type="text" className="contact-input" />
-                            </div>
-
-                            <div>
-                                <label className="contact-label">הודעה</label>
+                                <label className="contact-label">{t('home.msg_label')}</label>
                                 <textarea rows="4" className="contact-input resize-none" required></textarea>
                             </div>
 
                             <button type="submit" className="w-full bg-[#1A1A1A] text-white py-4 font-cinzel text-xs tracking-[0.2em] font-bold hover:bg-[#D4AF37] transition-colors flex items-center justify-center gap-2 mt-4">
-                                SEND MESSAGE <Send size={14} />
+                                {t('home.submit')} <Send size={14} />
                             </button>
                         </form>
                     </div>
@@ -370,6 +375,7 @@ const ContactSection = () => {
 
 // --- הדף הראשי ---
 const HomePage = () => {
+  const { t, i18n } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -404,7 +410,7 @@ const HomePage = () => {
 
   if (loading) return (
     <div className="bg-[#F9F9F9] min-h-screen flex items-center justify-center">
-        <div className="text-[#D4AF37] font-cinzel text-xl animate-pulse tracking-widest">LOADING LUXURY...</div>
+        <div className="text-[#D4AF37] font-cinzel text-xl animate-pulse tracking-widest">{t('common.loading') || 'LOADING...'}</div>
     </div>
   );
 
@@ -427,7 +433,8 @@ const HomePage = () => {
 
       {/* Statement Bar */}
       <div className="bg-white py-6 border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center text-xs md:text-sm font-montserrat text-gray-500 tracking-widest uppercase font-medium">
+        {/* תיקון סימטריה: max-w-[1440px] px-6 */}
+        <div className="max-w-[1440px] mx-auto px-6 flex justify-between items-center text-xs md:text-sm font-montserrat text-gray-500 tracking-widest uppercase font-medium">
           <span className="hidden md:inline">Worldwide Inspiration</span>
           <span className="text-[#D4AF37]">Premium Quality</span>
           <span className="hidden md:inline">Personal Concierge</span>
@@ -435,14 +442,15 @@ const HomePage = () => {
       </div>
 
       {/* Categories */}
-      <section className="py-32 px-2 md:px-4 bg-[#F9F9F9] relative">
-         <div className="max-w-7xl mx-auto mb-20 text-center">
+      <section className="py-32 bg-[#F9F9F9] relative">
+         <div className="max-w-[1440px] mx-auto mb-20 text-center px-6">
             <h3 className="font-cinzel text-3xl md:text-5xl text-[#1A1A1A] mb-4">Masterpieces</h3>
             <div className="w-[1px] h-20 bg-[#D4AF37] mx-auto mb-4"></div>
             <p className="font-playfair italic text-gray-500 text-xl">"Details are not just details. They make the design."</p>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-10 w-full max-w-screen-2xl mx-auto px-2">
+         {/* תיקון סימטריה קריטי: החלפתי max-w-screen-2xl ב-max-w-[1440px] px-6 כדי שיתאים בול למוצרים */}
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-10 w-full max-w-[1440px] mx-auto px-6">
             {categories.map((cat, index) => (
               <motion.div 
                 key={cat._id || index} 
@@ -459,18 +467,18 @@ const HomePage = () => {
                         <div className="absolute inset-0 bg-black/10 group-hover/card:bg-black/0 transition-colors duration-500 z-10"></div>
                         <img 
                             src={cat.image} 
-                            alt={getText(cat.title)} 
+                            alt={getText(cat.title, i18n.language)} 
                             className="h-full w-full object-cover grayscale group-hover/card:grayscale-0 transition-[filter,transform] duration-700 ease-out transform-gpu will-change-transform"
                         />
                       </CardItem>
 
                       <div className="absolute inset-0 flex flex-col items-center justify-center z-20 p-8 m-4 border-[1px] border-white/40 group-hover/card:border-[#D4AF37] transition-all duration-700">
                         <CardItem translateZ="80" className="text-center">
-                           <h4 className="font-cinzel text-4xl text-white mb-2 drop-shadow-lg">{getText(cat.title)}</h4>
-                           <h5 className="font-playfair text-[#D4AF37] text-2xl italic mb-6 drop-shadow-md bg-black/30 px-4 py-1 rounded backdrop-blur-sm">{getText(cat.hebrewTitle)}</h5>
+                           <h4 className="font-cinzel text-4xl text-white mb-2 drop-shadow-lg">{getText(cat.title, i18n.language)}</h4>
+                           <h5 className="font-playfair text-[#D4AF37] text-2xl italic mb-6 drop-shadow-md bg-black/30 px-4 py-1 rounded backdrop-blur-sm">{getText(cat.hebrewTitle, i18n.language)}</h5>
                         </CardItem>
                         <CardItem translateZ="60" className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 delay-100">
-                           <p className="font-montserrat text-xs tracking-widest text-white/90 uppercase border-b border-white/50 pb-1 font-bold">{getText(cat.subtitle)}</p>
+                           <p className="font-montserrat text-xs tracking-widest text-white/90 uppercase border-b border-white/50 pb-1 font-bold">{getText(cat.subtitle, i18n.language)}</p>
                         </CardItem>
                       </div>
 
@@ -481,19 +489,8 @@ const HomePage = () => {
             ))}
          </div>
       </section>
-
-      {/* Featured Products (Now Carousel) */}
       <CuratedSelection featured={featured} onProductClick={openDrawer} />
-
-      {/* Contact Section (Added Here) */}
       <ContactSection />
-
-      {/* Bespoke / Services */}
-
-
-      {/* Footer CTA */}
-
-
     </div>
   );
 };

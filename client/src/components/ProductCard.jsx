@@ -5,21 +5,24 @@ import { useTranslation } from 'react-i18next';
 import { ShoppingBag } from 'lucide-react'; 
 
 const ProductCard = ({ product, onClick }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
   // --- פונקציית עזר למניעת קריסות שמות ---
   const getName = (nameObj) => {
       if (!nameObj) return '';
       if (typeof nameObj === 'string') return nameObj;
-      return nameObj[i18n.language] || nameObj.he || nameObj.en || '';
+      // בדיקה לפי השפה הנוכחית
+      return i18n.language === 'he' 
+        ? (nameObj.he || nameObj.en || nameObj.name || '')
+        : (nameObj.en || nameObj.he || nameObj.name || '');
   };
 
   // --- פונקציית עזר לתמונות ---
   const getImageUrl = (imgStr) => {
     if (!imgStr) return 'https://via.placeholder.com/400x600?text=No+Image';
     if (imgStr.startsWith('http')) return imgStr;
-    return `http://localhost:5000${imgStr}`; // שים לב: אם אתה ב-Production תצטרך להתאים את זה
+    return `http://localhost:5000${imgStr}`; 
   };
 
   const name = getName(product.name);
@@ -32,7 +35,7 @@ const ProductCard = ({ product, onClick }) => {
       }
   };
 
-  // --- לוגיקה חדשה: בדיקת מבצע ---
+  // --- לוגיקה: בדיקת מבצע ---
   const isSale = product.originalPrice && product.originalPrice > product.price;
 
   return (
@@ -40,62 +43,65 @@ const ProductCard = ({ product, onClick }) => {
       className="group relative cursor-pointer flex flex-col items-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => handleClick()} // לחיצה על כל הכרטיס
+      onClick={() => handleClick()} 
     >
-      {/* מסגרת התמונה - שמרנו על aspect-[3/4] ועיצוב נקי */}
-      <div className="relative w-full aspect-[3/4] overflow-hidden bg-white mb-4 shadow-sm group-hover:shadow-2xl transition-all duration-500 border border-gray-100">
+      {/* מסגרת התמונה */}
+      <div className="relative w-full aspect-[3/4] overflow-hidden bg-white mb-3 shadow-sm group-hover:shadow-xl transition-all duration-500 border border-gray-100">
 
-        {/* תגית פופולרי (המקורית שלך) */}
+        {/* תגית פופולרי */}
         {product.isPopular && !isSale && (
-           <div className="absolute top-0 left-0 bg-[#D4AF37] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 z-20 shadow-md">
-               Best Seller
+           <div className="absolute top-0 left-0 bg-[#D4AF37] text-white text-[10px] uppercase font-bold tracking-widest px-2 py-1 z-20 shadow-md">
+              {t('product.best_seller') || 'BEST SELLER'}
            </div>
         )}
 
-        {/* --- תוספת: תגית SALE --- */}
+        {/* תגית SALE */}
         {isSale && (
-           <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 z-20 shadow-md animate-pulse">
-               SALE
+           <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] uppercase font-bold tracking-widest px-2 py-1 z-20 shadow-md animate-pulse">
+               {t('menu.sale') || 'SALE'}
            </div>
         )}
 
-        {/* התמונה עצמה */}
+        {/* התמונה */}
         <img
            src={getImageUrl(product.image || product.imageUrl)}
            alt={name}
            className="w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out group-hover:scale-110 opacity-100"
         />
 
-        {/* שכבת כהות עדינה + כפתור הוספה (בעיצוב המקורי שביקשת) */}
+        {/* שכבת כהות + כפתור הוספה (הוקטן מעט) */}
         <div className={`absolute inset-0 bg-black/10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-           <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
+           <div className="absolute bottom-0 left-0 w-full p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
               <button
-                className="w-full bg-white text-[#1A1A1A] font-bold text-xs uppercase tracking-widest py-4 hover:bg-[#D4AF37] hover:text-white transition-colors shadow-xl flex items-center justify-center gap-2 border border-gray-200"
+                className="w-full bg-white text-[#1A1A1A] font-bold text-[10px] uppercase tracking-widest py-3 hover:bg-[#D4AF37] hover:text-white transition-colors shadow-xl flex items-center justify-center gap-2 border border-gray-200"
                 onClick={handleClick}
               >
-                 <ShoppingBag size={16} />
-                 {isSale ? 'הוסף במבצע' : 'צפייה מהירה'}
+                 <ShoppingBag size={14} />
+                 {/* שימוש בתרגום עם Fallback */}
+                 {isSale 
+                    ? (t('product.add_sale') || 'הוסף במבצע') 
+                    : (t('menu.quick_view') || 'צפייה מהירה')}
               </button>
            </div>
         </div>
       </div>
 
-      {/* פרטי מוצר - נקי, בלי תיאור */}
+      {/* פרטי מוצר */}
       <div className="text-center w-full px-2">
-         {/* כותרת */}
-         <h3 className="font-serif text-xl text-gray-900 group-hover:text-[#d4af37] transition-colors duration-300">
+         {/* כותרת - הוקטנה מ-xl ל-lg */}
+         <h3 className="font-serif text-lg text-gray-900 group-hover:text-[#d4af37] transition-colors duration-300 line-clamp-1">
             {name}
          </h3>
 
-         {/* --- מחיר מעודכן --- */}
-         <div className="mt-2 font-medium tracking-wider flex items-center justify-center gap-2">
+         {/* מחיר - הוקטן מעט */}
+         <div className="mt-1 font-medium tracking-wider flex items-center justify-center gap-2 text-sm">
             {isSale ? (
                 <>
-                    <span className="text-gray-400 line-through text-sm">₪{product.originalPrice}</span>
-                    <span className="text-red-600 font-bold text-lg">₪{product.price}</span>
+                    <span className="text-gray-400 line-through text-xs">₪{product.originalPrice}</span>
+                    <span className="text-red-600 font-bold text-base">₪{product.price}</span>
                 </>
             ) : (
-                <span className="text-[#d4af37]">₪{product.price}</span>
+                <span className="text-[#d4af37] text-base">₪{product.price}</span>
             )}
          </div>
       </div>

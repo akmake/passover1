@@ -29,7 +29,7 @@ const fetchPublicDates = async () => (await api.get('/api/delivery-options/dates
 const fetchPublicSettings = async () => (await api.get('/api/settings/public')).data;
 
 const CheckoutPage = () => {
-  const { t } = useTranslation(); // הפעלת פונקציית התרגום
+  const { t, i18n } = useTranslation(); // הפעלת פונקציית התרגום + i18n לכיוון
   const navigate = useNavigate();
   const { items, clearCart } = useCartStore();
   const { user, updateUser, isAuthenticated } = useAuthStore();
@@ -225,7 +225,8 @@ const CheckoutPage = () => {
       : 85;
 
   return (
-    <div className="relative">
+    // הוספתי את ה-dir כאן כדי שהטופס יתהפך נכון בעברית/אנגלית
+    <div className="relative" dir={i18n.dir()}>
       {/* Hero Header */}
       <div className="mb-8 overflow-hidden rounded-2xl bg-gradient-to-tr from-gray-900 via-slate-800 to-blue-900 p-6 text-white shadow-lg">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -242,7 +243,7 @@ const CheckoutPage = () => {
             <Calendar className="h-4 w-4 opacity-80" />
             <span className="opacity-90">
               {deliveryDate
-                ? new Date(deliveryDate).toLocaleDateString('he-IL', { timeZone: 'UTC' })
+                ? new Date(deliveryDate).toLocaleDateString(i18n.language, { timeZone: 'UTC' }) // תאריך לפי שפה
                 : t('checkout.noDateSelected')}
             </span>
           </div>
@@ -304,7 +305,7 @@ const CheckoutPage = () => {
                   </div>
                 )}
                 {availableDates.map((d) => {
-                  const label = new Date(d).toLocaleDateString('he-IL', { timeZone: 'UTC' });
+                  const label = new Date(d).toLocaleDateString(i18n.language, { timeZone: 'UTC' }); // תאריך דינמי
                   const active = deliveryDate === d;
                   return (
                     <button

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import CartSlideOver from './CartSlideOver'; // --- הוספתי את זה ---
 
 // אייקונים דקים ואלגנטיים
 const Icons = {
@@ -40,7 +41,7 @@ const Icons = {
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
+  const { t } = useTranslation(); 
 
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -71,9 +72,9 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // לינקים רלוונטיים בלבד (הסרתי את אלה שלא מובילים/לא מעניינים אותך)
+  // לינקים רלוונטיים בלבד
   const navLinks = [
-    { name: 'תפריט', path: '/menu' },
+    { name: t('nav.menu'), path: '/menu' }, 
   ];
 
   const handleLogout = () => {
@@ -83,6 +84,9 @@ const Navbar = () => {
 
   return (
     <>
+      {/* --- הוספתי את הרכיב כאן כדי שיעבוד --- */}
+      <CartSlideOver />
+
       <nav
         className={[
           'fixed top-0 left-0 w-full z-50 transition-all duration-300',
@@ -108,16 +112,16 @@ const Navbar = () => {
           {/* מרכז: לוגו */}
           <Link to="/" className="flex flex-col items-center select-none">
             <span className="text-xl md:text-2xl font-serif tracking-[0.25em] text-[#1A1A1A] leading-none">
-              ALI ZAHAV
+              {t('hero.title') || 'ALI ZAHAV'}
             </span>
             <span className="text-[10px] tracking-[0.4em] text-[#D4AF37] mt-1 uppercase font-light">
-              Luxury Events
+              {t('hero.subtitle') || 'Luxury Events'}
             </span>
           </Link>
 
           {/* שמאל: פעולות */}
           <div className="flex items-center gap-3">
-            {/* כפתור תרגום (קיים אצלך) */}
+            {/* כפתור תרגום */}
             <LanguageSwitcher />
 
             {isAdmin && (
@@ -125,7 +129,7 @@ const Navbar = () => {
                 to="/admin/dashboard"
                 className="hidden md:inline-block text-xs font-semibold tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
               >
-                ADMIN
+                {t('nav.admin') || 'ADMIN'}
               </Link>
             )}
 
@@ -148,7 +152,7 @@ const Navbar = () => {
                 className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 transition-all text-sm"
               >
                 <Icons.User />
-                <span className="tracking-widest text-xs">התנתקות</span>
+                <span className="tracking-widest text-xs">{t('nav.logout')}</span>
               </button>
             ) : (
               <Link
@@ -156,7 +160,7 @@ const Navbar = () => {
                 className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 transition-all text-sm"
               >
                 <Icons.User />
-                <span className="tracking-widest text-xs">התחברות</span>
+                <span className="tracking-widest text-xs">{t('nav.login')}</span>
               </Link>
             )}
 
@@ -197,7 +201,7 @@ const Navbar = () => {
                   to="/admin/dashboard"
                   className="py-2 text-sm tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
                 >
-                  ADMIN
+                  {t('nav.admin') || 'ADMIN'}
                 </Link>
               )}
 
@@ -207,14 +211,14 @@ const Navbar = () => {
                     onClick={handleLogout}
                     className="w-full text-right py-2 text-sm tracking-widest text-red-600 hover:text-red-700"
                   >
-                    התנתקות
+                    {t('nav.logout')}
                   </button>
                 ) : (
                   <Link
                     to="/login"
                     className="block py-2 text-sm tracking-widest text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
                   >
-                    התחברות
+                    {t('nav.login')}
                   </Link>
                 )}
               </div>
