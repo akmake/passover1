@@ -3,59 +3,54 @@ import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 const router = express.Router();
 
-// 1. הגדרת מיקום שמירת הקבצים
+// יצירת __dirname (נדרש כי אנחנו ב-ES Modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 1. הגדרת מיקום שמירה - ישירות לתיקיית הקליינט
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // וודא שהתיקייה קיימת, אם לא - צור אותה (אופציונלי אך מומלץ)
-    const uploadPath = 'uploads/';
+    // הולך אחורה מהראוטס -> לשרת -> לרוט -> לקליינט -> פאבליק -> העלאות
+    // המבנה הזה מבוסס על הרשימה ששלחת: client/public/uploads
+    const uploadPath = path.join(__dirname, '../../client/public/uploads');
+
+    // יוצר את התיקייה אם היא לא קיימת
     if (!fs.existsSync(uploadPath)){
-        fs.mkdirSync(uploadPath);
+        fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    // יצירת שם קובץ ייחודי + הסיומת המקורית
     const uniqueName = uuidv4() + path.extname(file.originalname);
     cb(null, uniqueName);
   }
 });
 
-// 2. סינון קבצים (מאפשר תמונות ווידאו)
+// 2. סינון קבצים
 const fileFilter = (req, file, cb) => {
-  // רשימת סוגי MIME מותרים
   const allowedTypes = [
     'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
     'video/mp4', 'video/webm', 'video/quicktime'
   ];
   
-  if (allowedTypes.includes(file.mimetype)) {
+  if (allowedTypes.includes(file.mimetype) || file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
     cb(null, true);
   } else {
-    // נסה להיות גמיש יותר אם ה-MIME TYPE לא מדויק
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Invalid file type. Only images and videos are allowed.'), false);
-    }
+    cb(new Error('Invalid file type.'), false);
   }
 };
 
-// 3. יצירת אובייקט ה-Upload עם הגבלות מתאימות לוידאו
 const upload = multer({ 
   storage: storage,
   fileFilter: fileFilter,
-  limits: {
-    fileSize: 200 * 1024 * 1024 // 200MB - חשוב מאוד לוידאו!
-  }
+  limits: { fileSize: 200 * 1024 * 1024 }
 });
 
-/**
- * Route: POST /api/upload
- * מקבל: שדות 'image' או 'video'
- */
+// 3. הראוט
 router.post(
   '/',
   upload.fields([
@@ -67,15 +62,15 @@ router.post(
         const image = req.files?.image?.[0];
         const video = req.files?.video?.[0];
 
-        // אם שום קובץ לא עלה
         if (!image && !video) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
+        // מחזיר נתיב שמתחיל ב-/uploads
+        // מכיוון שהקובץ בתיקיית public, הדפדפן ימצא אותו מיד בנתיב הזה
         return res.json({
             imageUrl: image ? `/uploads/${image.filename}` : '',
             videoUrl: video ? `/uploads/${video.filename}` : '',
-            // תאימות לאחור אם יש קומפוננטות אחרות שמצפות לזה
             images: image ? [`/uploads/${image.filename}`] : [], 
         });
     } catch (error) {
@@ -85,18 +80,12 @@ router.post(
   }
 );
 
-// טיפול בשגיאות של Multer (גודל קובץ וכו')
+// טיפול בשגיאות
 router.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ message: 'File is too large. Max limit is 200MB.' });
-    }
-    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-       return res.status(400).json({ message: `Unexpected field: ${err.field}` });
-    }
     return res.status(400).json({ message: err.message });
   } else if (err) {
-    return res.status(400).json({ message: err.message || 'An unknown error occurred during upload.' });
+    return res.status(400).json({ message: err.message });
   }
   next();
 });

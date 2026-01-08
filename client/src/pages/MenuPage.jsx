@@ -1,5 +1,3 @@
-// client/src/pages/MenuPage.jsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,18 +5,17 @@ import { Search, Loader2 } from 'lucide-react';
 import api from '../api';
 import ProductCard from '../components/ProductCard';
 import ProductDrawer from '../components/ProductDrawer';
-import { useTranslation } from 'react-i18next'; // ייבוא התרגום
+import { useTranslation } from 'react-i18next';
 
-// פונקציית עזר לחילוץ טקסט (מעודכנת לקבל שפה)
+// פונקציית עזר לחילוץ טקסט
 const getText = (field, lang) => {
   if (!field) return '';
   if (typeof field === 'string') return field;
-  // בודק לפי השפה הנוכחית
   return lang === 'he' ? (field.he || field.en) : (field.en || field.he) || '';
 };
 
 const MenuPage = () => {
-  const { t, i18n } = useTranslation(); // הוק התרגום
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
@@ -34,6 +31,7 @@ const MenuPage = () => {
   const sectionRefs = useRef({});
   const isClickingRef = useRef(false);
 
+  // --- טעינת נתונים ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -77,12 +75,27 @@ const MenuPage = () => {
     fetchData();
   }, []);
 
+  // --- תיקון: גלילה אוטומטית לפי ה-URL לאחר הטעינה ---
+  useEffect(() => {
+    if (!loading && categories.length > 0) {
+      const categoryFromUrl = searchParams.get('category');
+      
+      if (categoryFromUrl && categoryFromUrl !== 'all') {
+        // Timeout קטן כדי לוודא שה-DOM מוכן והרפרנסים קיימים
+        setTimeout(() => {
+          scrollToCategory(categoryFromUrl);
+        }, 100);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, categories]); 
+
+
   // --- מנגנון Scroll Spy ---
   useEffect(() => {
     const handleScroll = () => {
       if (isClickingRef.current) return; 
 
-      // קיזוז של 250 פיקסלים בגלל ה-Navbar וה-Sticky Header
       const scrollPosition = window.scrollY + 250; 
       let currentSection = 'all';
 
@@ -121,7 +134,6 @@ const MenuPage = () => {
     } else {
       const element = sectionRefs.current[catId];
       if (element) {
-        // קיזוז שמשאיר מקום ל-Sticky Header (בערך 180-200 פיקסלים)
         const headerOffset = 220; 
         const elementPosition = element.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.scrollY - headerOffset;
@@ -148,7 +160,6 @@ const MenuPage = () => {
   };
 
   return (
-    // הוספתי הגדרת כיוון דינמית
     <div className="bg-[#F9F8F6] min-h-screen w-full text-[#1A1A1A] font-sans" dir={i18n.dir()}>
 
       <ProductDrawer
@@ -167,8 +178,7 @@ const MenuPage = () => {
           </p>
       </header>
 
-      {/* STICKY NAV BAR - הפס שיורד איתך */}
-      {/* שינוי קריטי: top-20 במקום top-0 כדי שלא יתחבא מאחורי ה-Navbar הראשי */}
+      {/* STICKY NAV BAR */}
       <div className="sticky top-20 z-40 bg-[#F9F8F6]/95 backdrop-blur-md border-b border-[#E5E5E5] py-4 shadow-sm transition-all duration-300">
           <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
 
@@ -237,7 +247,7 @@ const MenuPage = () => {
                     key={cat._id}
                     id={cat._id}
                     ref={(el) => (sectionRefs.current[cat._id] = el)}
-                    className="scroll-mt-60" // התאמה ל-Offset של הגלילה
+                    className="scroll-mt-60"
                   >
                     {/* כותרת קטגוריה */}
                     <div className="flex items-center gap-4 mb-10">
