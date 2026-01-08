@@ -118,7 +118,7 @@ const Navbar = () => {
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center select-none z-10"
           >
             <span className="text-xl md:text-2xl font-serif tracking-[0.25em] text-[#1A1A1A] leading-none whitespace-nowrap">
-              {t('hero.title') || 'ALI ZAHAV'}
+              {t('hero.title') || 'Alei Zahav'}
             </span>
             <span className="text-[10px] tracking-[0.4em] text-[#D4AF37] mt-1 uppercase font-light whitespace-nowrap">
               {t('hero.subtitle') || 'Luxury Events'}

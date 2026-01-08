@@ -25,7 +25,7 @@ const resources = {
         cart: "Cart"
       },
       hero: {
-        title: "Ali Zahav",
+        title: "Alei Zahav",
         subtitle: "Luxury Catering & Events",
         cta: "Order Now",
         scroll: "Scroll Down"
@@ -140,7 +140,7 @@ const resources = {
       },
       hero: {
         title: "עלי זהב",
-        subtitle: "קייטרינג ואירוח יוקרתי",
+        subtitle: "מתנות יוקרתיות",
         cta: "הזמן עכשיו",
         scroll: "גלול למטה"
       },

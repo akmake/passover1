@@ -63,7 +63,7 @@ const DEFAULT_HERO_SLIDES = [
     type: 'video',
     url: '/videos/opo.mp4',
     topText: 'EST. 2024 • ISRAEL',
-    title: 'ALI ZAHAV',
+    title: 'Alei Zahav',
     subtitle: 'The Art of Celebration',
     buttonText: 'Explore Collection',
     link: '/menu'
@@ -138,7 +138,7 @@ const HeroSlider = ({ slides, interval = 5, height = 95 }) => {
                     
                     <h1 className="font-playfair text-5xl md:text-7xl lg:text-9xl text-white mb-4 leading-none drop-shadow-2xl">
                         {/* כאן אפשר להשתמש ב-t אם רוצים לתרגם את הכותרת הראשית */}
-                        {slide.title || t('hero.title') || 'ALI ZAHAV'}
+                        {slide.title || t('hero.title') || 'Alei Zahav'}
                     </h1>
 
                     <p className="font-montserrat text-gray-200 tracking-[0.2em] text-lg uppercase font-light mb-10 drop-shadow-md">

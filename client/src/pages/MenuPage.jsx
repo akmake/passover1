@@ -169,25 +169,18 @@ const MenuPage = () => {
       />
 
       {/* HEADER ראשית */}
-      <header className="pt-28 pb-6 text-center bg-[#F9F8F6]">
-          <h1 className="text-4xl md:text-5xl text-[#1A1A1A] tracking-wider font-serif font-bold">
-            {t('hero.title') || 'ALI ZAHAV'}
-          </h1>
-          <p className="text-[#8A8A8A] text-xs tracking-[0.3em] mt-3 uppercase">
-            {t('hero.subtitle') || 'Luxury Home Collection'}
-          </p>
-      </header>
 
-      {/* STICKY NAV BAR */}
-      <div className="sticky top-20 z-40 bg-[#F9F8F6]/95 backdrop-blur-md border-b border-[#E5E5E5] py-4 shadow-sm transition-all duration-300">
-          <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
 
-            {/* רשימת קטגוריות */}
-            <div className="flex gap-8 overflow-x-auto hide-scrollbar w-full md:w-auto justify-center md:justify-start px-2">
+      <div className="sticky top-24 z-40 bg-[#F9F8F6]/95 backdrop-blur-md border-b border-[#E5E5E5] py-3 shadow-sm transition-all duration-300">
+          <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-4">
+
+            {/* רשימת קטגוריות - עכשיו ממורכזת! */}
+            {/* md:flex-1 נותן לקונטיינר את כל המקום הפנוי, ו-md:justify-center ממרכז את הכפתורים בתוכו */}
+            <div className="flex gap-8 overflow-x-auto hide-scrollbar w-full md:flex-1 justify-start md:justify-center items-center">
                 <button
                     onClick={() => scrollToCategory('all')}
-                    className={`relative pb-2 text-sm transition-all duration-300 whitespace-nowrap tracking-wide
-                  ${activeCategory === 'all' ? 'text-[#D4AF37] font-bold' : 'text-[#5A5A5A] hover:text-[#1A1A1A]'}`}
+                    className={`relative pb-1 text-sm font-medium transition-all duration-200 whitespace-nowrap
+                  ${activeCategory === 'all' ? 'text-[#D4AF37]' : 'text-[#5A5A5A] hover:text-[#1A1A1A]'}`}
                 >
                     {t('menu.filter_all')}
                     {activeCategory === 'all' && (
@@ -203,8 +196,8 @@ const MenuPage = () => {
                         <button
                             key={cat._id}
                             onClick={() => scrollToCategory(cat._id)}
-                            className={`relative pb-2 text-sm transition-all duration-300 whitespace-nowrap tracking-wide
-                            ${isActive ? 'text-[#D4AF37] font-bold' : 'text-[#5A5A5A] hover:text-[#1A1A1A]'}`}
+                            className={`relative pb-1 text-sm font-medium transition-all duration-200 whitespace-nowrap
+                            ${isActive ? 'text-[#D4AF37]' : 'text-[#5A5A5A] hover:text-[#1A1A1A]'}`}
                         >
                             {catName}
                             {isActive && (
@@ -215,16 +208,19 @@ const MenuPage = () => {
                 })}
             </div>
 
-            {/* חיפוש */}
-            <div className="relative w-full md:w-64">
+            {/* חיפוש - נשאר בצד לשמירה על איזון */}
+            <div className="relative w-full md:w-64 flex-shrink-0">
                 <input
                   type="text"
                   placeholder={t('menu.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white border border-[#E0E0E0] rounded-sm px-4 py-2 pl-10 text-sm focus:outline-none focus:border-[#D4AF37]"
+                  className={`w-full bg-white border border-[#E0E0E0] rounded-full px-4 py-2 text-sm focus:outline-none focus:border-[#D4AF37] focus:shadow-sm transition-all
+                  ${i18n.dir() === 'rtl' ? 'pl-4 pr-10' : 'pl-10 pr-4'}`}
                 />
-                <Search className={`absolute top-1/2 -translate-y-1/2 text-[#A0A0A0] w-4 h-4 ${i18n.dir() === 'rtl' ? 'left-3' : 'right-3'}`} />
+                <Search className={`absolute top-1/2 -translate-y-1/2 text-[#A0A0A0] w-4 h-4 
+                  ${i18n.dir() === 'rtl' ? 'right-3' : 'left-3'}`} 
+                />
             </div>
           </div>
       </div>

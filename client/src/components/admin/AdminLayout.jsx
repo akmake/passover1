@@ -131,7 +131,7 @@ function SidebarContent({ user, logout, onClose }) {
         
         <div className="relative z-10">
             <span className="text-[10px] font-bold tracking-[0.3em] text-[#D4AF37] uppercase mb-1 block">Admin Console</span>
-            <h1 className="text-2xl font-cinzel font-bold tracking-[0.15em] text-[#050505] leading-none">ALI ZAHAV</h1>
+            <h1 className="text-2xl font-cinzel font-bold tracking-[0.15em] text-[#050505] leading-none">Alei Zahav</h1>
             <span className="text-[9px] tracking-[0.4em] text-slate-400 mt-2 uppercase font-light block">Luxury Events</span>
         </div>
         
@@ -161,7 +161,7 @@ function SidebarContent({ user, logout, onClose }) {
 
       {/* Sidebar Footer */}
       <div className="p-4 text-center text-[10px] text-slate-300 tracking-widest uppercase hidden md:block">
-        v1.0.0 • Ali Zahav
+        v1.0.0 • Alei Zahav
       </div>
     </div>
   );

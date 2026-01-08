@@ -231,7 +231,7 @@ const HomePageManage = () => {
                   type: 'image', 
                   url: '', 
                   topText: 'EST. 2024', 
-                  title: 'ALI ZAHAV', 
+                  title: 'Alei Zahav', 
                   subtitle: 'The Art of Celebration', 
                   buttonText: 'Explore Collection', 
                   link: '/menu' 

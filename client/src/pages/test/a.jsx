@@ -35,7 +35,7 @@ const DEFAULT_HERO_SLIDES = [
         url: 'https://v.ftcdn.net/05/65/52/62/700_F_565526227_3Xn...mp4', // שים כאן לינק תקין לוידאו שלך אם זה לא עובד
         // או השתמש בזה זמנית: https://cdn.coverr.co/videos/coverr-pouring-champagne-into-a-glass-5494/1080p.mp4
         topText: 'EST. 2024 • ISRAEL',
-        title: 'ALI ZAHAV',
+        title: 'Alei Zahav',
         subtitle: 'The Art of Celebration',
         buttonText: 'Explore Collection',
         link: '/menu'
@@ -109,7 +109,7 @@ const HeroSlider = ({ slides, interval = 5, height = 95 }) => {
                     
                     {/* כותרת ראשית */}
                     <h1 className="font-playfair text-5xl md:text-7xl lg:text-9xl text-white mb-4 leading-none drop-shadow-2xl">
-                        {slide.title || 'ALI ZAHAV'}
+                        {slide.title || 'Alei Zahav'}
                     </h1>
 
                     {/* כותרת משנה */}
@@ -365,7 +365,7 @@ const HomePage = () => {
       {/* Footer CTA */}
       <section className="py-32 bg-black text-center px-4 relative overflow-hidden">
          <div className="relative z-10">
-            <h2 className="font-cinzel text-5xl md:text-8xl text-[#1a1a1a] mb-8 font-bold">ALI ZAHAV</h2>
+            <h2 className="font-cinzel text-5xl md:text-8xl text-[#1a1a1a] mb-8 font-bold">Alei Zahav</h2>
             <h3 className="font-playfair text-2xl md:text-4xl text-white mb-10">מוכנים ליצור את הבלתי יאומן?</h3>
             <Link to="/menu" className="inline-block bg-[#D4AF37] text-black font-cinzel font-bold px-12 py-5 hover:bg-white transition-colors tracking-widest">
                SHOP NOW

@@ -167,7 +167,7 @@ export default function LoginPage() {
                 className="relative z-10 w-full max-w-sm px-6"
             >
                 <div className="text-center mb-16">
-                    <h1 className="text-5xl font-serif font-bold text-black mb-2 tracking-wider">ALI ZAHAV</h1>
+                    <h1 className="text-5xl font-serif font-bold text-black mb-2 tracking-wider">Alei Zahav</h1>
                     <p className="text-[#D4AF37] text-xs tracking-[0.4em] uppercase font-bold">Luxury Home Collection</p>
                 </div>
 

@@ -106,7 +106,7 @@ const HomePage = () => {
           >
             <h2 className="font-cinzel text-[#D4AF37] tracking-[0.5em] text-sm md:text-xl mb-6">EST. 2024 • ISRAEL</h2>
             <h1 className="font-playfair text-5xl md:text-7xl lg:text-9xl text-white mb-4 leading-none">
-              ALI ZAHAV
+              Alei Zahav
             </h1>
             <p className="font-montserrat text-gray-300 tracking-[0.2em] text-lg uppercase font-light mb-10">
               The Art of Celebration
@@ -285,7 +285,7 @@ const HomePage = () => {
       {/* --- FOOTER CTA --- */}
       <section className="py-32 bg-black text-center px-4 relative overflow-hidden">
          <div className="relative z-10">
-            <h2 className="font-cinzel text-5xl md:text-8xl text-[#1a1a1a] mb-8 font-bold">ALI ZAHAV</h2>
+            <h2 className="font-cinzel text-5xl md:text-8xl text-[#1a1a1a] mb-8 font-bold">Alei Zahav</h2>
             <h3 className="font-playfair text-2xl md:text-4xl text-white mb-10">מוכנים ליצור את הבלתי יאומן?</h3>
             <Link to="/menu" className="inline-block bg-[#D4AF37] text-black font-cinzel font-bold px-12 py-5 hover:bg-white transition-colors tracking-widest">
                SHOP NOW
