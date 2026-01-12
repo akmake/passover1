@@ -37,17 +37,17 @@ import AdminCouponFormPage from './pages/admin/AdminCouponFormPage';
 import HomePageManage from './pages/admin/HomePageManage';
 import AdminPromotions from './pages/admin/AdminPromotions';
 
-
+// הייבוא של הדף החדש
+import BridalHomePage from './pages/BridalHomePage';
 
 function App() {
   const { i18n } = useTranslation();
 
-  // אפקט שמאזין לשינויי שפה ומעדכן את כל עמוד ה-HTML
   useEffect(() => {
     const dir = i18n.dir(i18n.language);
-    document.documentElement.dir = dir; // משנה את הכיווניות (rtl/ltr)
+    document.documentElement.dir = dir;
     document.documentElement.lang = i18n.language;
-  }, [i18n, i18n.language]); // רץ כל פעם שהשפה משתנה
+  }, [i18n, i18n.language]);
 
   return (
     <Suspense fallback={<div className="w-full h-screen flex items-center justify-center">טוען...</div>}>
@@ -55,7 +55,11 @@ function App() {
         <Route path="/" element={<Layout />}>
           {/* Public Routes */}
           <Route index element={<HomePage />} />
+          
           <Route path="menu" element={<MenuPage />} />
+          {/* הנה הנתיב החדש - בדיוק כמו שביקשת, חלק מהרשימה */}
+          <Route path="bridal" element={<BridalHomePage />} />
+          
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="order-success/:id" element={<OrderSuccessPage />} />
