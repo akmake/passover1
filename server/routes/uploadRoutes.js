@@ -4,6 +4,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { requireAuth, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -31,28 +32,30 @@ const storage = multer.diskStorage({
 });
 
 // 2. סינון קבצים
+// סוגי קבצים מותרים — SVG חסום למניעת XSS
+const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-    'video/mp4', 'video/webm', 'video/quicktime'
-  ];
-  
-  if (allowedTypes.includes(file.mimetype) || file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+  if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type.'), false);
+    cb(new Error('סוג קובץ לא מורשה. מותר: JPEG, PNG, GIF, WEBP, MP4, WEBM.'), false);
   }
 };
 
 const upload = multer({ 
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 200 * 1024 * 1024 }
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB מקסימום (מספיק לוידאו קצר)
 });
 
 // 3. הראוט
 router.post(
   '/',
+  requireAuth,
+  requireAdmin,
   upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'video', maxCount: 1 },

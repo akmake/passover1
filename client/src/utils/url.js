@@ -1,5 +1,14 @@
 // client/src/utils/url.js
 
+export function getServerOrigin() {
+  const apiBase = import.meta.env.VITE_API_BASE_URL;
+  if (apiBase) return apiBase.replace(/\/api\/?$/, '');
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'https://localhost:5000';
+  }
+  return typeof window !== 'undefined' ? window.location.origin : '';
+}
+
 export function toAbsoluteUrl(raw) {
   if (!raw) return null;
 
@@ -14,17 +23,8 @@ export function toAbsoluteUrl(raw) {
       path = '/' + path;
   }
 
-  // --- מחק או שים בהערה את החלק הזה ---
-  // if (path.startsWith('/uploads')) {
-  //     return path;
-  // }
-  // ------------------------------------
-
   // 3. חישוב שורש השרת
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://passover1.onrender.com';
-
-  // מסירים את הסיומת "/api" (אם קיימת)
-  const serverRoot = apiBase.replace(/\/api\/?$/, '');
+  const serverRoot = getServerOrigin();
 
   // 4. כעת הכתובת תמיד תכלול את השרת, גם עבור uploads
   return `${serverRoot}${path}`;

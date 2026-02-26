@@ -19,44 +19,39 @@ export const registerSchema = Joi.object({
 });
 
 export const orderSchema = Joi.object({
-    user: Joi.string().hex().length(24).required().messages({
-        'string.hex': 'Invalid user ID format',
-        'any.required': 'User ID is required'
-    }),
     orderItems: Joi.array().items(
         Joi.object({
-            name: Joi.string().required(),
+            _id: Joi.string().required(),
+            name: Joi.alternatives().try(
+                Joi.string(),
+                Joi.object({ he: Joi.string().allow(''), en: Joi.string().allow('') })
+            ).required(),
             price: Joi.number().min(0).required(),
-            itemType: Joi.string().valid('Product', 'MealPackage').required(),
-            item: Joi.string().hex().length(24).required(),
-            quantity: Joi.number().min(1).required(),
-            packageSelections: Joi.array().items(
-                Joi.object({
-                    category: Joi.string().required(),
-                    selectedOptions: Joi.array().items(
-                        Joi.object({
-                            _id: Joi.string().hex().length(24).required(),
-                            name: Joi.string().required()
-                        })
-                    )
-                })
-            )
-        })
+            type: Joi.string().valid('product', 'package').optional(),
+            itemType: Joi.string().valid('Product', 'MealPackage').optional(),
+            quantity: Joi.number().min(1).optional(),
+            userChoices: Joi.array().optional(),
+            packageSelections: Joi.array().optional(),
+        }).unknown(true)
     ).min(1).required(),
     shippingDetails: Joi.object({
         customerName: Joi.string().required(),
-        phone: Joi.string().pattern(/^[0-9]{10}$/).required().messages({
-            'string.pattern.base': 'Phone must be a valid 10-digit number'
+        phone: Joi.string().pattern(/^[0-9]{9,11}$/).required().messages({
+            'string.pattern.base': 'מספר טלפון חייב להיות בין 9-11 ספרות'
         }),
-        city: Joi.string().required(),
-        streetAddress: Joi.string().required(),
-        apartment: Joi.string().optional(),
-        floor: Joi.string().optional()
+        email: Joi.string().email().optional(),
+        city: Joi.string().allow('').optional(),
+        streetAddress: Joi.string().allow('').optional(),
+        apartment: Joi.string().allow('').optional(),
+        floor: Joi.string().allow('').optional()
     }).required(),
-    deliveryDate: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required().messages({
-        'string.pattern.base': 'Delivery date must be in YYYY-MM-DD format'
-    }),
+    deliveryDate: Joi.string().required(),
     fulfillmentType: Joi.string().valid('Delivery', 'Pickup').required(),
     fulfillmentDetails: Joi.string().required(),
-    notes: Joi.string().optional()
+    notes: Joi.string().allow('').optional(),
+    itemsPrice: Joi.number().optional(),
+    shippingPrice: Joi.number().optional(),
+    discountAmount: Joi.number().optional(),
+    couponCode: Joi.string().allow('', null).optional(),
+    totalPrice: Joi.number().optional(),
 });

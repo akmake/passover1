@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api.js';
 import { useAuthStore } from '../stores/authStore';
 
@@ -11,6 +11,7 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const login = useAuthStore((state) => state.login);
+    const navigate = useNavigate();
     const canvasRef = useRef(null);
 
     // --- לוגיקת קנבס: זהב על לבן נקי ---
@@ -141,7 +142,7 @@ export default function LoginPage() {
         try {
             const response = await api.post('/api/auth/login', { email, password });
             login(response.data);
-            window.location.href = response.data.role === 'admin' ? '/admin/products' : '/';
+            navigate(response.data.role === 'admin' ? '/admin/products' : '/', { replace: true });
         } catch (error) {
             const message = error.response?.data?.message || 'שגיאה בהתחברות';
             setError(message);

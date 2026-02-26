@@ -187,6 +187,13 @@ export const resetPassword = async (req, res) => {
             return res.status(400).json({ message: 'הקישור לאיפוס סיסמה אינו תקין או שפג תוקפו.' });
         }
         const { password } = req.body;
+
+        // בדיקת חוזק סיסמה (זהה לבדיקה בהרשמה)
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!password || !strongPasswordRegex.test(password)) {
+            return res.status(400).json({ message: 'הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה, מספר ותו מיוחד.' });
+        }
+
         const salt = await bcrypt.genSalt(12);
         user.passwordHash = await bcrypt.hash(password, salt);
         user.passwordResetToken = undefined;

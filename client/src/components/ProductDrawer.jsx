@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../stores/cartStore';
 import { useTranslation } from 'react-i18next'; // ייבוא התרגום
+import { toAbsoluteUrl } from '../utils/url';
 
 const ProductDrawer = ({ product, isOpen, onClose }) => {
   const { t, i18n } = useTranslation(); // שימוש בהוק
@@ -25,8 +26,7 @@ const ProductDrawer = ({ product, isOpen, onClose }) => {
 
   const getImageUrl = (imgStr) => {
     if (!imgStr) return 'https://via.placeholder.com/400x600?text=No+Image';
-    if (imgStr.startsWith('http')) return imgStr; 
-    return `http://localhost:5000${imgStr}`; 
+    return toAbsoluteUrl(imgStr);
   };
 
   const displayName = getName(product.name);

@@ -21,8 +21,30 @@ export const getDashboardStats = async (req, res) => {
 // --- Product Management ---
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({});
-        res.json(products);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+        const search = req.query.search || '';
+
+        const filter = search ? {
+            $or: [
+                { 'name.he': { $regex: search, $options: 'i' } },
+                { 'name.en': { $regex: search, $options: 'i' } },
+                { sku: { $regex: search, $options: 'i' } },
+            ]
+        } : {};
+
+        const [products, total] = await Promise.all([
+            Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Product.countDocuments(filter)
+        ]);
+
+        res.json({
+            products,
+            page,
+            pages: Math.ceil(total / limit),
+            total
+        });
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
@@ -110,8 +132,21 @@ export const deleteProduct = async (req, res) => {
 // --- User Management ---
 export const getUsers = async (req, res) => {
     try {
-        const users = await User.find({}).select('-passwordHash');
-        res.json(users);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+
+        const [users, total] = await Promise.all([
+            User.find({}).select('-passwordHash').sort({ createdAt: -1 }).skip(skip).limit(limit),
+            User.countDocuments()
+        ]);
+
+        res.json({
+            users,
+            page,
+            pages: Math.ceil(total / limit),
+            total
+        });
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 
@@ -129,8 +164,21 @@ export const deleteUser = async (req, res) => {
 // --- Order Management ---
 export const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find({}).populate('user', 'id name');
-        res.json(orders);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+
+        const [orders, total] = await Promise.all([
+            Order.find({}).populate('user', 'id name').sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Order.countDocuments()
+        ]);
+
+        res.json({
+            orders,
+            page,
+            pages: Math.ceil(total / limit),
+            total
+        });
     } catch (error) { res.status(500).json({ message: 'Server Error' }); }
 };
 

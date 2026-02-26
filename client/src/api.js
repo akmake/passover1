@@ -1,19 +1,17 @@
 import axios from 'axios';
 import { useAuthStore } from './stores/authStore';
 
-// --- הגדרת כתובת השרת בצורה חכמה ---
-// אם אנחנו ב-Localhost -> תשתמש בפורט 5000
-// אחרת (ב-Render) -> תשתמש בכתובת הייצור (הנחתי שהיא passover1, תעדכן אם זה שונה)
+// --- הגדרת כתובת השרת ---
+// משתמש ב-VITE_API_BASE_URL מקובץ .env או fallback
 const getBaseUrl = () => {
-    if (window.location.hostname === 'localhost') {
-        return 'https://localhost:5000';
-    }
-    // החלף את זה לכתובת השרת האמיתית שלך ב-Render אם היא שונה
-    return 'https://passover1.onrender.com'; 
+    return import.meta.env.VITE_API_BASE_URL || (
+        window.location.hostname === 'localhost'
+            ? 'https://localhost:5000'
+            : `${window.location.origin}`
+    );
 };
 
 const baseURL = getBaseUrl();
-console.log('🔌 API Base URL:', baseURL);
 
 const api = axios.create({
     baseURL: baseURL,

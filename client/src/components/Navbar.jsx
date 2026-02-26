@@ -7,7 +7,6 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
-import CartSlideOver from './CartSlideOver';
 
 // אייקונים דקים ואלגנטיים
 const Icons = {
@@ -84,8 +83,6 @@ const Navbar = () => {
 
   return (
     <>
-      <CartSlideOver />
-
       <nav
         className={[
           'fixed top-0 left-0 w-full z-50 transition-all duration-300',

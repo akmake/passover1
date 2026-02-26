@@ -3,6 +3,8 @@ import User from '../models/userModel.js';
 import Product from '../models/productModel.js';
 import MealPackage from '../models/mealPackageModel.js';
 import Coupon from '../models/couponModel.js';
+import DeliveryCenter from '../models/deliveryCenterModel.js';
+import GeneralSettings from '../models/generalSettingsModel.js';
 import sendEmail from '../utils/sendEmail.js';
 
 export const createOrder = async (req, res) => {
@@ -56,8 +58,28 @@ export const createOrder = async (req, res) => {
             }
         }
 
+        // --- שלב 3: חישוב מחיר משלוח בצד השרת (לא סומכים על הלקוח) ---
+        let serverShippingPrice = 0;
+        if (fulfillmentType === 'Delivery' && fulfillmentDetails) {
+            const settings = await GeneralSettings.findOne({ identifier: 'main' });
+            const freeShippingThreshold = settings?.freeShippingThreshold || 999999;
+
+            if (serverItemsPrice < freeShippingThreshold) {
+                // מחפשים את אזור המשלוח לפי העיר של הלקוח
+                const city = shippingDetails?.city;
+                if (city) {
+                    const zone = await DeliveryCenter.findOne({
+                        type: 'DeliveryZone',
+                        cities: city,
+                        isActive: true
+                    });
+                    serverShippingPrice = zone ? zone.price : 0;
+                }
+            }
+        }
+
         // חישוב הסכום הסופי
-        const serverTotalPrice = serverItemsPrice - serverDiscountAmount + clientShippingPrice;
+        const serverTotalPrice = serverItemsPrice - serverDiscountAmount + serverShippingPrice;
         
         // --- סוף החישוב המאובטח ---
 
@@ -102,7 +124,7 @@ export const createOrder = async (req, res) => {
             orderItems: formattedOrderItems,
             user: req.user._id,
             itemsPrice: serverItemsPrice,         // <-- שימוש בערך המאובטח
-            shippingPrice: clientShippingPrice,
+            shippingPrice: serverShippingPrice,     // <-- מחיר משלוח מחושב בשרת
             discountAmount: serverDiscountAmount, // <-- שימוש בערך המאובטח
             couponCode,
             totalPrice: serverTotalPrice,         // <-- שימוש בערך המאובטח

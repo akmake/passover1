@@ -13,7 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // יצירת "מנהל" חדש עבור כל האפליקציה
 const queryClient = new QueryClient();
 // --- סוף הוספות ---
-console.log('🔍 DEBUG: API URL is:', import.meta.env.VITE_API_BASE_URL);
+
 // --- הגשר בין החנויות ---
 useAuthStore.subscribe(
   (state, prevState) => {

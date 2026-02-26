@@ -3,6 +3,8 @@
 import { useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
@@ -50,8 +52,30 @@ function App() {
   }, [i18n, i18n.language]); // רץ כל פעם שהשפה משתנה
 
   return (
-    <Suspense fallback={<div className="w-full h-screen flex items-center justify-center">טוען...</div>}>
-      <Routes>
+    <ErrorBoundary>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3500,
+          style: {
+            background: '#1A1A1A',
+            color: '#fff',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            borderRadius: '8px',
+            padding: '12px 20px',
+          },
+          success: {
+            iconTheme: { primary: '#D4AF37', secondary: '#fff' },
+          },
+          error: {
+            iconTheme: { primary: '#dc2626', secondary: '#fff' },
+            duration: 4500,
+          },
+        }}
+      />
+      <Suspense fallback={<div className="w-full h-screen flex items-center justify-center">טוען...</div>}>
+        <Routes>
         <Route path="/" element={<Layout />}>
           {/* Public Routes */}
           <Route index element={<HomePage />} />
@@ -94,6 +118,7 @@ function App() {
         </Route>
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 }
 

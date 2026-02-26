@@ -1,6 +1,6 @@
 // routes/authRoutes.js
 import express from 'express';
-import csurf from 'csurf';
+import { doubleCsrf } from 'csrf-csrf';
 import rateLimit from 'express-rate-limit';
 import { registerUser, loginUser, logoutUser, forgotPassword, resetPassword, refreshToken, enableMfa } from '../controllers/authController.js';
 import { requireAuth, requireAdmin } from '../middleware/authMiddleware.js';
@@ -11,14 +11,27 @@ import { sensitiveApiLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// --- הגדרה מותנית של CSRF ---
+// --- הגדרה מותנית של CSRF באמצעות csrf-csrf (החלפת csurf שהוסר) ---
 let csrfProtection;
+let generateCsrfToken;
 
 if (process.env.NODE_ENV === 'test') {
   csrfProtection = (req, res, next) => next();
+  generateCsrfToken = (req, res) => 'test-csrf-token';
 } else {
-  // התיקון כאן: שינינו את sameSite ל-'none'
-  csrfProtection = csurf({ cookie: { httpOnly: true, secure: true, sameSite: 'none' } });
+  const { doubleCsrfProtection, generateToken } = doubleCsrf({
+    getSecret: () => process.env.CSRF_SECRET || process.env.JWT_SECRET,
+    cookieName: '__csrf',
+    cookieOptions: {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+    },
+    getTokenFromRequest: (req) => req.headers['x-csrf-token'],
+  });
+  csrfProtection = doubleCsrfProtection;
+  generateCsrfToken = generateToken;
 }
 // ---------------------------------
 
@@ -28,9 +41,10 @@ const loginLimiter = rateLimit({
     message: { message: 'יותר מדי ניסיונות התחברות. נסה שוב בעוד 15 דקות.' }
 });
 
-// Route ציבורי לשליפת CSRF token
-router.get('/csrf-token', csrfProtection, (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
+// Route ציבורי לשליפת CSRF token (עודכן ל-csrf-csrf)
+router.get('/csrf-token', (req, res) => {
+    const token = generateCsrfToken(req, res);
+    res.json({ csrfToken: token });
 });
 
 router.post('/register', csrfProtection, validate(registerSchema), registerUser);

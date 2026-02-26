@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBag } from 'lucide-react'; 
+import { toAbsoluteUrl } from '../utils/url';
+import LazyImage from './LazyImage';
 
 const ProductCard = ({ product, onClick }) => {
   const { t, i18n } = useTranslation();
@@ -21,8 +23,7 @@ const ProductCard = ({ product, onClick }) => {
   // --- פונקציית עזר לתמונות ---
   const getImageUrl = (imgStr) => {
     if (!imgStr) return 'https://via.placeholder.com/400x600?text=No+Image';
-    if (imgStr.startsWith('http')) return imgStr;
-    return `http://localhost:5000${imgStr}`; 
+    return toAbsoluteUrl(imgStr);
   };
 
   const name = getName(product.name);
@@ -62,11 +63,11 @@ const ProductCard = ({ product, onClick }) => {
            </div>
         )}
 
-        {/* התמונה */}
-        <img
+        {/* התמונה עם lazy loading */}
+        <LazyImage
            src={getImageUrl(product.image || product.imageUrl)}
            alt={name}
-           className="w-full h-full object-cover transition-transform duration-[1.5s] ease-in-out group-hover:scale-110 opacity-100"
+           className="w-full h-full transition-transform duration-[1.5s] ease-in-out group-hover:scale-110"
         />
 
         {/* שכבת כהות + כפתור הוספה (הוקטן מעט) */}

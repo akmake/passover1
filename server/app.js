@@ -110,12 +110,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/home-media', homeMediaRoutes); // נוסף לסנכרון מלא
 app.use('/api/promotions', promotionRoutes); // נוסף לסנכרון מלא
 
-// טיפול בשגיאות
+// טיפול בשגיאות (מרוכז)
 app.use(errorHandler);
-
-app.use((err, req, res, next) => {
-  logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-  res.status(err.status || 500).json({ message: err.message || 'שגיאת שרת' });
-});
 
 export default app;

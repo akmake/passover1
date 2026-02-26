@@ -21,14 +21,9 @@ const sendEmail = async (options) => {
         // html: '<b>אפשר גם לשלוח HTML</b>' // אפשר להוסיף בעתיד
     };
 
-    // 3. שליחת המייל
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Email sent successfully to ${options.email}`);
-    } catch (error) {
-        console.error(`Error sending email to ${options.email}:`, error);
-        // חשוב: לא "נזרוק" שגיאה החוצה כדי שתהליך ההרשמה/הזמנה לא ייכשל אם המייל נכשל
-    }
+    // 3. שליחת המייל — זורק שגיאה כדי שהקורא ידע אם נכשל
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully to ${options.email}`);
 };
 
 export default sendEmail;
